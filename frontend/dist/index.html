@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    
+    <!-- CSP actualizado -->
+<meta http-equiv="Content-Security-Policy"
+  content="
+    default-src 'self';
+    connect-src 'self' data:
+                http://localhost:3000
+                https://api.grupoproser.com.co
+                https://aplicacion.grupoproser.com.co
+                https://content.googleapis.com
+                https://www.gstatic.com
+                https://www.googleapis.com
+                https://accounts.google.com
+                https://*.firebaseapp.com
+                https://firebase.googleapis.com
+                ws: wss:;
+    img-src 'self' data: blob:
+             https://a.tile.openstreetmap.org
+             https://b.tile.openstreetmap.org
+             https://c.tile.openstreetmap.org
+             https://www.gstatic.com
+             https://*.firebaseapp.com;
+    style-src 'self' 'unsafe-inline';
+    script-src 'self' 'unsafe-inline' 'unsafe-eval'
+                https://apis.google.com
+                https://accounts.google.com
+                https://www.gstatic.com;
+    frame-src https://accounts.google.com
+              https://*.googleusercontent.com
+              https://content.googleapis.com
+              https://*.firebaseapp.com;
+  " />
+
+
+    <title>Vite + React</title>
+    <script src="https://apis.google.com/js/api.js"></script>
+    <script type="module" crossorigin src="/assets/index-Cqswcxwa.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-Bjp4NWpe.css">
+  </head>
+  <body>
+    <div id="root"></div>
+  </body>
+</html>
