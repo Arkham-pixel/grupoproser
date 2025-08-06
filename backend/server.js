@@ -9,13 +9,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 app.use(express.static(path.join(__dirname, "frontend", "build")));
 
-// ✅ Cualquier ruta que no sea de API la redirige al index.html del build
-app.get("*", (req, res) => {
-  res.sendFile(path.join(__dirname, "frontend", "build", "index.html"));
-});
 
-// Cargar variables de entorno desde el archivo .env
-dotenv.config({ path: path.join(__dirname, '.env') });
 
 // Verificar que las variables se cargaron
 console.log('🔧 Variables de entorno cargadas:');
