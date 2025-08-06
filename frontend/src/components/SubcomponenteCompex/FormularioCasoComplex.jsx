@@ -7,6 +7,7 @@ import Honorarios from './Honorarios';
 import Seguimiento from './Seguimiento';
 import ObservacionesCliente from './ObservacionesCliente';
 import { useDropzone } from 'react-dropzone';
+import config from '../../config.js';
 // Importa aquí los demás subcomponentes cuando los crees
 
 export default function FormularioCasoComplex({ initialData, onSave, onCancel }) {
@@ -165,7 +166,7 @@ export default function FormularioCasoComplex({ initialData, onSave, onCancel })
       // Buscar el cliente seleccionado para obtener su código
       const cliente = aseguradoraOptionsRaw.find(c => c.rzonSocial === formData.aseguradora);
       if (cliente && cliente.codiAsgrdra) {
-        fetch(`http://localhost:3000/api/funcionarios-aseguradora?codiAsgrdra=${cliente.codiAsgrdra}`)
+        fetch(`${config.API_BASE_URL}/api/funcionarios-aseguradora?codiAsgrdra=${cliente.codiAsgrdra}`)
           .then(res => res.json())
           .then(data => {
             setFuncionarios(data.map(f => f.nmbrContcto));
@@ -180,7 +181,7 @@ export default function FormularioCasoComplex({ initialData, onSave, onCancel })
 
   // Guardar los datos crudos de clientes para obtener el código
   useEffect(() => {
-    fetch('http://localhost:3000/api/clientes')
+            fetch(`${config.API_BASE_URL}/api/clientes`)
       .then(res => res.json())
       .then(data => {
         setAseguradoraOptionsRaw(data);
@@ -189,7 +190,7 @@ export default function FormularioCasoComplex({ initialData, onSave, onCancel })
   }, []);
 
   useEffect(() => {
-    fetch('http://localhost:3000/api/ciudades')
+            fetch(`${config.API_BASE_URL}/api/ciudades`)
       .then(res => res.json())
       .then(data => {
         // Transformar para react-select: { value, label }
@@ -202,7 +203,7 @@ export default function FormularioCasoComplex({ initialData, onSave, onCancel })
   }, []);
 
   useEffect(() => {
-    fetch('http://localhost:3000/api/responsables')
+            fetch(`${config.API_BASE_URL}/api/responsables`)
       .then(res => res.json())
       .then(data => {
         setResponsables(data.map(r => r.nmbrRespnsble));
@@ -210,7 +211,7 @@ export default function FormularioCasoComplex({ initialData, onSave, onCancel })
   }, []);
 
   useEffect(() => {
-    fetch('http://localhost:3000/api/estados')
+            fetch(`${config.API_BASE_URL}/api/estados`)
       .then(res => res.json())
       .then(data => {
         const mapped = (data || [])
@@ -225,7 +226,7 @@ export default function FormularioCasoComplex({ initialData, onSave, onCancel })
 
   // Cargar intermediarios desde la API
   useEffect(() => {
-    fetch('http://localhost:3000/api/complex/intermediarios')
+            fetch(`${config.API_BASE_URL}/api/complex/intermediarios`)
       .then(res => {
         if (!res.ok) {
           throw new Error(`HTTP error! status: ${res.status}`);

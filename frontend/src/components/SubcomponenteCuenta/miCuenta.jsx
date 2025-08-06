@@ -4,6 +4,7 @@ import React, { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { obtenerPerfil, actualizarFoto } from "../../services/userService";
 import axios from "axios";
+import config from "../../config.js";
 
 const estados = {
   Conectado: "bg-green-500 text-white",
@@ -126,7 +127,7 @@ export default function MiCuenta() {
               fotoPreview
                 ? fotoPreview
                 : usuario.foto
-                ? `http://localhost:3000${usuario.foto}`
+                ? `${config.API_BASE_URL}${usuario.foto}`
                 : "/img/placeholder.png"
             }
             alt="Foto de perfil"

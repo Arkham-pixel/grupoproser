@@ -4,6 +4,7 @@ import { getEstados } from '../services/estadosService';
 import { obtenerAseguradoras, obtenerResponsables } from '../services/riesgoService';
 import FormularioCasoComplex from './SubcomponenteCompex/FormularioCasoComplex';
 import * as XLSX from 'xlsx';
+import config from '../config.js';
 // Elimina la importación de antd
 
 const todosLosCampos = [
@@ -756,7 +757,7 @@ const ReporteComplex = () => {
                           <td className="p-2 border text-center">
                             {doc.url ? (
                               <a 
-                                href={`http://localhost:3000${doc.url}`} 
+                                href={`${config.API_BASE_URL}${doc.url}`} 
                                 target="_blank" 
                                 rel="noopener noreferrer" 
                                 download={doc.nombre}

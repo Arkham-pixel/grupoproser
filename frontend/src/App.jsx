@@ -1,6 +1,7 @@
 // src/App.jsx
 import React from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
+import config from './config.js'
 
 import Login from './components/login'
 import Register from './components/Register'
@@ -39,7 +40,7 @@ const guardarCasoComplex = async (formData) => {
   try {
     console.log('📝 Enviando datos del caso complex:', formData);
     
-    const response = await fetch('http://localhost:3000/api/complex', {
+    const response = await fetch(`${config.API_BASE_URL}/api/complex`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(formData)
