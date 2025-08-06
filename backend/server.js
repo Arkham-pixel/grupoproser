@@ -3,11 +3,12 @@ import mongoose from "mongoose";
 import app from "./app.js";
 import dotenv from 'dotenv';
 import path from 'path';
+import express from 'express';
 import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-app.use(express.static(path.join(__dirname, "frontend", "build")));
+// app.use(express.static(path.join(__dirname, "frontend", "build")));
 
 
 
@@ -23,10 +24,8 @@ if (!MONGO_URI) {
   process.exit(1);
 }
 
-// Configuración mejorada de MongoDB (solo opciones soportadas)
+// Configuración mejorada de MongoDB (opciones actualizadas)
 const mongoOptions = {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
   serverSelectionTimeoutMS: 10000, // 10 segundos
   socketTimeoutMS: 45000, // 45 segundos
   maxPoolSize: 10,
