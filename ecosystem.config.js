@@ -17,7 +17,7 @@ module.exports = {
         EMAIL_PASS: 'tu_password_aqui',
         JWT_SECRET: 'tu_secreto_jwt_super_seguro',
         EMAIL_SERVICE: 'gmail',
-        CORS_ORIGIN: '*'
+        CORS_ORIGIN: 'http://18.224.109.158:5173'
       },
       env_production: {
         NODE_ENV: 'production',
@@ -28,7 +28,7 @@ module.exports = {
         EMAIL_PASS: 'tu_password_aqui',
         JWT_SECRET: 'tu_secreto_jwt_super_seguro',
         EMAIL_SERVICE: 'gmail',
-        CORS_ORIGIN: '*'
+        CORS_ORIGIN: 'http://18.224.109.158:5173'
       },
       error_file: './logs/backend-error.log',
       out_file: './logs/backend-out.log',
