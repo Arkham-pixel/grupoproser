@@ -15,7 +15,7 @@ export const obtenerCasos = async () => {
 };
 
 export const obtenerCasosRiesgo = async () => {
-  const res = await api.get("http://localhost:3000/api/riesgos");
+  const res = await api.get(`${config.API_BASE_URL}/api/riesgos`);
   return res.data;
 };
 
@@ -28,22 +28,22 @@ export const deleteCasoRiesgo = async (id) => {
 };
 
 export const obtenerResponsables = async () => {
-  const res = await api.get("http://localhost:3000/api/responsables");
+  const res = await api.get(`${config.API_BASE_URL}/api/responsables`);
   return res.data;
 };
 
 export const obtenerEstados = async () => {
-  const res = await api.get("http://localhost:3000/api/estados/estados-riesgos");
+  const res = await api.get(`${config.API_BASE_URL}/api/estados/estados-riesgos`);
   return res.data;
 };
 
 export const obtenerAseguradoras = async () => {
-  const res = await api.get("http://localhost:3000/api/clientes");
+  const res = await api.get(`${config.API_BASE_URL}/api/clientes`);
   return res.data;
 };
 
 export const obtenerCiudades = async () => {
-  const res = await api.get("http://localhost:3000/api/ciudades");
+  const res = await api.get(`${config.API_BASE_URL}/api/ciudades`);
   return res.data;
 };
 
