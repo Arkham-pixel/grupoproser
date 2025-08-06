@@ -37,7 +37,7 @@ export const CasosRiesgoProvider = ({ children }) => {
       console.log('📝 DATOS A ENVIAR DESDE FRONTEND:', JSON.stringify(nuevoCaso, null, 2));
       
       let dataToSend = nuevoCaso;
-      let config = {};
+      let requestConfig = {};
       // Si hay archivos adjuntos, usar FormData
       const formData = new FormData();
       let hasFile = false;
@@ -51,12 +51,12 @@ export const CasosRiesgoProvider = ({ children }) => {
       });
       if (hasFile) {
         dataToSend = formData;
-        config.headers = { 'Content-Type': 'multipart/form-data' };
+        requestConfig.headers = { 'Content-Type': 'multipart/form-data' };
       }
       
       console.log('📤 ENVIANDO AL BACKEND:', dataToSend);
       
-      const response = await api.post(`${config.API_BASE_URL}/api/riesgos`, dataToSend, config);
+      const response = await api.post(`${config.API_BASE_URL}/api/riesgos`, dataToSend, requestConfig);
       
       console.log('✅ RESPUESTA DEL BACKEND:', response.data);
       
@@ -81,7 +81,7 @@ export const CasosRiesgoProvider = ({ children }) => {
       const caso = casos[index];
       if (!caso || !caso._id) throw new Error('No se encontró el caso a editar');
       let dataToSend = nuevoCaso;
-      let config = {};
+      let requestConfig = {};
       const formData = new FormData();
       let hasFile = false;
       Object.entries(nuevoCaso).forEach(([key, value]) => {
@@ -94,9 +94,9 @@ export const CasosRiesgoProvider = ({ children }) => {
       });
       if (hasFile) {
         dataToSend = formData;
-        config.headers = { 'Content-Type': 'multipart/form-data' };
+        requestConfig.headers = { 'Content-Type': 'multipart/form-data' };
       }
-      await api.put(`${config.API_BASE_URL}/api/riesgos/${caso._id}`, dataToSend, config);
+      await api.put(`${config.API_BASE_URL}/api/riesgos/${caso._id}`, dataToSend, requestConfig);
       await cargarCasos();
     } catch (err) {
       console.error('Error al editar caso de riesgo:', err);
