@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import proserLogo from "../../img/logo.png"; // Usa PNG
+import proserLogo from "../../img/Logo.png"; // Usa PNG
 
 export default function FirmaMaquinaria({ fecha }) {
   const [inspectores, setInspectores] = useState([
