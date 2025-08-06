@@ -16,6 +16,7 @@ module.exports = {
         NODE_ENV: 'production',
         PORT: 3000
       },
+      env_file: './backend/.env',
       error_file: './logs/backend-error.log',
       out_file: './logs/backend-out.log',
       log_file: './logs/backend-combined.log',
