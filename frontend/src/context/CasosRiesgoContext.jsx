@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import axios from "axios";
+import config from "../config.js";
 
 // Configurar axios con timeouts más largos para Firebase -> AWS
 const api = axios.create({
@@ -23,7 +24,7 @@ export const CasosRiesgoProvider = ({ children }) => {
 
   const cargarCasos = async () => {
     try {
-      const res = await api.get("http://localhost:3000/api/riesgos");
+      const res = await api.get(`${config.API_BASE_URL}/api/riesgos`);
       setCasos(Array.isArray(res.data) ? res.data : []);
     } catch (err) {
       console.error("Error al cargar casos de riesgo:", err);

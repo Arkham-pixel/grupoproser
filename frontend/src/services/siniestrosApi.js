@@ -1,4 +1,6 @@
-const API_URL = "http://localhost:3000/api/siniestros";
+import config from "../config.js";
+
+const API_URL = `${config.API_BASE_URL}/api/siniestros`;
 
 export const getSiniestros = async (params = {}) => {
   const query = new URLSearchParams(params).toString();

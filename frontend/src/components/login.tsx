@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import config from '../config.js';
 
 export default function Login() {
   const [login, setLogin] = useState('');
@@ -17,11 +18,11 @@ export default function Login() {
     try {
       const requestData = { correo: login, password: pswd };
       console.log('🚀 Enviando petición login:', requestData);
-      console.log('📡 URL:', 'http://localhost:3000/api/secur-auth/login');
+      console.log('📡 URL:', `${config.API_BASE_URL}/api/secur-auth/login`);
       console.log('📦 Headers:', { 'Content-Type': 'application/json' });
       console.log('📄 JSON string:', JSON.stringify(requestData));
       
-      const res = await axios.post('http://localhost:3000/api/secur-auth/login', requestData);
+      const res = await axios.post(`${config.API_BASE_URL}/api/secur-auth/login`, requestData);
       console.log('✅ Respuesta login:', res.data);
       console.log('🔍 Verificando respuesta...');
       console.log('   - twoFARequired:', res.data.twoFARequired);

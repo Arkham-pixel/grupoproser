@@ -1,4 +1,5 @@
 import axios from "axios";
+import config from "../config.js";
 
 // Configurar axios con timeouts más largos para Firebase -> AWS
 const api = axios.create({
@@ -9,7 +10,7 @@ const api = axios.create({
 });
 
 export const obtenerCasos = async () => {
-  const res = await api.get("http://localhost:3000/api/riesgos");
+  const res = await api.get(`${config.API_BASE_URL}/api/riesgos`);
   return res.data;
 };
 
