@@ -628,7 +628,7 @@ new Paragraph({
   alignment: AlignmentType.LEFT,
   children: [
     new ImageRun({
-      data: await fetch(proserLogo).then((r) => r.arrayBuffer()),
+      data: await fetch(Logo).then((r) => r.arrayBuffer()),
       transformation: { width: 150, height: 60 },
     }),
   ],
