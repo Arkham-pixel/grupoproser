@@ -44,7 +44,7 @@ app.use(express.json());
 const uploadsDir = path.resolve("uploads");
 if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true });
-  console.log("📁 Carpeta 'uploads/' creada.");
+  console.log("📁 Carpeta 'uploads/' creada... ✅");
 }
 
 // 3️ Sirve los archivos subidos de forma estática
