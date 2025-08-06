@@ -56,7 +56,7 @@ export const CasosRiesgoProvider = ({ children }) => {
       
       console.log('📤 ENVIANDO AL BACKEND:', dataToSend);
       
-      const response = await api.post('http://localhost:3000/api/riesgos', dataToSend, config);
+      const response = await api.post(`${config.API_BASE_URL}/api/riesgos`, dataToSend, config);
       
       console.log('✅ RESPUESTA DEL BACKEND:', response.data);
       
@@ -96,7 +96,7 @@ export const CasosRiesgoProvider = ({ children }) => {
         dataToSend = formData;
         config.headers = { 'Content-Type': 'multipart/form-data' };
       }
-      await api.put(`http://localhost:3000/api/riesgos/${caso._id}`, dataToSend, config);
+      await api.put(`${config.API_BASE_URL}/api/riesgos/${caso._id}`, dataToSend, config);
       await cargarCasos();
     } catch (err) {
       console.error('Error al editar caso de riesgo:', err);
