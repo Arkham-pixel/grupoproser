@@ -11,13 +11,12 @@ import RecomendacionesObservacionesMaquinaria from "./RecomendacionesObservacion
 import RegistroFotograficoMaquinaria from "./RegistroFotograficoMaquinaria";
 import FirmaMaquinaria from "./FirmaMaquinaria";
 import { gapi } from "gapi-script";
-import Logo from '../../img/Logo.png'; // Ajusta la ruta según tu estructura
 import proserLogo from "../../img/logo.png";
 
 const toArrayBuffer = (file) => {
   return new Promise((resolve, reject) => {
     if (!(file instanceof Blob)) {
-      return reject(new Error("El archivo no es un Blob válido."));
+      return reject(new Error("El archivo no es un Blob válido ¡."));
     }
 
     const reader = new FileReader();
