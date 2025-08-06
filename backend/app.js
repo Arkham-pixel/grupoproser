@@ -26,7 +26,7 @@ const app = express();
 
 // Configuración de CORS
 app.use(cors({
-  origin: ['http://localhost:5173', 'http://localhost:3000', 'https://aplicacion.grupoproser.com.co'],
+  origin: ['http://localhost:5173', 'http://localhost:3000', 'http://18.224.109.158:5173', 'http://18.224.109.158:3000', 'https://aplicacion.grupoproser.com.co'],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
