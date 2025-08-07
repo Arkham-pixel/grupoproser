@@ -23,44 +23,75 @@ router.get("/usuarios", async (req, res) => {
 // 🔐 Ruta para cambiar contraseña de usuarios (solo para admin/soporte)
 router.post("/cambiar-password", async (req, res) => {
   try {
+    console.log('🔐 Iniciando cambio de contraseña...');
+    console.log('📝 Datos recibidos:', { 
+      login: req.body.login, 
+      adminLogin: req.body.adminLogin,
+      nuevaPassword: req.body.nuevaPassword ? '***' : 'NO DEFINIDA'
+    });
+    
     const { login, nuevaPassword, adminLogin, adminPassword } = req.body;
     
+    // Validar datos requeridos
+    if (!login || !nuevaPassword || !adminLogin || !adminPassword) {
+      console.log('❌ Datos faltantes:', { login: !!login, nuevaPassword: !!nuevaPassword, adminLogin: !!adminLogin, adminPassword: !!adminPassword });
+      return res.status(400).json({ message: "Todos los campos son requeridos" });
+    }
+    
+    console.log('🔍 Buscando administrador:', adminLogin);
     // Verificar que el administrador existe y tiene permisos
     const admin = await SecurUser.findOne({ login: adminLogin });
     if (!admin) {
+      console.log('❌ Administrador no encontrado:', adminLogin);
       return res.status(404).json({ message: "Administrador no encontrado" });
     }
     
+    console.log('✅ Administrador encontrado:', { name: admin.name, role: admin.role, active: admin.active });
+    
     // Verificar que el administrador está activo
     if (admin.active !== "Y") {
+      console.log('❌ Administrador inactivo:', adminLogin);
       return res.status(401).json({ message: "Administrador inactivo" });
     }
     
+    console.log('🔐 Verificando contraseña del administrador...');
     // Verificar contraseña del administrador
     const isAdminPasswordValid = await bcrypt.compare(adminPassword, admin.pswd);
     if (!isAdminPasswordValid) {
+      console.log('❌ Contraseña de administrador incorrecta');
       return res.status(401).json({ message: "Contraseña de administrador incorrecta" });
     }
     
+    console.log('✅ Contraseña de administrador válida');
+    
     // Verificar que el administrador tiene permisos (admin o soporte)
     if (!["admin", "soporte"].includes(admin.role)) {
+      console.log('❌ Administrador sin permisos:', admin.role);
       return res.status(403).json({ message: "No tienes permisos para cambiar contraseñas" });
     }
     
+    console.log('🔍 Buscando usuario a cambiar:', login);
     // Buscar el usuario a cambiar
     const usuario = await SecurUser.findOne({ login });
     if (!usuario) {
+      console.log('❌ Usuario no encontrado:', login);
       return res.status(404).json({ message: "Usuario no encontrado" });
     }
     
+    console.log('✅ Usuario encontrado:', { name: usuario.name, role: usuario.role });
+    
+    console.log('🔐 Encriptando nueva contraseña...');
     // Encriptar nueva contraseña
     const saltRounds = 10;
     const hashedPassword = await bcrypt.hash(nuevaPassword, saltRounds);
     
+    console.log('💾 Actualizando contraseña en la base de datos...');
     // Actualizar contraseña
     usuario.pswd = hashedPassword;
     usuario.pswdLastUpdated = new Date().toISOString();
     await usuario.save();
+    
+    console.log('✅ Contraseña actualizada exitosamente');
     
     res.json({ 
       success: true, 
@@ -74,8 +105,12 @@ router.post("/cambiar-password", async (req, res) => {
     });
     
   } catch (error) {
-    console.error("Error al cambiar contraseña:", error);
-    res.status(500).json({ message: "Error en el servidor" });
+    console.error("❌ Error al cambiar contraseña:", error);
+    console.error("📋 Stack trace:", error.stack);
+    res.status(500).json({ 
+      message: "Error en el servidor",
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
   }
 });
 
