@@ -7,6 +7,99 @@ import axios from 'axios';
 import config from '../config.js';
 import * as XLSX from 'xlsx';
 
+// Función para convertir fechas al formato de input
+function toDateInputValue(dateString) {
+  if (!dateString) return '';
+  const date = new Date(dateString);
+  return date.toISOString().slice(0, 10);
+}
+
+// Función para mapear siniestro al formato del formulario
+const mapSiniestroToForm = (siniestro) => ({
+  // Campos principales que coinciden con el formulario
+  nmroAjste: siniestro.nmroAjste || '',
+  nmroSinstro: siniestro.nmroSinstro || '',
+  nombIntermediario: siniestro.nombIntermediario || '',
+  codWorkflow: siniestro.codWorkflow || '',
+  nmroPolza: siniestro.nmroPolza || '',
+  codiRespnsble: siniestro.codiRespnsble || '',
+  nombreResponsable: siniestro.nombreResponsable || '',
+  codiAsgrdra: siniestro.codiAsgrdra || '',
+  funcAsgrdra: siniestro.funcAsgrdra || '',
+  nombreFuncionario: siniestro.nombreFuncionario || '',
+  asgrBenfcro: siniestro.asgrBenfcro || '',
+  tipoDucumento: siniestro.tipoDucumento || '',
+  numDocumento: siniestro.numDocumento || '',
+  tipoPoliza: siniestro.tipoPoliza || '',
+  ciudadSiniestro: siniestro.ciudadSiniestro || '',
+  amprAfctdo: siniestro.amprAfctdo || '',
+  descSinstro: siniestro.descSinstro || '',
+  causa_siniestro: siniestro.causa_siniestro || '',
+  estado: siniestro.codiEstdo || '',
+  fchaAsgncion: toDateInputValue(siniestro.fchaAsgncion),
+  fchaSinstro: toDateInputValue(siniestro.fchaSinstro),
+  fchaInspccion: toDateInputValue(siniestro.fchaInspccion),
+  fchaContIni: toDateInputValue(siniestro.fchaContIni),
+  
+  // Campos adicionales para el formulario
+  aseguradora: siniestro.codiAsgrdra || '',
+  funcionario_aseguradora: siniestro.nombreFuncionario || '',
+  responsable: siniestro.codiRespnsble || '',
+  asegurado: siniestro.asgrBenfcro || '',
+  tipo_documento: siniestro.tipoDucumento || '',
+  numero_documento: siniestro.numDocumento || '',
+  fecha_siniestro: toDateInputValue(siniestro.fchaSinstro),
+  ciudad_siniestro: siniestro.ciudadSiniestro || '',
+  descripcion_siniestro: siniestro.descSinstro || '',
+  tipo_poliza: siniestro.tipoPoliza || '',
+  numero_poliza: siniestro.nmroPolza || '',
+  fecha_asignacion: toDateInputValue(siniestro.fchaAsgncion),
+  
+  // Campos de valores y prestaciones
+  valor_reserva: siniestro.vlor_resrva || '',
+  valor_reclamo: siniestro.vlor_reclmo || '',
+  monto_indemnizar: siniestro.monto_indmzar || '',
+  valor_servicio: siniestro.vlor_servcios || '',
+  valor_gastos: siniestro.vlor_gastos || '',
+  
+  // Campos de fechas adicionales
+  fecha_contacto_inicial: toDateInputValue(siniestro.fchaContIni),
+  fecha_solicitud_documentos: toDateInputValue(siniestro.fcha_soli_docu),
+  fecha_informe_preliminar: toDateInputValue(siniestro.fcha_info_prelm),
+  fecha_informe_final: toDateInputValue(siniestro.fcha_info_fnal),
+  fecha_ultimo_documento: toDateInputValue(siniestro.fcha_ult_doc),
+  fecha_factura: toDateInputValue(siniestro.fcha_factra),
+  fecha_ultima_revision: toDateInputValue(siniestro.fcha_ult_revi),
+  fecha_ultimo_seguimiento: toDateInputValue(siniestro.fcha_ult_segui),
+  
+  // Campos de observaciones
+  observaciones_contacto_inicial: siniestro.obse_cont_ini || '',
+  observacion_inspeccion: siniestro.obse_inspccion || '',
+  observacion_solicitud_documento: siniestro.obse_soli_docu || '',
+  observacion_informe_preliminar: siniestro.obse_info_prelm || '',
+  observacion_informe_final: siniestro.obse_info_fnal || '',
+  observacion_compromisos: siniestro.obse_comprmsi || '',
+  observacion_seguimiento_pendientes: siniestro.obse_segmnto || '',
+  
+  // Campos de adjuntos
+  adjuntos_contacto_inicial: siniestro.anex_cont_ini || '',
+  adjunto_acta_inspeccion: siniestro.anex_acta_inspccion || '',
+  adjunto_solicitud_documento: siniestro.anex_sol_doc || '',
+  adjunto_informe_preliminar: siniestro.anxo_inf_prelim || '',
+  adjunto_informe_final: siniestro.anxo_info_fnal || '',
+  adjunto_entrega_ultimo_documento: siniestro.anxo_repo_acti || '',
+  adjunto_factura: siniestro.anxo_factra || '',
+  adjunto_seguimientos_pendientes: siniestro.anxo_ult_segui || '',
+  
+  // Campos adicionales
+  numero_factura: siniestro.numero_factura || '',
+  creado_en: siniestro.creado_en || '',
+  historialDocs: siniestro.historialDocs || [],
+  
+  // ID para edición
+  _id: siniestro._id || ''
+});
+
 const todosLosCampos = [
   { clave: 'nmroAjste', label: 'No. Ajuste' },
   { clave: 'nmroSinstro', label: 'No. de Siniestro' },
@@ -55,6 +148,8 @@ export default function ReporteResponsables() {
   const [responsables, setResponsables] = useState([]);
   const [mostrarFormulario, setMostrarFormulario] = useState(false);
   const [siniestroEditar, setSiniestroEditar] = useState(null);
+  const [editSiniestro, setEditSiniestro] = useState(null);
+  const [modalOpen, setModalOpen] = useState(false);
 
   // Estados para administración de usuarios
   const [usuarios, setUsuarios] = useState([]);
@@ -296,6 +391,41 @@ export default function ReporteResponsables() {
       nuevasCamposVisibles.add(clave);
     }
     setCamposVisibles(nuevasCamposVisibles);
+  };
+
+  // Funciones para edición de casos
+  const handleEdit = (siniestro) => {
+    setEditSiniestro(mapSiniestroToForm(siniestro));
+    setModalOpen(true);
+  };
+
+  const handleDelete = async (id) => {
+    if (window.confirm('¿Estás seguro de que quieres eliminar este siniestro?')) {
+      try {
+        await deleteSiniestro(id);
+        alert('Siniestro eliminado correctamente');
+        // Recargar datos
+        window.location.reload();
+      } catch (error) {
+        console.error('Error al eliminar el siniestro:', error);
+        alert('Error al eliminar el siniestro');
+      }
+    }
+  };
+
+  const handleSave = async (formData) => {
+    if (!formData._id) return;
+    setLoading(true);
+    try {
+      await updateSiniestro(formData._id, formData);
+      setModalOpen(false);
+      setEditSiniestro(null);
+      // Recargar datos
+      window.location.reload();
+    } catch (error) {
+      alert('Error al guardar los cambios');
+    }
+    setLoading(false);
   };
 
   // Funciones para administración de usuarios
@@ -573,15 +703,18 @@ export default function ReporteResponsables() {
                        </td>
                      );
                    })}
-                   <td className="px-4 py-3 whitespace-nowrap text-sm font-medium">
+                   <td className="px-4 py-3 whitespace-nowrap text-sm font-medium space-x-2">
                      <button
-                       onClick={() => {
-                         setSiniestroEditar(siniestro);
-                         setMostrarFormulario(true);
-                       }}
-                       className="text-indigo-600 hover:text-indigo-900 bg-indigo-100 hover:bg-indigo-200 px-3 py-1 rounded-md text-sm font-medium transition-colors"
+                       onClick={() => handleEdit(siniestro)}
+                       className="bg-blue-500 text-white px-2 py-1 rounded hover:bg-blue-600 text-xs"
                      >
                        ✏️ Editar
+                     </button>
+                     <button
+                       onClick={() => handleDelete(siniestro._id)}
+                       className="bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600 text-xs"
+                     >
+                       🗑️ Borrar
                      </button>
                    </td>
                  </tr>
@@ -628,22 +761,17 @@ export default function ReporteResponsables() {
         </div>
       )}
 
-                 {/* Formulario Modal */}
-           {mostrarFormulario && (
-             <FormularioCasoComplex
-               visible={mostrarFormulario}
-               onCancel={() => {
-                 setMostrarFormulario(false);
-                 setSiniestroEditar(null);
-               }}
-               siniestroEditar={siniestroEditar}
-               onSuccess={() => {
-                 setMostrarFormulario(false);
-                 setSiniestroEditar(null);
-                 // Recargar datos
-                 window.location.reload();
-               }}
-             />
+                 {/* Modal con FormularioCasoComplex */}
+           {modalOpen && (
+             <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+               <div style={{ background: '#fff', padding: 24, borderRadius: 8, minWidth: 400, maxHeight: '90vh', overflowY: 'auto' }}>
+                 <FormularioCasoComplex
+                   initialData={editSiniestro}
+                   onSave={handleSave}
+                   onCancel={() => { setModalOpen(false); setEditSiniestro(null); }}
+                 />
+               </div>
+             </div>
            )}
          </>
        ) : activeTab === 'usuarios' && esAdminOSoporte ? (
