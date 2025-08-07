@@ -27,7 +27,8 @@ export default function Layout() {
   };
 
   // Verificar si el usuario tiene permisos de administración
-  const esAdminOSoporte = usuarioActual.rol === 'admin' || usuarioActual.rol === 'soporte';
+                const esAdminOSoporte = usuarioActual.rol === 'admin' || usuarioActual.rol === 'soporte';
+              const esSoloSoporte = usuarioActual.rol === 'soporte';
 
   const handleDropdown = (name) =>
     setDropdown(dropdown === name ? null : name);
@@ -183,14 +184,22 @@ export default function Layout() {
           </Link>
 
           {/* Enlace de Administración (solo visible para admin/soporte) */}
-          {esAdminOSoporte && (
-            <Link
-              to="/admin/usuarios"
-              className="flex items-center gap-2 text-red-700 hover:text-red-800 font-medium transition"
-            >
-              <FaUserShield /> Administración
-            </Link>
-          )}
+                            {esAdminOSoporte && (
+                    <Link
+                      to="/admin/usuarios"
+                      className="flex items-center gap-2 text-red-700 hover:text-red-800 font-medium transition"
+                    >
+                      <FaUserShield /> Administración
+                    </Link>
+                  )}
+                                {esSoloSoporte && (
+                <Link
+                  to="/test-email"
+                  className="flex items-center gap-2 text-orange-700 hover:text-orange-800 font-medium transition"
+                >
+                  📧 Prueba Email
+                </Link>
+              )}
         </div>
 
         {/* User & Logout */}
@@ -282,15 +291,24 @@ export default function Layout() {
               Cuenta
             </Link>
             {/* Enlace de Administración (solo visible para admin/soporte) */}
-            {esAdminOSoporte && (
-              <Link
-                to="/admin/usuarios"
-                className="px-6 py-2 hover:bg-blue-50 text-red-700"
-                onClick={() => setMenuOpen(false)}
-              >
-                🔐 Administración
-              </Link>
-            )}
+                                {esAdminOSoporte && (
+                      <Link
+                        to="/admin/usuarios"
+                        className="px-6 py-2 hover:bg-blue-50 text-red-700"
+                        onClick={() => setMenuOpen(false)}
+                      >
+                        🔐 Administración
+                      </Link>
+                    )}
+                                    {esSoloSoporte && (
+                  <Link
+                    to="/test-email"
+                    className="px-6 py-2 hover:bg-blue-50 text-orange-700"
+                    onClick={() => setMenuOpen(false)}
+                  >
+                    📧 Prueba Email
+                  </Link>
+                )}
             <LogoutButton />
           </div>
         )}

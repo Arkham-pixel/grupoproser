@@ -1,4 +1,7 @@
 import Riesgo from '../models/CasoRiesgo.js';
+import SecurUser from '../models/SecurUser.js';
+import Responsable from '../models/Responsable.js';
+import { enviarNotificacionAsignacion } from '../services/emailService.js';
 
 export const crearRiesgo = async (req, res) => {
   try {
@@ -54,11 +57,75 @@ export const crearRiesgo = async (req, res) => {
     console.log('✅ RIESGO GUARDADO EXITOSAMENTE:', JSON.stringify(nuevoRiesgo, null, 2));
     console.log('🎯 ===== RIESGO CREADO CON ÉXITO =====');
     
-    res.status(201).json({
-      success: true,
-      message: `Caso de riesgo #${nuevoNumero} creado exitosamente`,
-      riesgo: nuevoRiesgo
-    });
+    // Solo enviar notificación si hay un responsable asignado
+    if (nuevoRiesgo.codiIspector || nuevoRiesgo.codiRespnsble) {
+      console.log('📧 ===== ENVIANDO NOTIFICACIÓN DE ASIGNACIÓN =====');
+      
+      try {
+        // Obtener información del responsable
+        let responsableInfo = null;
+        if (nuevoRiesgo.codiIspector) {
+          responsableInfo = await Responsable.findOne({ codiRespnsble: nuevoRiesgo.codiIspector });
+        } else if (nuevoRiesgo.codiRespnsble) {
+          responsableInfo = await Responsable.findOne({ codiRespnsble: nuevoRiesgo.codiRespnsble });
+        }
+        
+        console.log('👤 INFORMACIÓN DEL RESPONSABLE:', responsableInfo);
+        
+        // Obtener información del usuario que está creando el caso
+        const usuarioActual = req.user || { name: 'Sistema', email: 'sistema@proserpuertos.com.co' };
+        
+        // Preparar datos para la notificación
+        const datosNotificacion = {
+          numeroCaso: nuevoRiesgo.nmroRiesgo || `Riesgo-${nuevoRiesgo._id}`,
+          nombreResponsable: responsableInfo?.nmbrRespnsble || 'Sin asignar',
+          emailResponsable: responsableInfo?.email || null,
+          aseguradora: nuevoRiesgo.codiAsgrdra || 'No especificada',
+          asegurado: nuevoRiesgo.asgrBenfcro || 'No especificado',
+          fechaAsignacion: nuevoRiesgo.fchaAsgncion ? nuevoRiesgo.fchaAsgncion.toLocaleDateString() : 'No especificada',
+          quienAsigna: usuarioActual.name || 'Sistema',
+          emailQuienAsigna: usuarioActual.email || null,
+          observaciones: nuevoRiesgo.observAsignacion || ''
+        };
+        
+        console.log('📧 DATOS PARA NOTIFICACIÓN:', datosNotificacion);
+        
+        // Enviar notificación
+        const resultadoEmail = await enviarNotificacionAsignacion(datosNotificacion);
+        
+        console.log('✅ NOTIFICACIÓN ENVIADA:', resultadoEmail);
+        
+        // Devolver respuesta con información del email
+        res.status(201).json({
+          success: true,
+          message: `Caso de riesgo #${nuevoNumero} creado exitosamente`,
+          riesgo: nuevoRiesgo,
+          notificacionEnviada: true,
+          emailInfo: resultadoEmail
+        });
+        
+      } catch (emailError) {
+        console.error('❌ ERROR ENVIANDO NOTIFICACIÓN:', emailError);
+        
+        // Aún devolver el caso creado aunque falle el email
+        res.status(201).json({
+          success: true,
+          message: `Caso de riesgo #${nuevoNumero} creado exitosamente`,
+          riesgo: nuevoRiesgo,
+          notificacionEnviada: false,
+          emailError: emailError.message
+        });
+      }
+    } else {
+      // No hay responsable asignado, devolver respuesta normal sin email
+      res.status(201).json({
+        success: true,
+        message: `Caso de riesgo #${nuevoNumero} creado exitosamente`,
+        riesgo: nuevoRiesgo,
+        notificacionEnviada: false,
+        mensaje: 'Caso creado sin responsable asignado. No se envió notificación por email.'
+      });
+    }
   } catch (err) {
     console.error('❌ ERROR AL GUARDAR RIESGO:', err);
     console.error('❌ DETALLES DEL ERROR:', err.message);
@@ -91,10 +158,109 @@ export const obtenerRiesgoPorId = async (req, res) => {
 
 export const actualizarRiesgo = async (req, res) => {
   try {
+    console.log('🔄 ===== ACTUALIZANDO RIESGO =====');
+    console.log('📝 DATOS RECIBIDOS EN actualizarRiesgo:', JSON.stringify(req.body, null, 2));
+    
+    // Obtener el caso actual antes de actualizarlo
+    const casoActual = await Riesgo.findById(req.params.id);
+    if (!casoActual) {
+      return res.status(404).json({ error: 'Riesgo no encontrado' });
+    }
+    
+    console.log('📊 CASO ACTUAL:', {
+      responsable: casoActual.codiIspector,
+      fechaAsignacion: casoActual.fchaAsgncion
+    });
+    
+    // Actualizar el caso
     const riesgo = await Riesgo.findByIdAndUpdate(req.params.id, req.body, { new: true });
     if (!riesgo) return res.status(404).json({ error: 'Riesgo no encontrado' });
-    res.json(riesgo);
+    
+    console.log('✅ CASO ACTUALIZADO:', {
+      responsable: riesgo.codiIspector,
+      fechaAsignacion: riesgo.fchaAsgncion
+    });
+    
+    // Verificar si se asignó un nuevo responsable
+    const responsableCambio = 
+      (casoActual.codiIspector !== riesgo.codiIspector) ||
+      (casoActual.codiRespnsble !== riesgo.codiRespnsble);
+    
+    const fechaAsignacionCambio = 
+      casoActual.fchaAsgncion?.toISOString() !== riesgo.fchaAsgncion?.toISOString();
+    
+    console.log('🔍 DETECCIÓN DE CAMBIOS:', {
+      responsableCambio,
+      fechaAsignacionCambio,
+      responsableAnterior: casoActual.codiIspector,
+      responsableNuevo: riesgo.codiIspector,
+      fechaAnterior: casoActual.fchaAsgncion,
+      fechaNueva: riesgo.fchaAsgncion
+    });
+    
+    // Si se asignó un nuevo responsable o se cambió la fecha de asignación, enviar notificación
+    if (responsableCambio || fechaAsignacionCambio) {
+      console.log('📧 ===== ENVIANDO NOTIFICACIÓN DE ASIGNACIÓN =====');
+      
+      try {
+        // Obtener información del responsable
+        let responsableInfo = null;
+        if (riesgo.codiIspector) {
+          responsableInfo = await Responsable.findOne({ codiRespnsble: riesgo.codiIspector });
+        } else if (riesgo.codiRespnsble) {
+          responsableInfo = await Responsable.findOne({ codiRespnsble: riesgo.codiRespnsble });
+        }
+        
+        console.log('👤 INFORMACIÓN DEL RESPONSABLE:', responsableInfo);
+        
+        // Obtener información del usuario que está haciendo la asignación
+        // Por ahora usaremos información del token o datos por defecto
+        const usuarioActual = req.user || { name: 'Sistema', email: 'sistema@proserpuertos.com.co' };
+        
+        // Preparar datos para la notificación
+        const datosNotificacion = {
+          numeroCaso: riesgo.nmroRiesgo || `Riesgo-${riesgo._id}`,
+          nombreResponsable: responsableInfo?.nmbrRespnsble || 'Sin asignar',
+          emailResponsable: responsableInfo?.email || null,
+          aseguradora: riesgo.codiAsgrdra || 'No especificada',
+          asegurado: riesgo.asgrBenfcro || 'No especificado',
+          fechaAsignacion: riesgo.fchaAsgncion ? riesgo.fchaAsgncion.toLocaleDateString() : 'No especificada',
+          quienAsigna: usuarioActual.name || 'Sistema',
+          emailQuienAsigna: usuarioActual.email || null,
+          observaciones: riesgo.observAsignacion || ''
+        };
+        
+        console.log('📧 DATOS PARA NOTIFICACIÓN:', datosNotificacion);
+        
+        // Enviar notificación
+        const resultadoEmail = await enviarNotificacionAsignacion(datosNotificacion);
+        
+        console.log('✅ NOTIFICACIÓN ENVIADA:', resultadoEmail);
+        
+        // Devolver respuesta con información del email
+        res.json({
+          ...riesgo.toObject(),
+          notificacionEnviada: true,
+          emailInfo: resultadoEmail
+        });
+        
+      } catch (emailError) {
+        console.error('❌ ERROR ENVIANDO NOTIFICACIÓN:', emailError);
+        
+        // Aún devolver el caso actualizado aunque falle el email
+        res.json({
+          ...riesgo.toObject(),
+          notificacionEnviada: false,
+          emailError: emailError.message
+        });
+      }
+    } else {
+      // No hubo cambios en la asignación, devolver respuesta normal
+      res.json(riesgo);
+    }
+    
   } catch (err) {
+    console.error('❌ ERROR ACTUALIZANDO RIESGO:', err);
     res.status(500).json({ error: 'Error al actualizar el riesgo' });
   }
 };
