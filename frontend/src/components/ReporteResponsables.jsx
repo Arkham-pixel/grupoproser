@@ -529,50 +529,64 @@ export default function ReporteResponsables() {
           <table className="w-full text-sm">
             <thead className="bg-gray-50">
               <tr>
-                {Array.from(camposVisibles).map(clave => {
-                  const campo = todosLosCampos.find(c => c.clave === clave);
-                  return campo ? (
-                    <th key={clave} className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      {campo.label}
-                    </th>
-                  ) : null;
-                })}
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {siniestrosPaginados.map((siniestro, index) => (
-                <tr key={siniestro._id || index} className="hover:bg-gray-50">
-                  {Array.from(camposVisibles).map(clave => {
-                    const campo = todosLosCampos.find(c => c.clave === clave);
-                    if (!campo) return null;
+                                 {Array.from(camposVisibles).map(clave => {
+                   const campo = todosLosCampos.find(c => c.clave === clave);
+                   return campo ? (
+                     <th key={clave} className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                       {campo.label}
+                     </th>
+                   ) : null;
+                 })}
+                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                   Acciones
+                 </th>
+               </tr>
+             </thead>
+             <tbody className="bg-white divide-y divide-gray-200">
+               {siniestrosPaginados.map((siniestro, index) => (
+                 <tr key={siniestro._id || index} className="hover:bg-gray-50">
+                   {Array.from(camposVisibles).map(clave => {
+                     const campo = todosLosCampos.find(c => c.clave === clave);
+                     if (!campo) return null;
 
-                    let valor = '';
-                    switch (clave) {
-                      case 'codi_estdo':
-                        valor = getNombreEstado(siniestro[clave]);
-                        break;
-                      case 'codiAsgrdra':
-                        valor = getNombreAseguradora(siniestro[clave]);
-                        break;
-                      case 'nombreResponsable':
-                        valor = getNombreResponsable(siniestro);
-                        break;
-                      case 'nombIntermediario':
-                        valor = getNombreIntermediario(siniestro);
-                        break;
-                      default:
-                        valor = siniestro[clave] || '';
-                    }
+                     let valor = '';
+                     switch (clave) {
+                       case 'codi_estdo':
+                         valor = getNombreEstado(siniestro[clave]);
+                         break;
+                       case 'codiAsgrdra':
+                         valor = getNombreAseguradora(siniestro[clave]);
+                         break;
+                       case 'nombreResponsable':
+                         valor = getNombreResponsable(siniestro);
+                         break;
+                       case 'nombIntermediario':
+                         valor = getNombreIntermediario(siniestro);
+                         break;
+                       default:
+                         valor = siniestro[clave] || '';
+                     }
 
-                    return (
-                      <td key={clave} className="px-4 py-3 whitespace-nowrap text-gray-900">
-                        {valor}
-                      </td>
-                    );
-                  })}
-                </tr>
-              ))}
-            </tbody>
+                     return (
+                       <td key={clave} className="px-4 py-3 whitespace-nowrap text-gray-900">
+                         {valor}
+                       </td>
+                     );
+                   })}
+                   <td className="px-4 py-3 whitespace-nowrap text-sm font-medium">
+                     <button
+                       onClick={() => {
+                         setSiniestroEditar(siniestro);
+                         setMostrarFormulario(true);
+                       }}
+                       className="text-indigo-600 hover:text-indigo-900 bg-indigo-100 hover:bg-indigo-200 px-3 py-1 rounded-md text-sm font-medium transition-colors"
+                     >
+                       ✏️ Editar
+                     </button>
+                   </td>
+                 </tr>
+               ))}
+             </tbody>
           </table>
         </div>
 

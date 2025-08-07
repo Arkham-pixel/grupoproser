@@ -18,6 +18,17 @@ export default function Layout() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [dropdown, setDropdown] = useState(null);
 
+  // Obtener información del usuario actual
+  const usuarioActual = {
+    login: localStorage.getItem('login'),
+    nombre: localStorage.getItem('nombre'),
+    rol: localStorage.getItem('rol'),
+    tipoUsuario: localStorage.getItem('tipoUsuario')
+  };
+
+  // Verificar si el usuario tiene permisos de administración
+  const esAdminOSoporte = usuarioActual.rol === 'admin' || usuarioActual.rol === 'soporte';
+
   const handleDropdown = (name) =>
     setDropdown(dropdown === name ? null : name);
 
@@ -172,12 +183,14 @@ export default function Layout() {
           </Link>
 
           {/* Enlace de Administración (solo visible para admin/soporte) */}
-          <Link
-            to="/admin/usuarios"
-            className="flex items-center gap-2 text-red-700 hover:text-red-800 font-medium transition"
-          >
-            <FaUserShield /> Administración
-          </Link>
+          {esAdminOSoporte && (
+            <Link
+              to="/admin/usuarios"
+              className="flex items-center gap-2 text-red-700 hover:text-red-800 font-medium transition"
+            >
+              <FaUserShield /> Administración
+            </Link>
+          )}
         </div>
 
         {/* User & Logout */}
