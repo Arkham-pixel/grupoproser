@@ -21,6 +21,41 @@ router.get("/usuarios", async (req, res) => {
   }
 });
 
+// 🔐 Ruta temporal para cambiar contraseña (solo para administradores)
+router.post("/cambiar-password", async (req, res) => {
+  try {
+    const { correo, nuevaPassword, adminPassword } = req.body;
+    
+    // Verificar contraseña de administrador (puedes cambiar esto)
+    if (adminPassword !== "admin123") {
+      return res.status(401).json({ message: "Contraseña de administrador incorrecta" });
+    }
+    
+    // Buscar usuario
+    const usuario = await Usuario.findOne({ correo });
+    if (!usuario) {
+      return res.status(404).json({ message: "Usuario no encontrado" });
+    }
+    
+    // Encriptar nueva contraseña
+    const saltRounds = 10;
+    const hashedPassword = await bcrypt.hash(nuevaPassword, saltRounds);
+    
+    // Actualizar contraseña
+    usuario.password = hashedPassword;
+    await usuario.save();
+    
+    res.json({ 
+      success: true, 
+      message: `Contraseña actualizada para ${usuario.nombre}` 
+    });
+    
+  } catch (error) {
+    console.error("Error al cambiar contraseña:", error);
+    res.status(500).json({ message: "Error en el servidor" });
+  }
+});
+
 // 🚪 Login con 2FA
 router.post("/login", async (req, res) => {
   const { correo, password } = req.body;

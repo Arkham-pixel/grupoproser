@@ -12,7 +12,7 @@ const api = axios.create({
 
 const CasosRiesgoContext = createContext();
 
-export const useCasosRiesgo = () => useContext(CasosRiesgoContext); // SOLO UNA VEZ
+export const useCasosRiesgo = () => useContext(CasosRiesgoContext); 
 
 export const CasosRiesgoProvider = ({ children }) => {
   const [casos, setCasos] = useState([]);
