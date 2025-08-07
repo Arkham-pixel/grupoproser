@@ -1,7 +1,8 @@
 import Riesgo from '../models/CasoRiesgo.js';
 import SecurUser from '../models/SecurUser.js';
 import Responsable from '../models/Responsable.js';
-import { enviarNotificacionAsignacion } from '../services/emailService.js';
+import FuncionarioAseguradora from '../models/FuncionarioAseguradora.js';
+import { enviarNotificacionAsignacion, enviarNotificacionAseguradora } from '../services/emailService.js';
 
 export const crearRiesgo = async (req, res) => {
   try {
@@ -90,18 +91,55 @@ export const crearRiesgo = async (req, res) => {
         
         console.log('📧 DATOS PARA NOTIFICACIÓN:', datosNotificacion);
         
-        // Enviar notificación
+        // Enviar notificación principal
         const resultadoEmail = await enviarNotificacionAsignacion(datosNotificacion);
         
-        console.log('✅ NOTIFICACIÓN ENVIADA:', resultadoEmail);
+        console.log('✅ NOTIFICACIÓN PRINCIPAL ENVIADA:', resultadoEmail);
         
-        // Devolver respuesta con información del email
+        // Buscar y enviar notificación al funcionario de la aseguradora
+        let resultadoEmailAseguradora = null;
+        if (nuevoRiesgo.codiAsgrdra) {
+          try {
+            const funcionarioAseguradora = await FuncionarioAseguradora.findOne({ 
+              codiAsgrdra: nuevoRiesgo.codiAsgrdra 
+            });
+            
+            if (funcionarioAseguradora && funcionarioAseguradora.email) {
+              console.log('👤 FUNCIONARIO ASEGURADORA ENCONTRADO:', funcionarioAseguradora);
+              
+              const datosNotificacionAseguradora = {
+                numeroCaso: nuevoRiesgo.nmroRiesgo || `Riesgo-${nuevoRiesgo._id}`,
+                nombreResponsable: responsableInfo?.nmbrRespnsble || 'Sin asignar',
+                emailResponsable: responsableInfo?.email || null,
+                telefonoResponsable: responsableInfo?.telefono || null,
+                aseguradora: nuevoRiesgo.codiAsgrdra || 'No especificada',
+                asegurado: nuevoRiesgo.asgrBenfcro || 'No especificado',
+                fechaAsignacion: nuevoRiesgo.fchaAsgncion ? nuevoRiesgo.fchaAsgncion.toLocaleDateString() : 'No especificada',
+                emailFuncionarioAseguradora: funcionarioAseguradora.email
+              };
+              
+              console.log('📧 ENVIANDO NOTIFICACIÓN A ASEGURADORA:', datosNotificacionAseguradora);
+              
+              resultadoEmailAseguradora = await enviarNotificacionAseguradora(datosNotificacionAseguradora);
+              
+              console.log('✅ NOTIFICACIÓN A ASEGURADORA ENVIADA:', resultadoEmailAseguradora);
+            } else {
+              console.log('⚠️ No se encontró funcionario de aseguradora o no tiene email');
+            }
+          } catch (emailAseguradoraError) {
+            console.error('❌ ERROR ENVIANDO NOTIFICACIÓN A ASEGURADORA:', emailAseguradoraError);
+            resultadoEmailAseguradora = { error: emailAseguradoraError.message };
+          }
+        }
+        
+        // Devolver respuesta con información de ambos emails
         res.status(201).json({
           success: true,
           message: `Caso de riesgo #${nuevoNumero} creado exitosamente`,
           riesgo: nuevoRiesgo,
           notificacionEnviada: true,
-          emailInfo: resultadoEmail
+          emailInfo: resultadoEmail,
+          emailAseguradora: resultadoEmailAseguradora
         });
         
       } catch (emailError) {
@@ -232,16 +270,53 @@ export const actualizarRiesgo = async (req, res) => {
         
         console.log('📧 DATOS PARA NOTIFICACIÓN:', datosNotificacion);
         
-        // Enviar notificación
+        // Enviar notificación principal
         const resultadoEmail = await enviarNotificacionAsignacion(datosNotificacion);
         
-        console.log('✅ NOTIFICACIÓN ENVIADA:', resultadoEmail);
+        console.log('✅ NOTIFICACIÓN PRINCIPAL ENVIADA:', resultadoEmail);
         
-        // Devolver respuesta con información del email
+        // Buscar y enviar notificación al funcionario de la aseguradora
+        let resultadoEmailAseguradora = null;
+        if (riesgo.codiAsgrdra) {
+          try {
+            const funcionarioAseguradora = await FuncionarioAseguradora.findOne({ 
+              codiAsgrdra: riesgo.codiAsgrdra 
+            });
+            
+            if (funcionarioAseguradora && funcionarioAseguradora.email) {
+              console.log('👤 FUNCIONARIO ASEGURADORA ENCONTRADO:', funcionarioAseguradora);
+              
+              const datosNotificacionAseguradora = {
+                numeroCaso: riesgo.nmroRiesgo || `Riesgo-${riesgo._id}`,
+                nombreResponsable: responsableInfo?.nmbrRespnsble || 'Sin asignar',
+                emailResponsable: responsableInfo?.email || null,
+                telefonoResponsable: responsableInfo?.telefono || null,
+                aseguradora: riesgo.codiAsgrdra || 'No especificada',
+                asegurado: riesgo.asgrBenfcro || 'No especificado',
+                fechaAsignacion: riesgo.fchaAsgncion ? riesgo.fchaAsgncion.toLocaleDateString() : 'No especificada',
+                emailFuncionarioAseguradora: funcionarioAseguradora.email
+              };
+              
+              console.log('📧 ENVIANDO NOTIFICACIÓN A ASEGURADORA:', datosNotificacionAseguradora);
+              
+              resultadoEmailAseguradora = await enviarNotificacionAseguradora(datosNotificacionAseguradora);
+              
+              console.log('✅ NOTIFICACIÓN A ASEGURADORA ENVIADA:', resultadoEmailAseguradora);
+            } else {
+              console.log('⚠️ No se encontró funcionario de aseguradora o no tiene email');
+            }
+          } catch (emailAseguradoraError) {
+            console.error('❌ ERROR ENVIANDO NOTIFICACIÓN A ASEGURADORA:', emailAseguradoraError);
+            resultadoEmailAseguradora = { error: emailAseguradoraError.message };
+          }
+        }
+        
+        // Devolver respuesta con información de ambos emails
         res.json({
           ...riesgo.toObject(),
           notificacionEnviada: true,
-          emailInfo: resultadoEmail
+          emailInfo: resultadoEmail,
+          emailAseguradora: resultadoEmailAseguradora
         });
         
       } catch (emailError) {

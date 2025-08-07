@@ -133,6 +133,98 @@ export const enviarNotificacionAsignacion = async (datosCaso) => {
   }
 };
 
+// Función para enviar email al funcionario de la aseguradora
+export const enviarNotificacionAseguradora = async (datosCaso) => {
+  try {
+    console.log('📧 Iniciando envío de notificación a aseguradora...');
+    console.log('📧 Datos del caso:', JSON.stringify(datosCaso, null, 2));
+    
+    const transporter = createTransporter();
+    
+    // Verificar conexión
+    await transporter.verify();
+    console.log('✅ Conexión SMTP verificada');
+    
+    const mailOptions = {
+      from: `"Grupo Proser - Sistema de Casos" <${process.env.EMAIL_USER}>`,
+      to: datosCaso.emailFuncionarioAseguradora,
+      subject: `📋 Caso Asignado - ${datosCaso.numeroCaso}`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f8f9fa; padding: 20px;">
+          <div style="background-color: #ffffff; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+            <div style="text-align: center; margin-bottom: 30px;">
+              <h1 style="color: #2563eb; margin: 0; font-size: 24px;">📋 Caso Asignado</h1>
+              <p style="color: #6b7280; margin: 10px 0 0 0;">Sistema de Gestión de Casos - Grupo Proser</p>
+            </div>
+            
+            <div style="background-color: #dbeafe; padding: 20px; border-radius: 8px; margin-bottom: 25px;">
+              <h2 style="color: #1e40af; margin: 0 0 15px 0; font-size: 18px;">📊 Información del Caso</h2>
+              <table style="width: 100%; border-collapse: collapse;">
+                <tr>
+                  <td style="padding: 8px 0; font-weight: bold; color: #374151;">Número de Caso:</td>
+                  <td style="padding: 8px 0; color: #1f2937;">${datosCaso.numeroCaso}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 0; font-weight: bold; color: #374151;">Aseguradora:</td>
+                  <td style="padding: 8px 0; color: #1f2937;">${datosCaso.aseguradora || 'No especificada'}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 0; font-weight: bold; color: #374151;">Asegurado:</td>
+                  <td style="padding: 8px 0; color: #1f2937;">${datosCaso.asegurado || 'No especificado'}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 0; font-weight: bold; color: #374151;">Fecha de Asignación:</td>
+                  <td style="padding: 8px 0; color: #1f2937;">${datosCaso.fechaAsignacion || 'No especificada'}</td>
+                </tr>
+              </table>
+            </div>
+            
+            <div style="background-color: #f0f9ff; padding: 20px; border-radius: 8px; margin-bottom: 25px;">
+              <h3 style="color: #0369a1; margin: 0 0 15px 0; font-size: 16px;">👤 Responsable Asignado</h3>
+              <table style="width: 100%; border-collapse: collapse;">
+                <tr>
+                  <td style="padding: 8px 0; font-weight: bold; color: #374151;">Nombre:</td>
+                  <td style="padding: 8px 0; color: #1f2937;">${datosCaso.nombreResponsable || 'Sin asignar'}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 0; font-weight: bold; color: #374151;">Email:</td>
+                  <td style="padding: 8px 0; color: #1f2937;">${datosCaso.emailResponsable || 'No disponible'}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 0; font-weight: bold; color: #374151;">Teléfono:</td>
+                  <td style="padding: 8px 0; color: #1f2937;">${datosCaso.telefonoResponsable || 'No disponible'}</td>
+                </tr>
+              </table>
+            </div>
+            
+            <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
+              <p style="color: #6b7280; font-size: 12px; margin: 0;">
+                Este es un mensaje automático del Sistema de Gestión de Casos de Grupo Proser.<br>
+                No responda a este correo. Para consultas, contacte al administrador del sistema.
+              </p>
+            </div>
+          </div>
+        </div>
+      `
+    };
+    
+    console.log('📧 Enviando notificación a aseguradora...');
+    const info = await transporter.sendMail(mailOptions);
+    console.log('✅ Notificación a aseguradora enviada exitosamente');
+    console.log('📧 Message ID:', info.messageId);
+    
+    return {
+      success: true,
+      messageId: info.messageId,
+      emailEnviado: datosCaso.emailFuncionarioAseguradora
+    };
+    
+  } catch (error) {
+    console.error('❌ Error enviando notificación a aseguradora:', error);
+    throw new Error(`Error enviando notificación a aseguradora: ${error.message}`);
+  }
+};
+
 // Función para enviar email de prueba
 export const enviarEmailPrueba = async (emailDestino) => {
   try {
