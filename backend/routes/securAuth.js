@@ -119,9 +119,17 @@ router.post("/cambiar-password", async (req, res) => {
     const hashedPassword = await bcrypt.hash(nuevaPassword, saltRounds);
     
     console.log('💾 Actualizando contraseña en la base de datos...');
-    // Actualizar contraseña
+    // Actualizar solo la contraseña y la fecha de actualización
+    // NO tocar otros campos para evitar problemas de validación
     usuario.pswd = hashedPassword;
     usuario.pswdLastUpdated = new Date().toISOString();
+    
+    // Si el usuario no tiene role, asignar uno por defecto
+    if (!usuario.role || usuario.role === '') {
+      console.log('⚠️ Usuario sin role, asignando "usuario" por defecto');
+      usuario.role = 'usuario';
+    }
+    
     await usuario.save();
     
     console.log('✅ Contraseña actualizada exitosamente');
