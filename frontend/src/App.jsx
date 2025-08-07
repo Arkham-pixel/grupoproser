@@ -21,6 +21,7 @@ import FormularioMaquinaria from './components/SubcomponenteMaquinaria/Formulari
 import FormularioCasoComplex from './components/SubcomponenteCompex/FormularioCasoComplex'
 import SiniestrosList from "./components/SiniestrosList";
 import ReportePolPadre from './components/ReportePol/ReportePolPadre';
+import AdminUsuarios from './components/AdminUsuarios';
 
 import { CasosRiesgoProvider } from './context/CasosRiesgoContext'
 import RequireAuth from './components/RequireAuth'
@@ -120,6 +121,7 @@ export default function App() {
           <Route path="formulario-maquinaria" element={<FormularioMaquinaria />} />
           <Route path="reporte-pol" element={<ReportePolPadre />} />
           <Route path="siniestros" element={<SiniestrosList />} />
+          <Route path="admin/usuarios" element={<AdminUsuarios />} />
         </Route>
 
         {/* Cualquier otra ruta redirige a la raíz */}

@@ -20,6 +20,65 @@ router.get("/usuarios", async (req, res) => {
   }
 });
 
+// 🔐 Ruta para cambiar contraseña de usuarios (solo para admin/soporte)
+router.post("/cambiar-password", async (req, res) => {
+  try {
+    const { login, nuevaPassword, adminLogin, adminPassword } = req.body;
+    
+    // Verificar que el administrador existe y tiene permisos
+    const admin = await SecurUser.findOne({ login: adminLogin });
+    if (!admin) {
+      return res.status(404).json({ message: "Administrador no encontrado" });
+    }
+    
+    // Verificar que el administrador está activo
+    if (admin.active !== "Y") {
+      return res.status(401).json({ message: "Administrador inactivo" });
+    }
+    
+    // Verificar contraseña del administrador
+    const isAdminPasswordValid = await bcrypt.compare(adminPassword, admin.pswd);
+    if (!isAdminPasswordValid) {
+      return res.status(401).json({ message: "Contraseña de administrador incorrecta" });
+    }
+    
+    // Verificar que el administrador tiene permisos (admin o soporte)
+    if (!["admin", "soporte"].includes(admin.role)) {
+      return res.status(403).json({ message: "No tienes permisos para cambiar contraseñas" });
+    }
+    
+    // Buscar el usuario a cambiar
+    const usuario = await SecurUser.findOne({ login });
+    if (!usuario) {
+      return res.status(404).json({ message: "Usuario no encontrado" });
+    }
+    
+    // Encriptar nueva contraseña
+    const saltRounds = 10;
+    const hashedPassword = await bcrypt.hash(nuevaPassword, saltRounds);
+    
+    // Actualizar contraseña
+    usuario.pswd = hashedPassword;
+    usuario.pswdLastUpdated = new Date().toISOString();
+    await usuario.save();
+    
+    res.json({ 
+      success: true, 
+      message: `Contraseña actualizada para ${usuario.name}`,
+      usuario: {
+        login: usuario.login,
+        name: usuario.name,
+        email: usuario.email,
+        role: usuario.role
+      }
+    });
+    
+  } catch (error) {
+    console.error("Error al cambiar contraseña:", error);
+    res.status(500).json({ message: "Error en el servidor" });
+  }
+});
+
 // Login para usuarios secur con 2FA
 router.post("/login", async (req, res) => {
   const { correo, password } = req.body;

@@ -170,6 +170,14 @@ export default function Layout() {
           >
             <FaUserShield /> Cuenta
           </Link>
+
+          {/* Enlace de Administración (solo visible para admin/soporte) */}
+          <Link
+            to="/admin/usuarios"
+            className="flex items-center gap-2 text-red-700 hover:text-red-800 font-medium transition"
+          >
+            <FaUserShield /> Administración
+          </Link>
         </div>
 
         {/* User & Logout */}
