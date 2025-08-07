@@ -9,14 +9,47 @@ const router = express.Router();
 // Ruta para listar usuarios secur (solo para desarrollo)
 router.get("/usuarios", async (req, res) => {
   try {
+    console.log('🔍 Buscando usuarios en la base de datos...');
     const usuarios = await SecurUser.find({}, { pswd: 0, mfa: 0, activationCode: 0 });
+    console.log('✅ Usuarios encontrados:', usuarios.length);
     res.json({
       total: usuarios.length,
       usuarios: usuarios
     });
   } catch (error) {
-    console.error("Error al listar usuarios secur:", error);
+    console.error("❌ Error al listar usuarios secur:", error);
+    console.error("📋 Stack trace:", error.stack);
     res.status(500).json({ message: "Error al obtener usuarios" });
+  }
+});
+
+// Ruta de prueba para verificar conexión a la base de datos
+router.get("/test-db", async (req, res) => {
+  try {
+    console.log('🧪 Probando conexión a la base de datos...');
+    
+    // Verificar si el modelo está conectado
+    const dbState = SecurUser.db.db.admin().listDatabases();
+    console.log('✅ Conexión a MongoDB verificada');
+    
+    // Contar usuarios
+    const count = await SecurUser.countDocuments();
+    console.log('📊 Total de usuarios en la base de datos:', count);
+    
+    res.json({
+      success: true,
+      message: "Conexión a la base de datos exitosa",
+      userCount: count,
+      dbState: "connected"
+    });
+  } catch (error) {
+    console.error("❌ Error en prueba de base de datos:", error);
+    console.error("📋 Stack trace:", error.stack);
+    res.status(500).json({ 
+      success: false,
+      message: "Error en la conexión a la base de datos",
+      error: error.message
+    });
   }
 });
 
