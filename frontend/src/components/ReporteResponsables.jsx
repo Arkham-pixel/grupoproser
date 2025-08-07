@@ -761,18 +761,26 @@ export default function ReporteResponsables() {
         </div>
       )}
 
-                 {/* Modal con FormularioCasoComplex */}
-           {modalOpen && (
-             <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-               <div style={{ background: '#fff', padding: 24, borderRadius: 8, minWidth: 400, maxHeight: '90vh', overflowY: 'auto' }}>
-                 <FormularioCasoComplex
-                   initialData={editSiniestro}
-                   onSave={handleSave}
-                   onCancel={() => { setModalOpen(false); setEditSiniestro(null); }}
-                 />
-               </div>
-             </div>
-           )}
+                                   {/* Modal con FormularioCasoComplex */}
+            {modalOpen && (
+              <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+                <div style={{ background: '#fff', padding: 24, borderRadius: 8, minWidth: 400, maxHeight: '90vh', overflowY: 'auto', position: 'relative' }}>
+                  {/* Botón X para cerrar */}
+                  <button
+                    className="absolute top-2 right-2 text-gray-500 hover:text-red-600 text-2xl font-bold z-10"
+                    onClick={() => { setModalOpen(false); setEditSiniestro(null); }}
+                    title="Cerrar"
+                  >
+                    ×
+                  </button>
+                  <FormularioCasoComplex
+                    initialData={editSiniestro}
+                    onSave={handleSave}
+                    onCancel={() => { setModalOpen(false); setEditSiniestro(null); }}
+                  />
+                </div>
+              </div>
+            )}
          </>
        ) : activeTab === 'usuarios' && esAdminOSoporte ? (
          <>
@@ -853,6 +861,20 @@ export default function ReporteResponsables() {
            {showChangePassword && selectedUser && (
              <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
                <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+                 {/* Botón X para cerrar */}
+                 <button
+                   className="absolute top-2 right-2 text-gray-500 hover:text-red-600 text-2xl font-bold z-10"
+                   onClick={() => {
+                     setShowChangePassword(false);
+                     setSelectedUser(null);
+                     setNewPassword('');
+                     setAdminCredentials({ adminLogin: '', adminPassword: '' });
+                     setMessage('');
+                   }}
+                   title="Cerrar"
+                 >
+                   ×
+                 </button>
                  <div className="mt-3">
                    <h3 className="text-lg font-medium text-gray-900 mb-4">
                      Cambiar Contraseña - {selectedUser.name}

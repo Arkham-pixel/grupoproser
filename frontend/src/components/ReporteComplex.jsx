@@ -810,7 +810,15 @@ const ReporteComplex = () => {
       {/* Modal con FormularioCasoComplex */}
       {modalOpen && (
         <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-          <div style={{ background: '#fff', padding: 24, borderRadius: 8, minWidth: 400, maxHeight: '90vh', overflowY: 'auto' }}>
+          <div style={{ background: '#fff', padding: 24, borderRadius: 8, minWidth: 400, maxHeight: '90vh', overflowY: 'auto', position: 'relative' }}>
+            {/* Botón X para cerrar */}
+            <button
+              className="absolute top-2 right-2 text-gray-500 hover:text-red-600 text-2xl font-bold z-10"
+              onClick={() => { setModalOpen(false); setEditSiniestro(null); }}
+              title="Cerrar"
+            >
+              ×
+            </button>
             <FormularioCasoComplex
               initialData={editSiniestro}
               onSave={handleSave}

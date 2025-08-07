@@ -163,6 +163,20 @@ const AdminUsuarios = () => {
       {showChangePassword && selectedUser && (
         <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
           <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+            {/* Botón X para cerrar */}
+            <button
+              className="absolute top-2 right-2 text-gray-500 hover:text-red-600 text-2xl font-bold z-10"
+              onClick={() => {
+                setShowChangePassword(false);
+                setSelectedUser(null);
+                setNewPassword('');
+                setAdminCredentials({ adminLogin: '', adminPassword: '' });
+                setMessage('');
+              }}
+              title="Cerrar"
+            >
+              ×
+            </button>
             <div className="mt-3">
               <h3 className="text-lg font-medium text-gray-900 mb-4">
                 Cambiar Contraseña - {selectedUser.name}

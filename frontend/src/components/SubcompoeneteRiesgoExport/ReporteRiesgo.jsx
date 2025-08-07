@@ -541,7 +541,7 @@ const ReporteRiesgo = ({ ciudades: ciudadesProp, estados: estadosProp }) => {
         <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
           <div className="bg-white rounded shadow-lg p-6 max-w-3xl w-full relative">
             <button
-              className="absolute top-2 right-2 text-gray-500 hover:text-red-600 text-2xl font-bold"
+              className="absolute top-2 right-2 text-gray-500 hover:text-red-600 text-2xl font-bold z-10"
               onClick={handleCloseModal}
               title="Cerrar"
             >
