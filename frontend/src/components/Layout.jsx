@@ -281,6 +281,16 @@ export default function Layout() {
             >
               Cuenta
             </Link>
+            {/* Enlace de Administración (solo visible para admin/soporte) */}
+            {esAdminOSoporte && (
+              <Link
+                to="/admin/usuarios"
+                className="px-6 py-2 hover:bg-blue-50 text-red-700"
+                onClick={() => setMenuOpen(false)}
+              >
+                🔐 Administración
+              </Link>
+            )}
             <LogoutButton />
           </div>
         )}
