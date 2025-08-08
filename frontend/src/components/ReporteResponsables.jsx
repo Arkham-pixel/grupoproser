@@ -172,15 +172,21 @@ export default function ReporteResponsables() {
 
   // Funciones de ayuda para obtener nombres
   const getNombreEstado = (codigoEstado) => {
-    if (!codigoEstado) return 'Sin estado';
-    const estado = estados.find(e => e.codigoestado === codigoEstado || e.codigo === codigoEstado);
-    return estado ? estado.nombreestado || estado.nombre : codigoEstado;
+    const valorStr = codigoEstado !== undefined && codigoEstado !== null ? String(codigoEstado) : '';
+    const estado = estados.find(e => String(e.codiEstdo) === valorStr);
+    if (!estado && valorStr) {
+      console.warn('No se encontró estado para:', valorStr, 'en', estados.map(e => String(e.codiEstdo)));
+    }
+    return estado ? estado.descEstdo : valorStr;
   };
 
   const getNombreAseguradora = (codigoAseguradora) => {
-    if (!codigoAseguradora) return 'Sin aseguradora';
-    const aseguradora = aseguradoras.find(a => a.codigo === codigoAseguradora);
-    return aseguradora ? aseguradora.nombre : codigoAseguradora;
+    const valorStr = codigoAseguradora !== undefined && codigoAseguradora !== null ? String(codigoAseguradora) : '';
+    const aseguradora = aseguradoras.find(a => 
+      String(a.cod1Asgrdra) === valorStr || 
+      String(a.codiAsgrdra) === valorStr
+    );
+    return aseguradora ? aseguradora.rzonSocial : valorStr;
   };
 
   const getNombreResponsable = (siniestro) => {
@@ -251,6 +257,8 @@ export default function ReporteResponsables() {
 
         if (estadosResult.status === 'fulfilled') {
           console.log('✅ Estados cargados:', estadosResult.value);
+          console.log('📊 Primer estado:', estadosResult.value[0]);
+          console.log('🔍 Propiedades del primer estado:', estadosResult.value[0] ? Object.keys(estadosResult.value[0]) : 'No hay estados');
           setEstados(Array.isArray(estadosResult.value) ? estadosResult.value : []);
         } else {
           console.error('❌ Error cargando estados:', estadosResult.reason);
@@ -258,6 +266,8 @@ export default function ReporteResponsables() {
 
         if (aseguradorasResult.status === 'fulfilled') {
           console.log('✅ Aseguradoras cargadas:', aseguradorasResult.value);
+          console.log('📊 Primera aseguradora:', aseguradorasResult.value[0]);
+          console.log('🔍 Propiedades de la primera aseguradora:', aseguradorasResult.value[0] ? Object.keys(aseguradorasResult.value[0]) : 'No hay aseguradoras');
           setAseguradoras(Array.isArray(aseguradorasResult.value) ? aseguradorasResult.value : []);
         } else {
           console.error('❌ Error cargando aseguradoras:', aseguradorasResult.reason);
@@ -278,6 +288,27 @@ export default function ReporteResponsables() {
         setLoading(false);
       });
   }, [usuarioActual.login, usuarioActual.nombre]);
+
+  // Debug: verificar cuando cambian los estados y aseguradoras
+  useEffect(() => {
+    console.log('🔄 Estados actualizados:', estados);
+    console.log('📊 Total de estados:', estados.length);
+    if (estados.length > 0) {
+      console.log('📋 Primer estado:', estados[0]);
+      console.log('🔑 Propiedades del primer estado:', Object.keys(estados[0]));
+    }
+  }, [estados]);
+
+  useEffect(() => {
+    console.log('🔄 Aseguradoras actualizadas:', aseguradoras);
+    console.log('📊 Total de aseguradoras:', aseguradoras.length);
+    if (aseguradoras.length > 0) {
+      console.log('📋 Primera aseguradora:', aseguradoras[0]);
+      console.log('🔑 Propiedades de la primera aseguradora:', Object.keys(aseguradoras[0]));
+    }
+  }, [aseguradoras]);
+
+
 
   // Función para aplicar filtros avanzados
   const aplicarFiltros = () => {
@@ -301,16 +332,14 @@ export default function ReporteResponsables() {
     // Filtro por estado
     if (filtroEstado) {
       filtrados = filtrados.filter(s => {
-        const estado = getNombreEstado(s.codi_estdo);
-        return estado.toLowerCase().includes(filtroEstado.toLowerCase());
+        return String(s.codiEstdo) === String(filtroEstado);
       });
     }
 
     // Filtro por aseguradora
     if (filtroAseguradora) {
       filtrados = filtrados.filter(s => {
-        const aseguradora = getNombreAseguradora(s.codiAsgrdra);
-        return aseguradora.toLowerCase().includes(filtroAseguradora.toLowerCase());
+        return String(s.codiAsgrdra) === String(filtroAseguradora);
       });
     }
 
@@ -321,6 +350,34 @@ export default function ReporteResponsables() {
   useEffect(() => {
     aplicarFiltros();
   }, [filtroFechaInicio, filtroFechaFin, filtroEstado, filtroAseguradora, siniestros]);
+
+  // Listas únicas para los filtros
+  const estadosUnicos = Array.from(new Set(siniestros.map(s => s.codiEstdo).filter(Boolean))).map(e => ({ 
+    value: e, 
+    label: getNombreEstado(e) 
+  }));
+  
+  const responsablesUnicos = Array.from(new Set(siniestros.map(s => s.nombreResponsable).filter(Boolean))).map(r => ({ 
+    value: r, 
+    label: r 
+  }));
+  
+  const aseguradorasUnicas = Array.from(new Set(siniestros.map(s => s.codiAsgrdra).filter(Boolean))).map(a => ({ 
+    value: a, 
+    label: getNombreAseguradora(a) 
+  }));
+
+  // Debug: verificar datos
+  console.log('🔍 Debug ReporteResponsables:', {
+    siniestros: siniestros.length,
+    estados: estados.length,
+    aseguradoras: aseguradoras.length,
+    estadosUnicos: estadosUnicos.length,
+    aseguradorasUnicas: aseguradorasUnicas.length,
+    primerSiniestro: siniestros[0],
+    primerEstado: estados[0],
+    primeraAseguradora: aseguradoras[0]
+  });
 
   // Funciones para manejar la paginación
   const indiceInicio = (paginaActual - 1) * registrosPorPagina;
@@ -475,10 +532,8 @@ export default function ReporteResponsables() {
               className="w-full border border-gray-300 rounded-md px-3 py-2"
             >
               <option value="">Todos los estados</option>
-              {estados.map((estado) => (
-                <option key={estado.codigoestado || estado.codigo} value={estado.nombreestado || estado.nombre}>
-                  {estado.nombreestado || estado.nombre}
-                </option>
+              {estadosUnicos.map((e, index) => (
+                <option key={`estado-${e.value}-${index}`} value={e.value}>{e.label}</option>
               ))}
             </select>
           </div>
@@ -493,10 +548,8 @@ export default function ReporteResponsables() {
               className="w-full border border-gray-300 rounded-md px-3 py-2"
             >
               <option value="">Todas las aseguradoras</option>
-              {aseguradoras.map((aseguradora) => (
-                <option key={aseguradora.codigo} value={aseguradora.nombre}>
-                  {aseguradora.nombre}
-                </option>
+              {aseguradorasUnicas.map((a, index) => (
+                <option key={`aseguradora-${a.value}-${index}`} value={a.value}>{a.label}</option>
               ))}
             </select>
           </div>
