@@ -3,8 +3,6 @@ import { getSiniestrosEnriquecidos, deleteSiniestro, updateSiniestro } from '../
 import { getEstados } from '../services/estadosService';
 import { obtenerAseguradoras, obtenerResponsables } from '../services/riesgoService';
 import FormularioCasoComplex from './SubcomponenteCompex/FormularioCasoComplex';
-import axios from 'axios';
-import config from '../config.js';
 import * as XLSX from 'xlsx';
 
 // Función para convertir fechas al formato de input
@@ -146,29 +144,13 @@ export default function ReporteResponsables() {
   const [estados, setEstados] = useState([]);
   const [aseguradoras, setAseguradoras] = useState([]);
   const [responsables, setResponsables] = useState([]);
-  const [mostrarFormulario, setMostrarFormulario] = useState(false);
-  const [siniestroEditar, setSiniestroEditar] = useState(null);
   const [editSiniestro, setEditSiniestro] = useState(null);
   const [modalOpen, setModalOpen] = useState(false);
-
-  // Estados para administración de usuarios
-  const [usuarios, setUsuarios] = useState([]);
-  const [loadingUsuarios, setLoadingUsuarios] = useState(false);
-  const [selectedUser, setSelectedUser] = useState(null);
-  const [showChangePassword, setShowChangePassword] = useState(false);
-  const [adminCredentials, setAdminCredentials] = useState({
-    adminLogin: '',
-    adminPassword: ''
-  });
-  const [newPassword, setNewPassword] = useState('');
-  const [message, setMessage] = useState('');
-  const [activeTab, setActiveTab] = useState('casos'); // 'casos' o 'usuarios'
 
   // Estados para filtros
   const [filtroFechaInicio, setFiltroFechaInicio] = useState('');
   const [filtroFechaFin, setFiltroFechaFin] = useState('');
   const [filtroEstado, setFiltroEstado] = useState('');
-  const [filtroResponsable, setFiltroResponsable] = useState('');
   const [filtroAseguradora, setFiltroAseguradora] = useState('');
 
   // Estados para paginación
@@ -187,9 +169,6 @@ export default function ReporteResponsables() {
   };
 
   console.log('👤 Usuario actual en ReporteResponsables:', usuarioActual);
-
-  // Verificar si el usuario tiene permisos de administración
-  const esAdminOSoporte = usuarioActual.rol === 'admin' || usuarioActual.rol === 'soporte';
 
   // Funciones de ayuda para obtener nombres
   const getNombreEstado = (codigoEstado) => {
@@ -255,8 +234,15 @@ export default function ReporteResponsables() {
             usuario: usuarioActual.login
           });
           
-          setSiniestros(siniestrosFiltradosPorResponsable);
-          setSiniestrosFiltrados(siniestrosFiltradosPorResponsable);
+          // Ordenar del más nuevo al más viejo por fecha de asignación
+          const siniestrosOrdenados = siniestrosFiltradosPorResponsable.sort((a, b) => {
+            const fechaA = new Date(a.fchaAsgncion || a.fecha_asignacion_form || 0);
+            const fechaB = new Date(b.fchaAsgncion || b.fecha_asignacion_form || 0);
+            return fechaB - fechaA; // Orden descendente (más nuevo primero)
+          });
+          
+          setSiniestros(siniestrosOrdenados);
+          setSiniestrosFiltrados(siniestrosOrdenados);
         } else {
           console.error('Error al cargar siniestros:', siniestrosResult.reason);
           setSiniestros([]);
@@ -264,15 +250,24 @@ export default function ReporteResponsables() {
         }
 
         if (estadosResult.status === 'fulfilled') {
+          console.log('✅ Estados cargados:', estadosResult.value);
           setEstados(Array.isArray(estadosResult.value) ? estadosResult.value : []);
+        } else {
+          console.error('❌ Error cargando estados:', estadosResult.reason);
         }
 
         if (aseguradorasResult.status === 'fulfilled') {
+          console.log('✅ Aseguradoras cargadas:', aseguradorasResult.value);
           setAseguradoras(Array.isArray(aseguradorasResult.value) ? aseguradorasResult.value : []);
+        } else {
+          console.error('❌ Error cargando aseguradoras:', aseguradorasResult.reason);
         }
 
         if (responsablesResult.status === 'fulfilled') {
+          console.log('✅ Responsables cargados:', responsablesResult.value);
           setResponsables(Array.isArray(responsablesResult.value) ? responsablesResult.value : []);
+        } else {
+          console.error('❌ Error cargando responsables:', responsablesResult.reason);
         }
       })
       .catch(err => {
@@ -283,13 +278,6 @@ export default function ReporteResponsables() {
         setLoading(false);
       });
   }, [usuarioActual.login, usuarioActual.nombre]);
-
-  // Cargar usuarios cuando se cambie a la pestaña de usuarios
-  useEffect(() => {
-    if (activeTab === 'usuarios' && esAdminOSoporte) {
-      cargarUsuarios();
-    }
-  }, [activeTab, esAdminOSoporte]);
 
   // Función para aplicar filtros avanzados
   const aplicarFiltros = () => {
@@ -318,14 +306,6 @@ export default function ReporteResponsables() {
       });
     }
 
-    // Filtro por responsable
-    if (filtroResponsable) {
-      filtrados = filtrados.filter(s => {
-        const responsable = getNombreResponsable(s);
-        return responsable.toLowerCase().includes(filtroResponsable.toLowerCase());
-      });
-    }
-
     // Filtro por aseguradora
     if (filtroAseguradora) {
       filtrados = filtrados.filter(s => {
@@ -340,7 +320,7 @@ export default function ReporteResponsables() {
 
   useEffect(() => {
     aplicarFiltros();
-  }, [filtroFechaInicio, filtroFechaFin, filtroEstado, filtroResponsable, filtroAseguradora, siniestros]);
+  }, [filtroFechaInicio, filtroFechaFin, filtroEstado, filtroAseguradora, siniestros]);
 
   // Funciones para manejar la paginación
   const indiceInicio = (paginaActual - 1) * registrosPorPagina;
@@ -428,57 +408,6 @@ export default function ReporteResponsables() {
     setLoading(false);
   };
 
-  // Funciones para administración de usuarios
-  const cargarUsuarios = async () => {
-    if (!esAdminOSoporte) return;
-    
-    try {
-      setLoadingUsuarios(true);
-      const response = await axios.get(`${config.API_BASE_URL}/api/secur-auth/usuarios`);
-      setUsuarios(response.data.usuarios);
-    } catch (error) {
-      console.error('Error cargando usuarios:', error);
-      setMessage('Error al cargar usuarios');
-    } finally {
-      setLoadingUsuarios(false);
-    }
-  };
-
-  const handleChangePassword = async (e) => {
-    e.preventDefault();
-    
-    if (!selectedUser || !newPassword || !adminCredentials.adminLogin || !adminCredentials.adminPassword) {
-      setMessage('Por favor completa todos los campos');
-      return;
-    }
-
-    try {
-      const response = await axios.post(`${config.API_BASE_URL}/api/secur-auth/cambiar-password`, {
-        login: selectedUser.login,
-        nuevaPassword: newPassword,
-        adminLogin: adminCredentials.adminLogin,
-        adminPassword: adminCredentials.adminPassword
-      });
-
-      if (response.data.success) {
-        setMessage(`✅ ${response.data.message}`);
-        setShowChangePassword(false);
-        setSelectedUser(null);
-        setNewPassword('');
-        setAdminCredentials({ adminLogin: '', adminPassword: '' });
-      }
-    } catch (error) {
-      console.error('Error cambiando contraseña:', error);
-      setMessage(`❌ ${error.response?.data?.message || 'Error al cambiar contraseña'}`);
-    }
-  };
-
-  const openChangePasswordModal = (usuario) => {
-    setSelectedUser(usuario);
-    setShowChangePassword(true);
-    setMessage('');
-  };
-
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-screen">
@@ -510,52 +439,10 @@ export default function ReporteResponsables() {
         </p>
       </div>
 
-      {/* Mensaje de estado */}
-      {message && (
-        <div className={`mb-4 p-4 rounded ${
-          message.includes('✅') ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
-        }`}>
-          {message}
-        </div>
-      )}
-
-      {/* Pestañas */}
-      <div className="bg-white shadow rounded-lg">
-        <div className="border-b border-gray-200">
-          <nav className="-mb-px flex space-x-8 px-6">
-            <button
-              onClick={() => setActiveTab('casos')}
-              className={`py-4 px-1 border-b-2 font-medium text-sm ${
-                activeTab === 'casos'
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
-            >
-              📋 Mis Casos
-            </button>
-            {esAdminOSoporte && (
-              <button
-                onClick={() => setActiveTab('usuarios')}
-                className={`py-4 px-1 border-b-2 font-medium text-sm ${
-                  activeTab === 'usuarios'
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }`}
-              >
-                👥 Administración de Usuarios
-              </button>
-            )}
-          </nav>
-        </div>
-      </div>
-
-             {/* Contenido condicional según la pestaña activa */}
-       {activeTab === 'casos' ? (
-         <>
-           {/* Filtros Avanzados */}
-           <div className="bg-white shadow rounded-lg p-4">
-             <h3 className="text-lg font-semibold mb-4">🔍 Filtros Avanzados</h3>
-             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      {/* Filtros Avanzados */}
+      <div className="bg-white shadow rounded-lg p-4">
+        <h3 className="text-lg font-semibold mb-4">🔍 Filtros Avanzados</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               📅 Fecha Inicio
@@ -582,37 +469,36 @@ export default function ReporteResponsables() {
             <label className="block text-sm font-medium text-gray-700 mb-1">
               📊 Estado
             </label>
-            <input
-              type="text"
-              placeholder="Filtrar por estado..."
+            <select
               value={filtroEstado}
               onChange={(e) => setFiltroEstado(e.target.value)}
               className="w-full border border-gray-300 rounded-md px-3 py-2"
-            />
+            >
+              <option value="">Todos los estados</option>
+              {estados.map((estado) => (
+                <option key={estado.codigoestado || estado.codigo} value={estado.nombreestado || estado.nombre}>
+                  {estado.nombreestado || estado.nombre}
+                </option>
+              ))}
+            </select>
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              👤 Responsable
-            </label>
-            <input
-              type="text"
-              placeholder="Filtrar por responsable..."
-              value={filtroResponsable}
-              onChange={(e) => setFiltroResponsable(e.target.value)}
-              className="w-full border border-gray-300 rounded-md px-3 py-2"
-            />
-          </div>
+
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               🏢 Aseguradora
             </label>
-            <input
-              type="text"
-              placeholder="Filtrar por aseguradora..."
+            <select
               value={filtroAseguradora}
               onChange={(e) => setFiltroAseguradora(e.target.value)}
               className="w-full border border-gray-300 rounded-md px-3 py-2"
-            />
+            >
+              <option value="">Todas las aseguradoras</option>
+              {aseguradoras.map((aseguradora) => (
+                <option key={aseguradora.codigo} value={aseguradora.nombre}>
+                  {aseguradora.nombre}
+                </option>
+              ))}
+            </select>
           </div>
         </div>
       </div>
@@ -659,67 +545,67 @@ export default function ReporteResponsables() {
           <table className="w-full text-sm">
             <thead className="bg-gray-50">
               <tr>
-                                 {Array.from(camposVisibles).map(clave => {
-                   const campo = todosLosCampos.find(c => c.clave === clave);
-                   return campo ? (
-                     <th key={clave} className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                       {campo.label}
-                     </th>
-                   ) : null;
-                 })}
-                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                   Acciones
-                 </th>
-               </tr>
-             </thead>
-             <tbody className="bg-white divide-y divide-gray-200">
-               {siniestrosPaginados.map((siniestro, index) => (
-                 <tr key={siniestro._id || index} className="hover:bg-gray-50">
-                   {Array.from(camposVisibles).map(clave => {
-                     const campo = todosLosCampos.find(c => c.clave === clave);
-                     if (!campo) return null;
+                {Array.from(camposVisibles).map(clave => {
+                  const campo = todosLosCampos.find(c => c.clave === clave);
+                  return campo ? (
+                    <th key={clave} className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      {campo.label}
+                    </th>
+                  ) : null;
+                })}
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Acciones
+                </th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {siniestrosPaginados.map((siniestro, index) => (
+                <tr key={siniestro._id || index} className="hover:bg-gray-50">
+                  {Array.from(camposVisibles).map(clave => {
+                    const campo = todosLosCampos.find(c => c.clave === clave);
+                    if (!campo) return null;
 
-                     let valor = '';
-                     switch (clave) {
-                       case 'codi_estdo':
-                         valor = getNombreEstado(siniestro[clave]);
-                         break;
-                       case 'codiAsgrdra':
-                         valor = getNombreAseguradora(siniestro[clave]);
-                         break;
-                       case 'nombreResponsable':
-                         valor = getNombreResponsable(siniestro);
-                         break;
-                       case 'nombIntermediario':
-                         valor = getNombreIntermediario(siniestro);
-                         break;
-                       default:
-                         valor = siniestro[clave] || '';
-                     }
+                    let valor = '';
+                    switch (clave) {
+                      case 'codi_estdo':
+                        valor = getNombreEstado(siniestro[clave]);
+                        break;
+                      case 'codiAsgrdra':
+                        valor = getNombreAseguradora(siniestro[clave]);
+                        break;
+                      case 'nombreResponsable':
+                        valor = getNombreResponsable(siniestro);
+                        break;
+                      case 'nombIntermediario':
+                        valor = getNombreIntermediario(siniestro);
+                        break;
+                      default:
+                        valor = siniestro[clave] || '';
+                    }
 
-                     return (
-                       <td key={clave} className="px-4 py-3 whitespace-nowrap text-gray-900">
-                         {valor}
-                       </td>
-                     );
-                   })}
-                   <td className="px-4 py-3 whitespace-nowrap text-sm font-medium space-x-2">
-                     <button
-                       onClick={() => handleEdit(siniestro)}
-                       className="bg-blue-500 text-white px-2 py-1 rounded hover:bg-blue-600 text-xs"
-                     >
-                       ✏️ Editar
-                     </button>
-                     <button
-                       onClick={() => handleDelete(siniestro._id)}
-                       className="bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600 text-xs"
-                     >
-                       🗑️ Borrar
-                     </button>
-                   </td>
-                 </tr>
-               ))}
-             </tbody>
+                    return (
+                      <td key={clave} className="px-4 py-3 whitespace-nowrap text-gray-900">
+                        {valor}
+                      </td>
+                    );
+                  })}
+                  <td className="px-4 py-3 whitespace-nowrap text-sm font-medium space-x-2">
+                    <button
+                      onClick={() => handleEdit(siniestro)}
+                      className="bg-blue-500 text-white px-2 py-1 rounded hover:bg-blue-600 text-xs"
+                    >
+                      ✏️ Editar
+                    </button>
+                    <button
+                      onClick={() => handleDelete(siniestro._id)}
+                      className="bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600 text-xs"
+                    >
+                      🗑️ Borrar
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
           </table>
         </div>
 
@@ -761,197 +647,26 @@ export default function ReporteResponsables() {
         </div>
       )}
 
-                                   {/* Modal con FormularioCasoComplex */}
-            {modalOpen && (
-              <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-                <div style={{ background: '#fff', padding: 24, borderRadius: 8, minWidth: 400, maxHeight: '90vh', overflowY: 'auto', position: 'relative' }}>
-                  {/* Botón X para cerrar */}
-                  <button
-                    className="absolute top-2 right-2 text-gray-500 hover:text-red-600 text-2xl font-bold z-10"
-                    onClick={() => { setModalOpen(false); setEditSiniestro(null); }}
-                    title="Cerrar"
-                  >
-                    ×
-                  </button>
-                  <FormularioCasoComplex
-                    initialData={editSiniestro}
-                    onSave={handleSave}
-                    onCancel={() => { setModalOpen(false); setEditSiniestro(null); }}
-                  />
-                </div>
-              </div>
-            )}
-         </>
-       ) : activeTab === 'usuarios' && esAdminOSoporte ? (
-         <>
-           {/* Tabla de usuarios */}
-           <div className="bg-white shadow-md rounded-lg overflow-hidden">
-             <div className="px-6 py-4 border-b border-gray-200">
-               <h2 className="text-xl font-semibold text-gray-800">👥 Administración de Usuarios</h2>
-               <p className="text-sm text-gray-600 mt-1">Gestiona los usuarios del sistema</p>
-             </div>
-             
-             {loadingUsuarios ? (
-               <div className="flex justify-center items-center py-8">
-                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-               </div>
-             ) : (
-               <table className="min-w-full divide-y divide-gray-200">
-                 <thead className="bg-gray-50">
-                   <tr>
-                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                       Usuario
-                     </th>
-                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                       Email
-                     </th>
-                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                       Rol
-                     </th>
-                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                       Estado
-                     </th>
-                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                       Acciones
-                     </th>
-                   </tr>
-                 </thead>
-                 <tbody className="bg-white divide-y divide-gray-200">
-                   {usuarios.map((usuario) => (
-                     <tr key={usuario._id} className="hover:bg-gray-50">
-                       <td className="px-6 py-4 whitespace-nowrap">
-                         <div className="text-sm font-medium text-gray-900">{usuario.name}</div>
-                         <div className="text-sm text-gray-500">Login: {usuario.login}</div>
-                       </td>
-                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                         {usuario.email}
-                       </td>
-                       <td className="px-6 py-4 whitespace-nowrap">
-                         <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                           usuario.role === 'admin' ? 'bg-red-100 text-red-800' :
-                           usuario.role === 'soporte' ? 'bg-yellow-100 text-yellow-800' :
-                           'bg-green-100 text-green-800'
-                         }`}>
-                           {usuario.role}
-                         </span>
-                       </td>
-                       <td className="px-6 py-4 whitespace-nowrap">
-                         <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                           usuario.active === 'Y' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                         }`}>
-                           {usuario.active === 'Y' ? 'Activo' : 'Inactivo'}
-                         </span>
-                       </td>
-                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                         <button
-                           onClick={() => openChangePasswordModal(usuario)}
-                           className="text-indigo-600 hover:text-indigo-900 bg-indigo-100 hover:bg-indigo-200 px-3 py-1 rounded-md text-sm font-medium transition-colors"
-                         >
-                           Cambiar Contraseña
-                         </button>
-                       </td>
-                     </tr>
-                   ))}
-                 </tbody>
-               </table>
-             )}
-           </div>
-
-           {/* Modal para cambiar contraseña */}
-           {showChangePassword && selectedUser && (
-             <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-               <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
-                 {/* Botón X para cerrar */}
-                 <button
-                   className="absolute top-2 right-2 text-gray-500 hover:text-red-600 text-2xl font-bold z-10"
-                   onClick={() => {
-                     setShowChangePassword(false);
-                     setSelectedUser(null);
-                     setNewPassword('');
-                     setAdminCredentials({ adminLogin: '', adminPassword: '' });
-                     setMessage('');
-                   }}
-                   title="Cerrar"
-                 >
-                   ×
-                 </button>
-                 <div className="mt-3">
-                   <h3 className="text-lg font-medium text-gray-900 mb-4">
-                     Cambiar Contraseña - {selectedUser.name}
-                   </h3>
-                   
-                   <form onSubmit={handleChangePassword} className="space-y-4">
-                     {/* Credenciales del administrador */}
-                     <div>
-                       <label className="block text-sm font-medium text-gray-700 mb-1">
-                         Tu Login (Administrador)
-                       </label>
-                       <input
-                         type="text"
-                         value={adminCredentials.adminLogin}
-                         onChange={(e) => setAdminCredentials({...adminCredentials, adminLogin: e.target.value})}
-                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                         placeholder="Tu login de administrador"
-                         required
-                       />
-                     </div>
-
-                     <div>
-                       <label className="block text-sm font-medium text-gray-700 mb-1">
-                         Tu Contraseña (Administrador)
-                       </label>
-                       <input
-                         type="password"
-                         value={adminCredentials.adminPassword}
-                         onChange={(e) => setAdminCredentials({...adminCredentials, adminPassword: e.target.value})}
-                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                         placeholder="Tu contraseña de administrador"
-                         required
-                       />
-                     </div>
-
-                     <div>
-                       <label className="block text-sm font-medium text-gray-700 mb-1">
-                         Nueva Contraseña para {selectedUser.name}
-                       </label>
-                       <input
-                         type="password"
-                         value={newPassword}
-                         onChange={(e) => setNewPassword(e.target.value)}
-                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                         placeholder="Nueva contraseña"
-                         required
-                       />
-                     </div>
-
-                     <div className="flex justify-end space-x-3 pt-4">
-                       <button
-                         type="button"
-                         onClick={() => {
-                           setShowChangePassword(false);
-                           setSelectedUser(null);
-                           setNewPassword('');
-                           setAdminCredentials({ adminLogin: '', adminPassword: '' });
-                           setMessage('');
-                         }}
-                         className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 transition-colors"
-                       >
-                         Cancelar
-                       </button>
-                       <button
-                         type="submit"
-                         className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-                       >
-                         Cambiar Contraseña
-                       </button>
-                     </div>
-                   </form>
-                 </div>
-               </div>
-             </div>
-           )}
-         </>
-       ) : null}
-     </div>
-   );
- }
+      {/* Modal con FormularioCasoComplex */}
+      {modalOpen && (
+        <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+          <div style={{ background: '#fff', padding: 24, borderRadius: 8, minWidth: 400, maxHeight: '90vh', overflowY: 'auto', position: 'relative' }}>
+            {/* Botón X para cerrar */}
+            <button
+              className="absolute top-2 right-2 text-gray-500 hover:text-red-600 text-2xl font-bold z-10"
+              onClick={() => { setModalOpen(false); setEditSiniestro(null); }}
+              title="Cerrar"
+            >
+              ×
+            </button>
+            <FormularioCasoComplex
+              initialData={editSiniestro}
+              onSave={handleSave}
+              onCancel={() => { setModalOpen(false); setEditSiniestro(null); }}
+            />
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

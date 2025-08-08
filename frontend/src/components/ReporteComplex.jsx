@@ -254,7 +254,13 @@ const ReporteComplex = () => {
     setLoading(true);
     try {
       const data = await getSiniestrosEnriquecidos();
-      setSiniestros(data);
+      // Ordenar del más nuevo al más viejo por fecha de asignación
+      const siniestrosOrdenados = data.sort((a, b) => {
+        const fechaA = new Date(a.fchaAsgncion || a.fecha_asignacion_form || 0);
+        const fechaB = new Date(b.fchaAsgncion || b.fecha_asignacion_form || 0);
+        return fechaB - fechaA; // Orden descendente (más nuevo primero)
+      });
+      setSiniestros(siniestrosOrdenados);
     } catch (error) {
       console.error('Error al cargar siniestros:', error);
       setSiniestros([]);
@@ -332,6 +338,18 @@ const ReporteComplex = () => {
     }
     console.log('✅ Intermediario encontrado:', valor);
     return String(valor);
+  };
+
+  // Función para verificar si el usuario puede editar el caso
+  const puedeEditarCaso = (siniestro) => {
+    // Si es admin, puede editar todos los casos
+    if (esAdmin) return true;
+    
+    // Si no es admin, solo puede editar casos donde es el responsable
+    const responsableCaso = getNombreResponsable(siniestro);
+    const usuarioActual = localStorage.getItem('nombre') || localStorage.getItem('login');
+    
+    return responsableCaso === usuarioActual;
   };
 
   // Debug: verificar qué propiedades tienen los siniestros
@@ -432,41 +450,24 @@ const ReporteComplex = () => {
     return <div className="p-4 text-center text-gray-500">Cargando datos...</div>;
   }
 
-  // Verificación de acceso solo para administradores
-  if (!esAdmin) {
-    return (
-      <div className="container mx-auto p-4 max-w-4xl">
-        <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
-          <div className="text-red-600 text-6xl mb-4">🚫</div>
-          <h2 className="text-2xl font-bold text-red-800 mb-2">Acceso Restringido</h2>
-          <p className="text-red-700 mb-4">
-            Este reporte completo está disponible únicamente para administradores.
-          </p>
-          <p className="text-red-600 text-sm">
-            👤 Usuario actual: <strong>{usuarioActual.nombre || usuarioActual.login}</strong><br/>
-            🏷️ Rol: <strong>{usuarioActual.rol}</strong>
-          </p>
-          <div className="mt-6">
-            <p className="text-gray-600 text-sm">
-              💡 Si eres responsable de casos, puedes acceder a tu reporte personalizado desde el menú.
-            </p>
-          </div>
-        </div>
-      </div>
-    );
-  }
+
 
   return (
     <div className="p-2 sm:p-4">
-      <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
-        <h2 className="text-xl sm:text-2xl font-bold mb-2 text-green-800">📊 Reporte Completo de Siniestros</h2>
-        <p className="text-green-600">
-          🔐 <strong>Vista de Administrador</strong> - Acceso completo a todos los casos del sistema
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+        <h2 className="text-xl sm:text-2xl font-bold mb-2 text-blue-800">📊 Reporte Completo de Siniestros</h2>
+        <p className="text-blue-600">
+          👁️ <strong>Vista General</strong> - Acceso a todos los casos del sistema
         </p>
-        <p className="text-sm text-green-500 mt-1">
+        <p className="text-sm text-blue-500 mt-1">
           👤 Usuario: <strong>{usuarioActual.nombre || usuarioActual.login}</strong> | 
           🏷️ Rol: <strong>{usuarioActual.rol}</strong>
         </p>
+        {!esAdmin && (
+          <p className="text-sm text-orange-600 mt-1">
+            ⚠️ Solo puedes editar los casos donde eres el responsable
+          </p>
+        )}
       </div>
 
       {/* Filtros Avanzados */}
@@ -702,18 +703,24 @@ const ReporteComplex = () => {
                     </td>
                   ))}
                   <td className="p-2 whitespace-nowrap space-x-2">
-                    <button
-                      className="bg-blue-500 text-white px-2 py-1 rounded hover:bg-blue-600 text-xs"
-                      onClick={() => handleEdit(siniestro)}
-                    >
-                      ✏️ Editar
-                    </button>
-                    <button
-                      className="bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600 text-xs"
-                      onClick={() => handleDelete(siniestro._id)}
-                    >
-                      🗑️ Borrar
-                    </button>
+                    {puedeEditarCaso(siniestro) ? (
+                      <>
+                        <button
+                          className="bg-blue-500 text-white px-2 py-1 rounded hover:bg-blue-600 text-xs"
+                          onClick={() => handleEdit(siniestro)}
+                        >
+                          ✏️ Editar
+                        </button>
+                        <button
+                          className="bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600 text-xs"
+                          onClick={() => handleDelete(siniestro._id)}
+                        >
+                          🗑️ Borrar
+                        </button>
+                      </>
+                    ) : (
+                      <span className="text-gray-400 text-xs">Solo lectura</span>
+                    )}
                   </td>
                 </tr>
               ))

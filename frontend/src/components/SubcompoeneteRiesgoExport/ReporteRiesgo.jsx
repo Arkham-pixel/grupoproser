@@ -108,7 +108,13 @@ const ReporteRiesgo = ({ ciudades: ciudadesProp, estados: estadosProp }) => {
     try {
       // Cargar datos principales primero
       const data = await obtenerCasosRiesgo();
-      setCasos(Array.isArray(data) ? data : []);
+      // Ordenar del más nuevo al más viejo por fecha de asignación
+      const casosOrdenados = Array.isArray(data) ? data.sort((a, b) => {
+        const fechaA = new Date(a.fchaAsgncion || a.fecha_asignacion_form || 0);
+        const fechaB = new Date(b.fchaAsgncion || b.fecha_asignacion_form || 0);
+        return fechaB - fechaA; // Orden descendente (más nuevo primero)
+      }) : [];
+      setCasos(casosOrdenados);
       
       // Cargar datos adicionales en paralelo, con manejo de errores individual
       try {
