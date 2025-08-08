@@ -379,11 +379,9 @@ export default function ReporteResponsables() {
     primeraAseguradora: aseguradoras[0]
   });
 
-  // Funciones para manejar la paginación
-  const indiceInicio = (paginaActual - 1) * registrosPorPagina;
-  const indiceFin = indiceInicio + registrosPorPagina;
-  const siniestrosPaginados = siniestrosFiltrados.slice(indiceInicio, indiceFin);
-  const totalPaginas = Math.ceil(siniestrosFiltrados.length / registrosPorPagina);
+  // Funciones para manejar la paginación - Mostrar todos los casos sin paginación
+  const siniestrosPaginados = siniestrosFiltrados; // Mostrar todos los casos
+  const totalPaginas = 1; // Solo una página
 
   // Función para exportar a Excel
   const exportarAExcel = () => {
@@ -493,6 +491,9 @@ export default function ReporteResponsables() {
         </p>
         <p className="text-sm text-blue-500">
           Mostrando únicamente los casos asignados a tu responsabilidad
+        </p>
+        <p className="text-sm text-green-600 font-medium">
+          ✅ Mostrando todos los casos sin paginación
         </p>
       </div>
 

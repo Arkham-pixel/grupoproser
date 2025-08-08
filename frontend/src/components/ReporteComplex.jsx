@@ -407,11 +407,15 @@ const ReporteComplex = () => {
     const valorB = b[campo]?.toString().toLowerCase() || '';
     return orden.asc ? valorA.localeCompare(valorB) : valorB.localeCompare(valorA);
   });
-  const totalPaginas = Math.ceil(siniestrosOrdenados.length / elementosPorPagina);
-  const siniestrosPaginados = siniestrosOrdenados.slice(
-    (paginaActual - 1) * elementosPorPagina,
-    paginaActual * elementosPorPagina
-  );
+  // Si hay un filtro de responsable activo, mostrar todos los casos sin paginación
+  const hayFiltroResponsable = responsableFiltro !== '';
+  const totalPaginas = hayFiltroResponsable ? 1 : Math.ceil(siniestrosOrdenados.length / elementosPorPagina);
+  const siniestrosPaginados = hayFiltroResponsable 
+    ? siniestrosOrdenados // Mostrar todos los casos cuando hay filtro de responsable
+    : siniestrosOrdenados.slice(
+        (paginaActual - 1) * elementosPorPagina,
+        paginaActual * elementosPorPagina
+      );
 
   // Listas únicas para los filtros
   const estadosUnicos = Array.from(new Set(siniestros.map(s => s.codiEstdo).filter(Boolean))).map(e => ({ 
@@ -569,6 +573,11 @@ const ReporteComplex = () => {
               {responsableFiltro && <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs">Responsable: {responsableFiltro}</span>}
             </div>
             <p className="text-xs text-blue-600 mt-1">Mostrando {siniestrosFiltrados.length} de {siniestros.length} siniestros</p>
+            {hayFiltroResponsable && (
+              <p className="text-xs text-green-600 mt-1 font-medium">
+                ✅ Mostrando todos los casos del responsable seleccionado (sin paginación)
+              </p>
+            )}
           </div>
         )}
       </div>

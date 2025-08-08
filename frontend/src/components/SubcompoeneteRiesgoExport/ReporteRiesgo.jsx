@@ -235,11 +235,15 @@ const ReporteRiesgo = ({ ciudades: ciudadesProp, estados: estadosProp }) => {
     return orden.asc ? valorA.localeCompare(valorB) : valorB.localeCompare(valorA);
   });
 
-  const totalPaginas = Math.ceil(casosOrdenados.length / elementosPorPagina);
-  const casosPaginados = casosOrdenados.slice(
-    (paginaActual - 1) * elementosPorPagina,
-    paginaActual * elementosPorPagina
-  );
+  // Si hay un filtro de responsable activo, mostrar todos los casos sin paginación
+  const hayFiltroResponsable = responsableFiltro !== '';
+  const totalPaginas = hayFiltroResponsable ? 1 : Math.ceil(casosOrdenados.length / elementosPorPagina);
+  const casosPaginados = hayFiltroResponsable 
+    ? casosOrdenados // Mostrar todos los casos cuando hay filtro de responsable
+    : casosOrdenados.slice(
+        (paginaActual - 1) * elementosPorPagina,
+        paginaActual * elementosPorPagina
+      );
 
   const cambiarOrden = campo => {
     setOrden(prev => ({
@@ -413,6 +417,11 @@ const ReporteRiesgo = ({ ciudades: ciudadesProp, estados: estadosProp }) => {
               {ciudadFiltro && <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs">Ciudad: {getCiudadNombre(ciudadFiltro, ciudades)}</span>}
             </div>
             <p className="text-xs text-blue-600 mt-1">Mostrando {casosFiltrados.length} de {casos.length} casos</p>
+            {hayFiltroResponsable && (
+              <p className="text-xs text-green-600 mt-1 font-medium">
+                ✅ Mostrando todos los casos del responsable seleccionado (sin paginación)
+              </p>
+            )}
           </div>
         )}
       </div>
