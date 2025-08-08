@@ -111,14 +111,17 @@ export default function EditarCuentas() {
               placeholder="Celular"
               className="w-full px-4 py-2 rounded border"
             />
-            <input
-              type="text"
-              name="role"
-              value={form.role}
-              onChange={handleChange}
-              placeholder="Rol"
-              className="w-full px-4 py-2 rounded border"
-            />
+            {/* Campo de rol solo visible para admin/soporte */}
+            {(localStorage.getItem('rol') === 'admin' || localStorage.getItem('rol') === 'soporte') && (
+              <input
+                type="text"
+                name="role"
+                value={form.role}
+                onChange={handleChange}
+                placeholder="Rol"
+                className="w-full px-4 py-2 rounded border"
+              />
+            )}
             <input
               type="password"
               name="passwordConfirm"

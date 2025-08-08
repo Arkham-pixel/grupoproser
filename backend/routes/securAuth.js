@@ -696,4 +696,109 @@ router.post("/test-email", async (req, res) => {
   }
 });
 
+// Ruta para obtener usuario por ID (solo admin/soporte)
+router.get("/usuario/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    // Verificar que el usuario que hace la petición sea admin o soporte
+    const token = req.headers.authorization?.split(' ')[1];
+    if (!token) {
+      return res.status(401).json({ message: "Token no proporcionado" });
+    }
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || "secreto_super_seguro");
+    const usuarioActual = await SecurUser.findOne({ login: decoded.login });
+    
+    if (!usuarioActual || (usuarioActual.role !== 'admin' && usuarioActual.role !== 'soporte')) {
+      return res.status(403).json({ message: "No tienes permisos para realizar esta acción" });
+    }
+
+    // Buscar el usuario por ID
+    const usuario = await SecurUser.findById(id);
+    if (!usuario) {
+      return res.status(404).json({ message: "Usuario no encontrado" });
+    }
+
+    // No enviar la contraseña en la respuesta
+    const usuarioSinPassword = {
+      _id: usuario._id,
+      login: usuario.login,
+      name: usuario.name,
+      email: usuario.email,
+      active: usuario.active,
+      role: usuario.role,
+      phone: usuario.phone,
+      createdAt: usuario.createdAt,
+      updatedAt: usuario.updatedAt
+    };
+
+    res.json(usuarioSinPassword);
+  } catch (error) {
+    console.error("Error al obtener usuario:", error);
+    res.status(500).json({ message: "Error en el servidor" });
+  }
+});
+
+// Ruta para actualizar usuario por ID (solo admin/soporte)
+router.put("/actualizar-usuario/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, email, phone, role, active } = req.body;
+    
+    // Verificar que el usuario que hace la petición sea admin o soporte
+    const token = req.headers.authorization?.split(' ')[1];
+    if (!token) {
+      return res.status(401).json({ message: "Token no proporcionado" });
+    }
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || "secreto_super_seguro");
+    const usuarioActual = await SecurUser.findOne({ login: decoded.login });
+    
+    if (!usuarioActual || (usuarioActual.role !== 'admin' && usuarioActual.role !== 'soporte')) {
+      return res.status(403).json({ message: "No tienes permisos para realizar esta acción" });
+    }
+
+    // Buscar el usuario por ID
+    const usuario = await SecurUser.findById(id);
+    if (!usuario) {
+      return res.status(404).json({ message: "Usuario no encontrado" });
+    }
+
+    // Actualizar campos permitidos
+    if (name !== undefined) usuario.name = name;
+    if (email !== undefined) usuario.email = email;
+    if (phone !== undefined) usuario.phone = phone;
+    if (role !== undefined) usuario.role = role;
+    if (active !== undefined) usuario.active = active;
+
+    await usuario.save();
+
+    console.log('✅ Usuario actualizado exitosamente:', {
+      id: usuario._id,
+      name: usuario.name,
+      role: usuario.role,
+      active: usuario.active
+    });
+
+    res.json({
+      success: true,
+      message: `Usuario ${usuario.name} actualizado exitosamente`,
+      usuario: {
+        _id: usuario._id,
+        login: usuario.login,
+        name: usuario.name,
+        email: usuario.email,
+        active: usuario.active,
+        role: usuario.role,
+        phone: usuario.phone
+      }
+    });
+
+  } catch (error) {
+    console.error("Error al actualizar usuario:", error);
+    res.status(500).json({ message: "Error en el servidor" });
+  }
+});
+
 export default router; 
