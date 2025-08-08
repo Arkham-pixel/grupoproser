@@ -13,6 +13,7 @@ import {
 } from 'react-icons/fa';
 import proserLogo from '../img/PROSER_FIRMA_BLANCA_V2 (3).gif';
 import LogoutButton from './LogoutButton';
+import SessionIndicator from './SessionIndicator';
 
 export default function Layout() {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -308,6 +309,15 @@ export default function Layout() {
                         🔐 Administración
                       </Link>
                     )}
+                    {esAdminOSoporte && (
+                      <Link
+                        to="/admin/session-settings"
+                        className="px-6 py-2 hover:bg-blue-50 text-blue-700"
+                        onClick={() => setMenuOpen(false)}
+                      >
+                        ⚙️ Configuración de Sesión
+                      </Link>
+                    )}
                                                 {esSoloSoporte && (
               <Link
                 to="/test-email"
@@ -335,6 +345,9 @@ export default function Layout() {
       <main className="flex-1 bg-gray-100 p-4">
         <Outlet />
       </main>
+      
+      {/* Indicador de sesión */}
+      <SessionIndicator />
     </div>
   );
 }

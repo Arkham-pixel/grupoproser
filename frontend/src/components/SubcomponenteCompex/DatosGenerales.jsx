@@ -45,7 +45,7 @@ export default function DatosGenerales({
           </div>
 
           <div>
-            <label className="block text-sm font-medium">Aseguradora *</label>
+            <label className="block text-sm font-medium"> Cliente *</label>
             <select
               name="aseguradora"
               value={formData.aseguradora || ""}
@@ -53,7 +53,7 @@ export default function DatosGenerales({
               className="w-full border rounded px-3 py-2"
               required
             >
-              <option value="">Seleccione una aseguradora</option>
+              <option value="">Seleccione una Cliente</option>
               {(aseguradoraOptions || []).map((aseg) => (
                 <option key={aseg} value={aseg}>{aseg}</option>
               ))}

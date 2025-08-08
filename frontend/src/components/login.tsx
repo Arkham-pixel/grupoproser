@@ -84,6 +84,7 @@ export default function Login() {
         localStorage.setItem('rol', res.data.usuario.role);
         localStorage.setItem('login', res.data.usuario.login);
         localStorage.setItem('nombre', res.data.usuario.name);
+        localStorage.setItem('sessionStart', Date.now().toString());
         
         console.log('✅ Login 2FA exitoso - guardado en localStorage:', {
           token: res.data.token,
