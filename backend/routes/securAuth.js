@@ -511,27 +511,44 @@ router.delete("/usuarios", async (req, res) => {
   const { loginOrEmail } = req.query;
   const token = req.headers.authorization?.split(' ')[1];
   
+  console.log('🗑️ Eliminando usuario:', { loginOrEmail, hasToken: !!token });
+  console.log('📋 Headers:', req.headers);
+  
   try {
     if (!token) {
+      console.log('❌ No hay token en la petición');
       return res.status(401).json({ message: "Token requerido" });
     }
     
+    console.log('🔐 Verificando token...');
     const decoded = jwt.verify(token, process.env.JWT_SECRET || "secreto_super_seguro");
+    console.log('✅ Token válido, ID del usuario:', decoded.id);
+    
     const usuarioActual = await SecurUser.findById(decoded.id);
     
     if (!usuarioActual) {
+      console.log('❌ Usuario actual no encontrado en la base de datos');
       return res.status(404).json({ message: "Usuario no encontrado" });
     }
     
+    console.log('✅ Usuario actual encontrado:', { 
+      login: usuarioActual.login, 
+      role: usuarioActual.role, 
+      active: usuarioActual.active 
+    });
+    
     // Solo admin puede eliminar usuarios
     if (usuarioActual.role !== "admin") {
+      console.log('❌ Usuario no es admin, rol actual:', usuarioActual.role);
       return res.status(403).json({ message: "No tienes permisos para eliminar usuarios" });
     }
     
     if (!loginOrEmail) {
+      console.log('❌ No se proporcionó loginOrEmail');
       return res.status(400).json({ message: "Login o email requerido" });
     }
     
+    console.log('🔍 Buscando usuario a eliminar:', loginOrEmail);
     // Buscar usuario por login o email
     const usuarioAEliminar = await SecurUser.findOne({
       $or: [
@@ -541,15 +558,25 @@ router.delete("/usuarios", async (req, res) => {
     });
     
     if (!usuarioAEliminar) {
+      console.log('❌ Usuario a eliminar no encontrado:', loginOrEmail);
       return res.status(404).json({ message: "Usuario a eliminar no encontrado" });
     }
     
+    console.log('✅ Usuario a eliminar encontrado:', { 
+      login: usuarioAEliminar.login, 
+      email: usuarioAEliminar.email,
+      role: usuarioAEliminar.role 
+    });
+    
     // No permitir eliminar al propio usuario
     if (usuarioAEliminar._id.toString() === usuarioActual._id.toString()) {
+      console.log('❌ Intento de eliminar propia cuenta');
       return res.status(400).json({ message: "No puedes eliminar tu propia cuenta" });
     }
     
+    console.log('🗑️ Procediendo a eliminar usuario...');
     await SecurUser.findByIdAndDelete(usuarioAEliminar._id);
+    console.log('✅ Usuario eliminado exitosamente');
     
     res.json({ 
       message: "Usuario eliminado correctamente",

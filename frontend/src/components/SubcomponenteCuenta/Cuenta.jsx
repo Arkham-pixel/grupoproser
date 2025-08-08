@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import EditarCuentas from "./EditarCuenta";
 import AgregarCuenta from "./AgregarCuenta";
-import axios from "axios";
+import api from "../../services/api";
 import MiCuenta from "./miCuenta";
 import CambiarContrasena from "./CambiarContrasena";
 
@@ -35,12 +35,21 @@ export default function Cuenta() {
     setEliminando(true);
     setMensaje("");
     try {
-      // Llama al endpoint real de eliminación (ajusta la URL según tu backend)
-      await axios.delete(`/api/secur-auth/usuarios?loginOrEmail=${encodeURIComponent(usuarioEliminar.trim())}`);
+      // Llama al endpoint real de eliminación (el interceptor maneja automáticamente el token)
+      await api.delete(`/api/secur-auth/usuarios?loginOrEmail=${encodeURIComponent(usuarioEliminar.trim())}`);
       setMensaje("Usuario eliminado correctamente.");
       setUsuarioEliminar("");
     } catch (err) {
-      setMensaje(err.response?.data?.mensaje || "Error al eliminar el usuario");
+      console.error('Error al eliminar usuario:', err);
+      if (err.response?.status === 401) {
+        setMensaje("No tienes permisos para eliminar usuarios o el token ha expirado.");
+      } else if (err.response?.status === 403) {
+        setMensaje("No tienes permisos para eliminar usuarios.");
+      } else if (err.response?.status === 404) {
+        setMensaje("Usuario no encontrado.");
+      } else {
+        setMensaje(err.response?.data?.message || "Error al eliminar el usuario");
+      }
     } finally {
       setEliminando(false);
     }
