@@ -696,10 +696,10 @@ router.post("/test-email", async (req, res) => {
   }
 });
 
-// Ruta para obtener usuario por ID (solo admin/soporte)
-router.get("/usuario/:id", async (req, res) => {
+// Ruta para obtener usuario por login (solo admin/soporte)
+router.get("/usuario/:login", async (req, res) => {
   try {
-    const { id } = req.params;
+    const { login } = req.params;
     
     // Verificar que el usuario que hace la petición sea admin o soporte
     const token = req.headers.authorization?.split(' ')[1];
@@ -714,11 +714,14 @@ router.get("/usuario/:id", async (req, res) => {
       return res.status(403).json({ message: "No tienes permisos para realizar esta acción" });
     }
 
-    // Buscar el usuario por ID
-    const usuario = await SecurUser.findById(id);
+    // Buscar el usuario por login
+    const usuario = await SecurUser.findOne({ login: login });
     if (!usuario) {
+      console.log('❌ Usuario no encontrado con login:', login);
       return res.status(404).json({ message: "Usuario no encontrado" });
     }
+
+    console.log('✅ Usuario encontrado por login:', usuario.login);
 
     // No enviar la contraseña en la respuesta
     const usuarioSinPassword = {
@@ -740,10 +743,10 @@ router.get("/usuario/:id", async (req, res) => {
   }
 });
 
-// Ruta para actualizar usuario por ID (solo admin/soporte)
-router.put("/actualizar-usuario/:id", async (req, res) => {
+// Ruta para actualizar usuario por login (solo admin/soporte)
+router.put("/actualizar-usuario/:login", async (req, res) => {
   try {
-    const { id } = req.params;
+    const { login } = req.params;
     const { name, email, phone, role, active } = req.body;
     
     // Verificar que el usuario que hace la petición sea admin o soporte
@@ -759,9 +762,10 @@ router.put("/actualizar-usuario/:id", async (req, res) => {
       return res.status(403).json({ message: "No tienes permisos para realizar esta acción" });
     }
 
-    // Buscar el usuario por ID
-    const usuario = await SecurUser.findById(id);
+    // Buscar el usuario por login
+    const usuario = await SecurUser.findOne({ login: login });
     if (!usuario) {
+      console.log('❌ Usuario no encontrado con login:', login);
       return res.status(404).json({ message: "Usuario no encontrado" });
     }
 

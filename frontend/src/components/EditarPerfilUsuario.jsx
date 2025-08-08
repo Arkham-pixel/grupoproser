@@ -3,7 +3,7 @@ import axios from 'axios';
 import config from '../config.js';
 
 export default function EditarPerfilUsuario() {
-  const [userId, setUserId] = useState('');
+  const [userLogin, setUserLogin] = useState('');
   const [usuario, setUsuario] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -17,8 +17,8 @@ export default function EditarPerfilUsuario() {
   });
 
   const buscarUsuario = async () => {
-    if (!userId.trim()) {
-      setError('Por favor ingrese un ID de usuario');
+    if (!userLogin.trim()) {
+      setError('Por favor ingrese el login del usuario');
       return;
     }
 
@@ -28,7 +28,7 @@ export default function EditarPerfilUsuario() {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get(`${config.API_BASE_URL}/api/secur-auth/usuario/${userId}`, {
+      const response = await axios.get(`${config.API_BASE_URL}/api/secur-auth/usuario/${userLogin}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
 
@@ -60,7 +60,7 @@ export default function EditarPerfilUsuario() {
 
     try {
       const token = localStorage.getItem('token');
-      await axios.put(`${config.API_BASE_URL}/api/secur-auth/actualizar-usuario/${userId}`, form, {
+      await axios.put(`${config.API_BASE_URL}/api/secur-auth/actualizar-usuario/${userLogin}`, form, {
         headers: { Authorization: `Bearer ${token}` }
       });
 
@@ -117,9 +117,9 @@ export default function EditarPerfilUsuario() {
           <div className="flex gap-2">
             <input
               type="text"
-              value={userId}
-              onChange={(e) => setUserId(e.target.value)}
-              placeholder="Ingrese ID del usuario"
+              value={userLogin}
+              onChange={(e) => setUserLogin(e.target.value)}
+              placeholder="Ingrese login del usuario"
               className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
             <button
@@ -260,8 +260,8 @@ export default function EditarPerfilUsuario() {
         <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-md">
           <h3 className="text-lg font-medium text-blue-800 mb-2">📋 Información</h3>
           <div className="text-sm text-blue-700 space-y-1">
-            <p>• Solo administradores y soporte pueden editar perfiles de usuarios</p>
-            <p>• Busque el usuario por su ID único</p>
+                         <p>• Solo administradores y soporte pueden editar perfiles de usuarios</p>
+             <p>• Busque el usuario por su login</p>
             <p>• Puede cambiar nombre, email, teléfono, rol y estado</p>
             <p>• Los cambios se aplican inmediatamente</p>
           </div>
