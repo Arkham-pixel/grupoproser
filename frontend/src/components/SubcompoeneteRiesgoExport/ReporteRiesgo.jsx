@@ -468,6 +468,33 @@ const ReporteRiesgo = ({ ciudades: ciudadesProp, estados: estadosProp }) => {
         </button>
       </div>
 
+      {/* Paginación - Movida arriba de la tabla */}
+      {totalPaginas > 1 && (
+        <div className="bg-white shadow rounded-lg p-4 mb-4">
+          <div className="flex justify-between items-center">
+            <span className="text-sm text-gray-700">
+              Página {paginaActual} de {totalPaginas}
+            </span>
+            <div className="space-x-2">
+              <button
+                onClick={() => setPaginaActual(p => Math.max(p - 1, 1))}
+                disabled={paginaActual === 1}
+                className="px-3 py-1 bg-gray-200 rounded disabled:opacity-50 hover:bg-gray-300 transition-colors"
+              >
+                ⬅ Anterior
+              </button>
+              <button
+                onClick={() => setPaginaActual(p => Math.min(p + 1, totalPaginas))}
+                disabled={paginaActual === totalPaginas}
+                className="px-3 py-1 bg-gray-200 rounded disabled:opacity-50 hover:bg-gray-300 transition-colors"
+              >
+                Siguiente ➡
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="overflow-auto">
         <table className="w-full text-sm border">
           <thead className="bg-gray-100 sticky top-0 z-10">
@@ -530,27 +557,7 @@ const ReporteRiesgo = ({ ciudades: ciudadesProp, estados: estadosProp }) => {
         </table>
       </div>
 
-      <div className="flex justify-between items-center mt-4">
-        <span className="text-sm">
-          Página {paginaActual} de {totalPaginas}
-        </span>
-        <div className="space-x-2">
-          <button
-            onClick={() => setPaginaActual(p => Math.max(p - 1, 1))}
-            disabled={paginaActual === 1}
-            className="px-3 py-1 bg-gray-200 rounded disabled:opacity-50"
-          >
-            ⬅ Anterior
-          </button>
-          <button
-            onClick={() => setPaginaActual(p => Math.min(p + 1, totalPaginas))}
-            disabled={paginaActual === totalPaginas}
-            className="px-3 py-1 bg-gray-200 rounded disabled:opacity-50"
-          >
-            Siguiente ➡
-          </button>
-        </div>
-      </div>
+
       {/* Modal de edición */}
       {modalAbierto && (
         <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">

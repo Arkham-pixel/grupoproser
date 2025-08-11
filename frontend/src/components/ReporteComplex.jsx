@@ -738,6 +738,33 @@ const ReporteComplex = () => {
         </table>
       </div>
 
+      {/* Paginación - Movida arriba del historial */}
+      {totalPaginas > 1 && (
+        <div className="mt-4 bg-white shadow rounded-lg p-4">
+          <div className="flex justify-between items-center">
+            <span className="text-sm text-gray-700">
+              Página {paginaActual} de {totalPaginas}
+            </span>
+            <div className="space-x-2">
+              <button
+                onClick={() => setPaginaActual(p => Math.max(p - 1, 1))}
+                disabled={paginaActual === 1}
+                className="px-3 py-1 bg-gray-200 rounded disabled:opacity-50 hover:bg-gray-300 transition-colors"
+              >
+                ⬅ Anterior
+              </button>
+              <button
+                onClick={() => setPaginaActual(p => Math.min(p + 1, totalPaginas))}
+                disabled={paginaActual === totalPaginas}
+                className="px-3 py-1 bg-gray-200 rounded disabled:opacity-50 hover:bg-gray-300 transition-colors"
+              >
+                Siguiente ➡
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Sección de Historial de Documentos */}
       <div className="mt-8 bg-white shadow rounded-lg p-4">
         <h3 className="text-lg font-semibold mb-4">📁 Historial de Documentos</h3>
@@ -801,27 +828,7 @@ const ReporteComplex = () => {
         )}
       </div>
 
-      <div className="flex justify-between items-center mt-4">
-        <span className="text-sm">
-          Página {paginaActual} de {totalPaginas}
-        </span>
-        <div className="space-x-2">
-          <button
-            onClick={() => setPaginaActual(p => Math.max(p - 1, 1))}
-            disabled={paginaActual === 1}
-            className="px-3 py-1 bg-gray-200 rounded disabled:opacity-50"
-          >
-            ⬅ Anterior
-          </button>
-          <button
-            onClick={() => setPaginaActual(p => Math.min(p + 1, totalPaginas))}
-            disabled={paginaActual === totalPaginas}
-            className="px-3 py-1 bg-gray-200 rounded disabled:opacity-50"
-          >
-            Siguiente ➡
-          </button>
-        </div>
-      </div>
+
 
       {/* Modal con FormularioCasoComplex */}
       {modalOpen && (

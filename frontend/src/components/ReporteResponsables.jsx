@@ -593,6 +593,36 @@ export default function ReporteResponsables() {
         </div>
       </div>
 
+      {/* Paginación - Movida arriba de la tabla */}
+      {totalPaginas > 1 && (
+        <div className="bg-white shadow rounded-lg p-4 mb-4">
+          <div className="flex justify-between items-center">
+            <div className="text-sm text-gray-700">
+              Mostrando {indiceInicio + 1} a {Math.min(indiceFin, siniestrosFiltrados.length)} de {siniestrosFiltrados.length} casos
+            </div>
+            <div className="flex space-x-2">
+              <button
+                onClick={() => setPaginaActual(paginaActual - 1)}
+                disabled={paginaActual === 1}
+                className="px-3 py-1 border border-gray-300 rounded-md text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+              >
+                Anterior
+              </button>
+              <span className="px-3 py-1 text-sm font-medium">
+                Página {paginaActual} de {totalPaginas}
+              </span>
+              <button
+                onClick={() => setPaginaActual(paginaActual + 1)}
+                disabled={paginaActual === totalPaginas}
+                className="px-3 py-1 border border-gray-300 rounded-md text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+              >
+                Siguiente
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Tabla de Siniestros */}
       <div className="bg-white shadow rounded-lg overflow-hidden">
         <div className="overflow-x-auto">
@@ -663,33 +693,7 @@ export default function ReporteResponsables() {
           </table>
         </div>
 
-        {/* Paginación */}
-        {totalPaginas > 1 && (
-          <div className="bg-white px-4 py-3 border-t border-gray-200 flex justify-between items-center">
-            <div className="text-sm text-gray-700">
-              Mostrando {indiceInicio + 1} a {Math.min(indiceFin, siniestrosFiltrados.length)} de {siniestrosFiltrados.length} casos
-            </div>
-            <div className="flex space-x-2">
-              <button
-                onClick={() => setPaginaActual(paginaActual - 1)}
-                disabled={paginaActual === 1}
-                className="px-3 py-1 border border-gray-300 rounded-md text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
-              >
-                Anterior
-              </button>
-              <span className="px-3 py-1 text-sm font-medium">
-                Página {paginaActual} de {totalPaginas}
-              </span>
-              <button
-                onClick={() => setPaginaActual(paginaActual + 1)}
-                disabled={paginaActual === totalPaginas}
-                className="px-3 py-1 border border-gray-300 rounded-md text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
-              >
-                Siguiente
-              </button>
-            </div>
-          </div>
-        )}
+
       </div>
 
       {siniestrosFiltrados.length === 0 && (

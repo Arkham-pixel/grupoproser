@@ -123,4 +123,23 @@ const casosPaginados = hayFiltroResponsable
 
 ## 🚀 Resultado
 
-Ahora cuando un usuario seleccione un **responsable** en los filtros de **Complex** o **Riesgos**, verá **todos los casos** de ese responsable en una sola vista, sin tener que navegar entre páginas. 
+Ahora cuando un usuario seleccione un **responsable** en los filtros de **Complex** o **Riesgos**, verá **todos los casos** de ese responsable en una sola vista, sin tener que navegar entre páginas.
+
+## 📍 Ubicación de Paginación
+
+### **Posición Actualizada:**
+- ✅ **Paginación movida arriba**: Los botones "Anterior" y "Siguiente" ahora aparecen **encima** de las tablas/historial
+- ✅ **Mejor UX**: Los usuarios pueden navegar antes de ver los datos
+- ✅ **Diseño consistente**: Todos los reportes tienen la misma ubicación de paginación
+
+### **ReporteComplex:**
+- ✅ Paginación aparece **antes** del historial de documentos
+- ✅ Solo visible cuando hay múltiples páginas (`totalPaginas > 1`)
+
+### **ReporteResponsables:**
+- ✅ Paginación aparece **antes** de la tabla de casos
+- ✅ Solo visible cuando hay múltiples páginas (`totalPaginas > 1`)
+
+### **ReporteRiesgo:**
+- ✅ Paginación aparece **antes** de la tabla de casos
+- ✅ Solo visible cuando hay múltiples páginas (`totalPaginas > 1`) 
