@@ -7,11 +7,7 @@ export default function DatosGenerales({
   hora, setHora,
   tipoInspeccion, setTipoInspeccion,
   fechaLlegada, setFechaLlegada,
-  regional, setRegional,
-  actaNumero, setActaNumero,
-  inspTipo, setInspTipo,
-  inspFecha, setInspFecha,
-  regionalDer, setRegionalDer
+  regional, setRegional
 }) {
   // Extraer todas las ciudades únicas de colombia.json
   const ciudadesColombia = useMemo(() => {
@@ -21,70 +17,110 @@ export default function DatosGenerales({
   }, []);
 
   return (
-    <section className="mb-4 border p-3 rounded">
-      <table className="w-full border text-xs">
-        <tbody>
-          <tr>
-            <td rowSpan={3} className="border p-2 align-top w-1/2">
-              <div className="mb-1">
-                <label>Ciudad / City:</label>
-                <select
-                  className="w-full"
-                  value={ciudad}
-                  onChange={e => setCiudad(e.target.value)}
-                >
-                  <option value="">Seleccione una ciudad</option>
-                  {ciudadesColombia.map((c) => (
-                    <option key={c} value={c}>{c}</option>
-                  ))}
-                </select>
-              </div>
-              <div className="mb-1">
-                <label>Fecha / Date:</label>
-                <input type="date" className="w-full" value={fecha} onChange={e => setFecha(e.target.value)} />
-              </div>
-              <div className="mb-1">
-                <label>Hora / Hour:</label>
-                <input type="time" className="w-full" value={hora} onChange={e => setHora(e.target.value)} />
-              </div>
-            </td>
-            <td className="border p-2 font-bold text-center bg-gray-100" colSpan={2}>ACTA / REPORT</td>
-            <td className="border p-2" rowSpan={2}>
-              <label>No.</label>
-              <input type="text" className="w-full" value={actaNumero} onChange={e => setActaNumero(e.target.value)} />
-            </td>
-          </tr>
-          <tr>
-            <td className="border p-2">INSP.</td>
-            <td className="border p-2">
-              <input type="text" className="w-full" value={inspTipo} onChange={e => setInspTipo(e.target.value)} />
-            </td>
-          </tr>
-          <tr>
-            <td className="border p-2">Fecha de Inspección</td>
-            <td className="border p-2">
-              <input type="date" className="w-full" value={inspFecha} onChange={e => setInspFecha(e.target.value)} />
-            </td>
-            <td className="border p-2">
-              <input type="text" className="w-full" value={regionalDer} onChange={e => setRegionalDer(e.target.value)} placeholder="Regional" />
-            </td>
-          </tr>
-          <tr>
-            <td className="border p-2">
-              <label>Tipo Inspección / Type Survey:</label>
-              <input type="text" className="w-full" value={tipoInspeccion} onChange={e => setTipoInspeccion(e.target.value)} />
-            </td>
-            <td className="border p-2">
-              <label>Fecha de Llegada:</label>
-              <input type="date" className="w-full" value={fechaLlegada} onChange={e => setFechaLlegada(e.target.value)} />
-            </td>
-            <td className="border p-2" colSpan={2}>
-              <label>Regional:</label>
-              <input type="text" className="w-full" value={regional} onChange={e => setRegional(e.target.value)} />
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </section>
+    <div className="bg-gray-50 p-6 rounded-lg mb-6 border-l-4 border-blue-500">
+      <h2 className="text-2xl font-bold text-gray-800 mb-4 flex items-center">
+        <span className="bg-blue-500 text-white p-2 rounded-lg mr-3">📋</span>
+        DATOS GENERALES
+      </h2>
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Primera fila - 4 campos */}
+        <div className="space-y-2">
+          <label className="block text-sm font-medium text-gray-700">
+            Ciudad / City *
+          </label>
+          <select
+            value={ciudad}
+            onChange={(e) => setCiudad(e.target.value)}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          >
+            <option value="">Seleccionar ciudad...</option>
+            {ciudadesColombia.map((ciudadItem) => (
+              <option key={ciudadItem} value={ciudadItem}>
+                {ciudadItem}
+              </option>
+            ))}
+          </select>
+        </div>
+        
+        <div className="space-y-2">
+          <label className="block text-sm font-medium text-gray-700">
+            Fecha / Date *
+          </label>
+          <input
+            type="date"
+            value={fecha}
+            onChange={(e) => setFecha(e.target.value)}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          />
+        </div>
+        
+        <div className="space-y-2">
+          <label className="block text-sm font-medium text-gray-700">
+            Hora / Hour *
+          </label>
+          <input
+            type="time"
+            value={hora}
+            onChange={(e) => setHora(e.target.value)}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          />
+        </div>
+        
+        <div className="space-y-2">
+          <label className="block text-sm font-medium text-gray-700">
+            Regional *
+          </label>
+          <input
+            type="text"
+            value={regional}
+            onChange={(e) => setRegional(e.target.value)}
+            placeholder="Ej: BUENAVENTURA"
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          />
+        </div>
+      </div>
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+        {/* Segunda fila - 2 campos */}
+        <div className="space-y-2">
+          <label className="block text-sm font-medium text-gray-700">
+            Tipo Inspección / Type Survey *
+          </label>
+          <select
+            value={tipoInspeccion}
+            onChange={(e) => setTipoInspeccion(e.target.value)}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          >
+            <option value="">Seleccionar tipo...</option>
+            <option value="INSP. ANTINARCOTICOS">INSP. ANTINARCOTICOS</option>
+            <option value="INSP. ADUANERA">INSP. ADUANERA</option>
+            <option value="INSP. SANITARIA">INSP. SANITARIA</option>
+            <option value="INSP. FITOSANITARIA">INSP. FITOSANITARIA</option>
+            <option value="INSP. GENERAL">INSP. GENERAL</option>
+            <option value="OTRO">OTRO</option>
+          </select>
+        </div>
+        
+        <div className="space-y-2">
+          <label className="block text-sm font-medium text-gray-700">
+            Fecha de Llegada (Arrival Date) *
+          </label>
+          <input
+            type="date"
+            value={fechaLlegada}
+            onChange={(e) => setFechaLlegada(e.target.value)}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          />
+        </div>
+      </div>
+      
+      {/* Información adicional */}
+      <div className="mt-4 p-3 bg-blue-50 rounded-md border border-blue-200">
+        <p className="text-sm text-blue-800">
+          <strong>💡 Nota:</strong> Los campos marcados con * son obligatorios para generar el documento POL.
+        </p>
+      </div>
+    </div>
   );
 } 

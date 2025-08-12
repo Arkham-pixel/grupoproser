@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Document, Packer, Paragraph, Table, TableRow, TableCell, TextRun, AlignmentType, HeadingLevel, ImageRun, Header, WidthType, Media } from "docx";
 import { saveAs } from "file-saver";
 import EncabezadoMaquinaria from "./EncabezadoMaquinaria";
@@ -10,8 +10,10 @@ import TipoProteccionMaquinaria from "./TipoProteccionMaquinaria";
 import RecomendacionesObservacionesMaquinaria from "./RecomendacionesObservacionesMaquinaria";
 import RegistroFotograficoMaquinaria from "./RegistroFotograficoMaquinaria";
 import FirmaMaquinaria from "./FirmaMaquinaria";
-import { gapi } from "gapi-script";
 import Logo from '../../img/Logo.png'; // Ajusta la ruta según tu estructura
+import BotonesHistorial from '../BotonesHistorial.jsx';
+import { useHistorialFormulario } from '../../hooks/useHistorialFormulario.js';
+import historialService, { TIPOS_FORMULARIOS } from '../../services/historialService.js';
 
 //import proserLogo from "../../img/logo.png";
 
@@ -60,9 +62,6 @@ export const convertirHtmlADocx = (html) => {
 
   return docxParagraphs;
 };
-
-const CLIENT_ID = "262224611220-om055q2l4g4j1kd5v6kv1jkabjo5cdfo.apps.googleusercontent.com";
-const SCOPE = "https://www.googleapis.com/auth/drive.file";
 
 export default function FormularioMaquinaria() {
   // Estados principales
@@ -113,11 +112,80 @@ export default function FormularioMaquinaria() {
   const [mantenimiento, setMantenimiento] = useState("");
   const [funcionamiento, setFuncionamiento] = useState("");
   const [registroFotografico, setRegistroFotografico] = useState([]);
-  const [isSignedIn, setIsSignedIn] = useState(false);
-  const [accessToken, setAccessToken] = useState("");
-  const [subiendo, setSubiendo] = useState(false);
-  const [enlaceDrive, setEnlaceDrive] = useState("");
-  const [errorDrive, setErrorDrive] = useState("");
+  const [firmanteInspector, setFirmanteInspector] = useState("");
+  const [codigoInspector, setCodigoInspector] = useState("");
+
+  // Hook para manejar el historial
+  const { guardando, exportando, guardarEnHistorial, exportarYGuardar } = useHistorialFormulario(TIPOS_FORMULARIOS.MAQUINARIA);
+
+  const handleGuardarEnHistorial = async () => {
+    const datos = {
+      numeroActa: nombre || "N/A",
+      fechaInspeccion: fecha,
+      horaInspeccion: new Date().toLocaleTimeString(),
+      ciudad: ciudadFecha,
+      aseguradora: aseguradora,
+      sucursal: "N/A",
+      asegurado: nombreAsegurado,
+      tipoMaquinaria: nombreMaquinaria,
+      marca: marca,
+      modelo: modelo,
+      serie: "N/A",
+      ano: "N/A",
+      estadoGeneral: "N/A",
+      tipoProteccion: tipoProteccion,
+      observaciones: recomendaciones,
+      recomendaciones: recomendaciones,
+      firmanteInspector: firmanteInspector,
+      codigoInspector: codigoInspector,
+      // Agregar otros campos según sea necesario
+    };
+
+    const resultado = await guardarEnHistorial(datos, 'en_proceso');
+    alert(resultado.message);
+  };
+
+  const handleExportar = async () => {
+    try {
+      const datos = {
+        numeroActa: nombre || "N/A",
+        fechaInspeccion: fecha,
+        horaInspeccion: new Date().toLocaleTimeString(),
+        ciudad: ciudadFecha,
+        aseguradora: aseguradora,
+        sucursal: "N/A",
+        asegurado: nombreAsegurado,
+        tipoMaquinaria: nombreMaquinaria,
+        marca: marca,
+        modelo: modelo,
+        serie: "N/A",
+        ano: "N/A",
+        estadoGeneral: "N/A",
+        tipoProteccion: tipoProteccion,
+        observaciones: recomendaciones,
+        recomendaciones: recomendaciones,
+        firmanteInspector: firmanteInspector,
+        codigoInspector: codigoInspector,
+      };
+
+      // Primero exportar el documento
+      const firmaCanvas = await getFirmaArrayBuffer();
+      await generarWord({
+        inspectorSeleccionado: firmanteInspector,
+        cargoSeleccionado: codigoInspector,
+        firmaCanvas,
+        fecha,
+      });
+
+      // Luego guardar en el historial como completado
+      const resultado = await guardarEnHistorial(datos, 'completado');
+      alert(resultado.message);
+      
+    } catch (error) {
+      console.error('Error en exportación:', error);
+      alert(`❌ Error en la exportación: ${error.message}`);
+    }
+  };
 
 
   // Convierte el canvas de firma en un ArrayBuffer
@@ -704,85 +772,8 @@ const blob = await Packer.toBlob(doc);
   // 2. Descargar localmente
   saveAs(blob, `Inspeccion_Maquinaria_${nombre || "maquinaria"}.docx`);
 
-    // 3. Subir a Google Drive si autenticado
-    if (!accessToken) {
-      if (isMounted) setErrorDrive('Debes iniciar sesión con Google primero.');
-      return;
-    }
-    if (isMounted) setSubiendo(true);
-    if (isMounted) setErrorDrive("");
-    if (isMounted) setEnlaceDrive("");
-    try {
-      const metadata = {
-        name: `Inspeccion_Maquinaria_${nombre || 'maquinaria'}.docx`,
-        mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-      };
-      const boundary = '-------314159265358979323846';
-      const delimiter = "\r\n--" + boundary + "\r\n";
-      const closeDelimiter = "\r\n--" + boundary + "--";
-      const multipartRequestBody =
-        delimiter +
-        'Content-Type: application/json; charset=UTF-8\r\n\r\n' +
-        JSON.stringify(metadata) +
-        delimiter +
-        'Content-Type: ' + metadata.mimeType + '\r\n\r\n';
-      const body = new Blob([ multipartRequestBody, blob, closeDelimiter ]);
-      const res = await fetch(
-        'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,webViewLink',
-        {
-          method: 'POST',
-          headers: {
-            'Authorization': 'Bearer ' + accessToken,
-            'Content-Type': 'multipart/related; boundary=' + boundary,
-          },
-          body,
-        }
-      );
-      const data = await res.json();
-      if (data.error) throw data.error;
-      if (isMounted) setEnlaceDrive(data.webViewLink);
-    } catch (err) {
-      if (isMounted) setErrorDrive('No se pudo subir el documento a Drive. ' + (err.message || ''));
-    } finally {
-      if (isMounted) setSubiendo(false);
-    }
   return () => { isMounted = false; };
 };
-
-  useEffect(() => {
-    let isMounted = true;
-    function start() {
-      gapi.client.init({
-        clientId: CLIENT_ID,
-        scope: SCOPE,
-        discoveryDocs: ["https://www.googleapis.com/discovery/v1/apis/drive/v3/rest"],
-      }).then(() => {
-        const auth = gapi.auth2.getAuthInstance();
-        if (isMounted) setIsSignedIn(auth.isSignedIn.get());
-        if (auth.isSignedIn.get()) {
-          const token = auth.currentUser.get().getAuthResponse().access_token;
-          if (isMounted) setAccessToken(token);
-        }
-        auth.isSignedIn.listen(signedIn => {
-          if (isMounted) setIsSignedIn(signedIn);
-          if (signedIn) {
-            const token = auth.currentUser.get().getAuthResponse().access_token;
-            if (isMounted) setAccessToken(token);
-          } else {
-            if (isMounted) setAccessToken("");
-          }
-        });
-      });
-    }
-    gapi.load("client:auth2", start);
-
-    return () => { isMounted = false; };
-  }, []);
-  
-
-  const handleLogin = () => {
-    gapi.auth2.getAuthInstance().signIn();
-  };
 
   return (
     <div className="bg-gray-900 min-h-screen p-6">
@@ -923,59 +914,64 @@ const blob = await Packer.toBlob(doc);
                 recomendaciones={recomendaciones}
                 setRecomendaciones={setRecomendaciones}
               />
-
-         </div>
+          </div>
+          
           <div className="bg-gray-700 rounded-lg p-4 mb-4">
             <h2 className="text-lg font-bold mb-2 border-b border-gray-600 pb-1">Registro Fotográfico</h2>
             <RegistroFotograficoMaquinaria onChange={setImagenesRegistro} />
           </div>
+          
           <div className="bg-gray-700 rounded-lg p-4 mb-4">
             <h2 className="text-lg font-bold mb-2 border-b border-gray-600 pb-1">Firma</h2>
-            <FirmaMaquinaria />
+            <FirmaMaquinaria
+              firmanteInspector={firmanteInspector}
+              setFirmanteInspector={setFirmanteInspector}
+              codigoInspector={codigoInspector}
+              setCodigoInspector={setCodigoInspector}
+            />
           </div>
         </div>
 
-        {/* BOTONES FINALES */}
-        <div className="mt-10 flex flex-col md:flex-row items-center gap-4 justify-end">
-          <input
-            value={nombre}
-            onChange={e => setNombre(e.target.value)}
-            placeholder="Nombre"
-            className="bg-gray-800 border-b border-gray-600 px-3 py-2 text-white rounded w-64"
-          />
-          <input
-            type="date"
-            value={fecha}
-            onChange={e => setFecha(e.target.value)}
-            className="bg-gray-800 border-b border-gray-600 px-3 py-2 text-white rounded w-48"
-          />
-            {!isSignedIn && (
-            <button
-              onClick={handleLogin}
-              className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded shadow"
-            >
-              Iniciar sesión con Google
-            </button>
-          )}
-          {subiendo && <span className="text-yellow-400 font-semibold">Subiendo a Google Drive...</span>}
-          {enlaceDrive && (
-            <a href={enlaceDrive} target="_blank" rel="noopener noreferrer" className="text-green-400 underline font-semibold">Ver archivo en Google Drive</a>
-          )}
-          {errorDrive && <span className="text-red-400 font-semibold">{errorDrive}</span>}
-          <button
-            onClick={async () => {
-              const firmaCanvas = await getFirmaArrayBuffer();
-              await generarWord({
-                inspectorSeleccionado,
-                cargoSeleccionado,
-                firmaCanvas,
-                fecha,
-              });
-            }}
-            className="bg-green-700 hover:bg-green-800 text-white font-bold py-2 px-6 rounded shadow"
-          >
-            Exportar Word y subir a Drive
-          </button>
+        {/* BOTONES DE ACCIÓN PRINCIPALES */}
+        <div className="mt-8 bg-gray-700 rounded-lg p-6">
+          <h2 className="text-xl font-bold mb-4 text-center border-b border-gray-600 pb-2">
+            Acciones del Formulario
+          </h2>
+          
+          {/* Botones de historial */}
+          <div className="mb-6">
+            <BotonesHistorial
+              onGuardarEnHistorial={handleGuardarEnHistorial}
+              onExportar={handleExportar}
+              tipoFormulario={TIPOS_FORMULARIOS.MAQUINARIA}
+              tituloFormulario="Maquinaria"
+              deshabilitado={!nombre || !ciudadFecha || !aseguradora}
+              guardando={guardando}
+              exportando={exportando}
+            />
+          </div>
+
+          {/* Campos adicionales para exportación */}
+          <div className="grid md:grid-cols-2 gap-4 mb-6">
+            <div>
+              <label className="block text-sm font-medium mb-2">Nombre del Inspector</label>
+              <input
+                value={nombre}
+                onChange={e => setNombre(e.target.value)}
+                placeholder="Nombre del inspector"
+                className="w-full bg-gray-800 border border-gray-600 px-3 py-2 text-white rounded focus:border-blue-500 focus:outline-none"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-2">Fecha de Inspección</label>
+              <input
+                type="date"
+                value={fecha}
+                onChange={e => setFecha(e.target.value)}
+                className="w-full bg-gray-800 border border-gray-600 px-3 py-2 text-white rounded focus:border-blue-500 focus:outline-none"
+              />
+            </div>
+          </div>
         </div>
       </div>
     </div>

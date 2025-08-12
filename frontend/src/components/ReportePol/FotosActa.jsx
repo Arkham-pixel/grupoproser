@@ -1,83 +1,118 @@
-import React from "react";
+import React, { useRef } from "react";
 
-export default function FotosActa({ fotosActa, setFotosActa }) {
-  const handleFotoChange = (index, file) => {
-    if (file) {
+export default function FotosActa({
+  fotosActa, setFotosActa
+}) {
+  const fileInputRef = useRef(null);
+
+  const handleFileChange = (event) => {
+    const files = Array.from(event.target.files);
+    
+    files.forEach((file) => {
       const reader = new FileReader();
-      reader.onload = (ev) => {
-        const nuevasFotos = [...fotosActa];
-        nuevasFotos[index] = {
-          ...nuevasFotos[index],
-          src: ev.target.result,
-          file: file,
+      reader.onload = (e) => {
+        const nuevaFoto = {
+          src: e.target.result,
+          descripcion: file.name,
+          timestamp: new Date().toISOString()
         };
-        setFotosActa(nuevasFotos);
+        setFotosActa(prev => [...prev, nuevaFoto]);
       };
       reader.readAsDataURL(file);
-    }
+    });
   };
 
-  const handleDescripcionChange = (index, value) => {
-    const nuevasFotos = [...fotosActa];
-    nuevasFotos[index] = { ...nuevasFotos[index], descripcion: value };
-    setFotosActa(nuevasFotos);
+  const removeFoto = (index) => {
+    setFotosActa(prev => prev.filter((_, i) => i !== index));
   };
 
-  const handleAddFoto = () => {
-    setFotosActa([...fotosActa, { src: "", descripcion: "" }]);
-  };
-
-  const handleRemoveFoto = (index) => {
-    const nuevasFotos = fotosActa.filter((_, i) => i !== index);
-    setFotosActa(nuevasFotos);
+  const updateDescripcion = (index, nuevaDescripcion) => {
+    setFotosActa(prev => prev.map((foto, i) => 
+      i === index ? { ...foto, descripcion: nuevaDescripcion } : foto
+    ));
   };
 
   return (
-    <section className="mb-4 border p-3 rounded">
-      <h2 className="font-bold text-lg mb-2">Fotos del Acta</h2>
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {fotosActa.map((foto, i) => (
-          <div key={i} className="flex flex-col items-center border border-gray-300 p-2 rounded">
-            <div className="mb-1 font-bold">Foto Nro. {i + 1}</div>
-            {foto.src && (
-              <img
-                src={foto.src}
-                alt={`Foto ${i + 1}`}
-                className="w-32 h-32 object-cover border border-gray-400 mb-2"
-              />
-            )}
-            <input
-              type="file"
-              accept="image/*"
-              onChange={(e) => handleFotoChange(i, e.target.files[0])}
-              className="mb-2 text-xs"
-            />
-            <input
-              type="text"
-              value={foto.descripcion}
-              onChange={(e) => handleDescripcionChange(i, e.target.value)}
-              className="w-full bg-gray-100 border-b border-gray-400 px-2 py-1 text-xs mb-1 text-center"
-              placeholder={`Descripción foto ${i + 1}`}
-            />
-            <button
-              type="button"
-              onClick={() => handleRemoveFoto(i)}
-              className="text-xs text-red-400 hover:text-red-600 mt-1"
-            >
-              Eliminar
-            </button>
-          </div>
-        ))}
-      </div>
-      <div className="flex justify-center mt-6">
+    <div className="bg-gray-50 p-6 rounded-lg mb-6 border-l-4 border-emerald-500">
+      <h2 className="text-2xl font-bold text-gray-800 mb-4 flex items-center">
+        <span className="bg-emerald-500 text-white p-2 rounded-lg mr-3">📸</span>
+        FOTOS DEL ACTA
+      </h2>
+      
+      {/* Botón para agregar fotos */}
+      <div className="mb-6">
         <button
-          type="button"
-          onClick={handleAddFoto}
-          className="bg-blue-700 hover:bg-blue-800 text-white font-bold py-2 px-4 rounded"
+          onClick={() => fileInputRef.current?.click()}
+          className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-4 rounded-lg transition-colors duration-200 flex items-center"
         >
-          Añadir Foto
+          <span className="mr-2">📷</span>
+          Agregar Fotos
         </button>
+        <input
+          ref={fileInputRef}
+          type="file"
+          multiple
+          accept="image/*"
+          onChange={handleFileChange}
+          className="hidden"
+        />
+        <p className="text-sm text-gray-600 mt-2">
+          Puedes seleccionar múltiples imágenes. Formatos soportados: JPG, PNG, GIF
+        </p>
       </div>
-    </section>
+      
+      {/* Grid de fotos */}
+      {fotosActa.length > 0 ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {fotosActa.map((foto, index) => (
+            <div key={index} className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
+              <div className="relative">
+                <img
+                  src={foto.src}
+                  alt={`Foto ${index + 1}`}
+                  className="w-full h-48 object-cover rounded-lg mb-3"
+                />
+                <button
+                  onClick={() => removeFoto(index)}
+                  className="absolute top-2 right-2 bg-red-500 hover:bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm"
+                  title="Eliminar foto"
+                >
+                  ×
+                </button>
+              </div>
+              
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-700">
+                  Descripción
+                </label>
+                <input
+                  type="text"
+                  value={foto.descripcion}
+                  onChange={(e) => updateDescripcion(index, e.target.value)}
+                  placeholder="Descripción de la foto..."
+                  className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                />
+                <p className="text-xs text-gray-500">
+                  Agregada: {new Date(foto.timestamp).toLocaleString()}
+                </p>
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="text-center py-8 bg-white rounded-lg border-2 border-dashed border-gray-300">
+          <div className="text-gray-400 text-6xl mb-4">📸</div>
+          <p className="text-gray-500 text-lg">No hay fotos adjuntas</p>
+          <p className="text-gray-400 text-sm">Haz clic en "Agregar Fotos" para comenzar</p>
+        </div>
+      )}
+      
+      {/* Información adicional */}
+      <div className="mt-6 p-3 bg-emerald-50 rounded-md border border-emerald-200">
+        <p className="text-sm text-emerald-800">
+          <strong>💡 Nota:</strong> Las fotos se incluirán en el documento Word final. Se recomienda agregar fotos de la inspección, estado de la mercancía, y cualquier evidencia relevante.
+        </p>
+      </div>
+    </div>
   );
 } 

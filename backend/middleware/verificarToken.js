@@ -12,7 +12,7 @@ export function verificarToken(req, res, next) {
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET || "secreto_super_seguro");
-    req.usuario = decoded;
+    req.user = decoded; // Cambio a req.user para ser consistente
     next();
   } catch (error) {
     return res.status(403).json({ message: "Token inválido" });

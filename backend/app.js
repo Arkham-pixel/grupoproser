@@ -21,6 +21,7 @@ import comunicadosRoutes from './routes/comunicados.routes.js';
 import usuariosRoutes from './routes/usuarios.routes.js';
 import casosRoutes from './routes/casos.js';
 import riesgosRoutes from './routes/riesgos.routes.js';
+import historialRoutes from './routes/historial.routes.js';
 
 const app = express();
 
@@ -67,6 +68,7 @@ app.use('/api/riesgos', riesgosRoutes);
 app.use('/api/tareas', tareasRoutes);
 app.use('/api/comunicados', comunicadosRoutes);
 app.use('/api/usuarios', usuariosRoutes);
+app.use('/api/historial-formularios', historialRoutes);
 
 console.log('EMAIL_USER:', process.env.EMAIL_USER);
 console.log('EMAIL_PASS:', process.env.EMAIL_PASS ? '***' : 'NO DEFINIDO');

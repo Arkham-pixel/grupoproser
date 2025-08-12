@@ -173,6 +173,12 @@ export default function Layout() {
                 >
                   Formulario POL
                 </Link>
+                <Link
+                  to="/historial"
+                  className="block px-4 py-2 hover:bg-blue-50"
+                >
+                  📚 Historial de Formularios
+                </Link>
               </div>
             )}
           </div>
@@ -292,6 +298,16 @@ export default function Layout() {
             >
               📥 Exportar Riesgos
             </Link>
+            
+            {/* Historial de Formularios */}
+            <Link
+              to="/historial"
+              className="px-6 py-2 hover:bg-blue-50"
+              onClick={() => setMenuOpen(false)}
+            >
+              📚 Historial de Formularios
+            </Link>
+            
             <Link
               to="/cuenta"
               className="px-6 py-2 hover:bg-blue-50"
@@ -299,6 +315,7 @@ export default function Layout() {
             >
               Cuenta
             </Link>
+            
             {/* Enlace de Administración (solo visible para admin/soporte) */}
                                 {esAdminOSoporte && (
                       <Link

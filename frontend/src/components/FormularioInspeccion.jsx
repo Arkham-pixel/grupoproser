@@ -35,6 +35,9 @@ import Select from 'react-select';
 import 'leaflet/dist/leaflet.css'
 import MapaDeCalor from "./MapaDeCalor";
 import FormularioAreas from "./SubcomponenteFRiesgo/FormularioAreas";
+import BotonesHistorial from './BotonesHistorial.jsx';
+import { useHistorialFormulario } from '../hooks/useHistorialFormulario.js';
+import historialService, { TIPOS_FORMULARIOS } from '../services/historialService.js';
 
 
 export default function FormularioInspeccion() {
@@ -292,7 +295,7 @@ const [recomendaciones, setRecomendaciones] = useState("");
     "DURANTE LA VIGENCIA DE LA PÓLIZA, EL ASEGURADO DEBE MANTENER INSTALADO POR ENCIMA DE LOS MUROS Y/O EN LAS REJAS PERIMETRALES COLINDANTES A LOS PREDIOS ALEDAÑOS, UN SISTEMA DE CONCERTINAS. ENTIÉNDASE POR CONCERTINA: ALAMBRE ENROLLADO CON FILAMENTOS CORTO PUNZANTES."
   ],
   "RESPONSABILIDAD CIVIL CONTRACTUAL Y EXTRACONTRACTUAL / MEDIO AMBIENTE": [
-    "MUCHOS TIPOS DE EDIFICIOS TIENEN, EN SU INTERIOR, RECINTOS PARA LA RECOLECCIÓN DE BASURAS. ALGUNOS DE ESTOS CUENTAN CON UN SISTEMA DE CONDUCCIÓN DE BASURAS O “CHUTES” POR LOS CUALES, SE LANZAN LOS DESECHOS, PARA POSTERIORMENTE SER ALMACENADOS EN RECIPIENTES DE MAYOR TAMAÑO.",
+    "MUCHOS TIPOS DE EDIFICIOS TIENEN, EN SU INTERIOR, RECINTOS PARA LA RECOLECCIÓN DE BASURAS. ALGUNOS DE ESTOS CUENTAN CON UN SISTEMA DE CONDUCCIÓN DE BASURAS O \"CHUTES\" POR LOS CUALES, SE LANZAN LOS DESECHOS, PARA POSTERIORMENTE SER ALMACENADOS EN RECIPIENTES DE MAYOR TAMAÑO.",
     "DADO QUE ESTOS ESPACIOS RECIBEN TODO TIPO DE MATERIALES, PUEDEN ENCONTRARSE OBJETOS CON ALTA CARGA COMBUSTIBLE QUE, EN EL MOMENTO DE GENERARSE FUENTES DE IGNICIÓN, PODRÍA PRODUCIRSE UN EVENTO DE INCENDIO. POR ESTO SE RECOMIENDA QUE LOS DEPÓSITOS DE BASURA CUENTEN CON LAS SIGUIENTES CARACTERÍSTICAS ESTIPULADAS EN LA NORMA NFPA 82 – ESTÁNDAR EN INCINERADORES Y DESECHOS Y SISTEMAS DE MANEJO DE LINOS Y EQUIPAMIENTO:",
     "· EL RECINTO DEBE ESTAR PROVISTO DE UNA PUERTA CON CIERRE AUTOMÁTICO CON RESISTENCIA AL FUEGO NO MENOR A 1 ½ HORA.",
     "· SE DEBEN REALIZAR LABORES DE MANTENIMIENTO Y LIMPIEZA ADECUADOS ANUALMENTE O SEGÚN COMO LO RECOMIENDE EL CONSTRUCTOR.",
@@ -323,6 +326,8 @@ const [recomendaciones, setRecomendaciones] = useState("");
 
   const [categoriaSeleccionada, setCategoriaSeleccionada] = useState("");
 
+  // Hook para manejar el historial
+  const { guardando, exportando, guardarEnHistorial, exportarYGuardar } = useHistorialFormulario(TIPOS_FORMULARIOS.INSPECCION);
 
   const handleAgregarRecomendacion = (recomendacion) => {
     if (recomendacion && !recomendaciones.includes(recomendacion)) {
@@ -1745,6 +1750,234 @@ L.Icon.Default.mergeOptions({
   shadowUrl: markerShadow
 })
 
+const handleGuardarEnHistorial = async () => {
+  const datos = {
+    numeroActa: nombreCliente || "N/A",
+    fechaInspeccion: fecha,
+    horaInspeccion: new Date().toLocaleTimeString(),
+    ciudad: formData.ciudad_siniestro,
+    aseguradora: formData.aseguradora,
+    sucursal: "N/A",
+    asegurado: nombreCliente,
+    tipoMaquinaria: "N/A",
+    marca: "N/A",
+    modelo: "N/A",
+    serie: "N/A",
+    ano: "N/A",
+    estadoGeneral: "N/A",
+    tipoProteccion: "N/A",
+    observaciones: recomendaciones,
+    recomendaciones: recomendaciones,
+    firmanteInspector: cargo,
+    codigoInspector: colaboladores,
+    direccion: formData.direccion,
+    departamento: formData.departamento_siniestro,
+    descripcionEmpresa: descripcionEmpresa,
+    infraestructura: infraestructura,
+    analisisRiesgos: analisisRiesgos,
+    antiguedad: antiguedad,
+    areaLote: areaLote,
+    areaConstruida: areaConstruida,
+    numeroEdificios: numeroEdificios,
+    numeroPisos: numeroPisos,
+    sotanos: sotanos,
+    tenencia: tenencia,
+    descripcionInfraestructura: descripcionInfraestructura,
+    procesos: procesos,
+    areas: areas,
+    datosEquipos: datosEquipos,
+    linderoNorte: linderoNorte,
+    linderoSur: linderoSur,
+    linderoOriente: linderoOriente,
+    linderoOccidente: linderoOccidente,
+    energiaProveedor: energiaProveedor,
+    energiaTension: energiaTension,
+    energiaPararrayos: energiaPararrayos,
+    transformadores: transformadores,
+    alarmaMonitoreada: alarmaMonitoreada,
+    cctv: cctv,
+    mantenimientoSeguridad: mantenimientoSeguridad,
+    comentariosSeguridadElectronica: comentariosSeguridadElectronica,
+    tipoVigilancia: tipoVigilancia,
+    horariosVigilancia: horariosVigilancia,
+    accesos: accesos,
+    personalCierre: personalCierre,
+    cerramientoPredio: cerramientoPredio,
+    otrosCerramiento: otrosCerramiento,
+    comentariosSeguridadFisica: comentariosSeguridadFisica,
+    plantasElectricas: plantasElectricas,
+    energiaComentarios: energiaComentarios,
+    transformadorSubestacion: transformadorSubestacion,
+    transformadorMarca: transformadorMarca,
+    transformadorTipo: transformadorTipo,
+    transformadorCapacidad: transformadorCapacidad,
+    transformadorEdad: transformadorEdad,
+    transformadorRelacionVoltaje: transformadorRelacionVoltaje,
+    plantaNumero1: plantaNumero1,
+    plantaMarca1: plantaMarca1,
+    plantaTipo1: plantaTipo1,
+    plantaCapacidad1: plantaCapacidad1,
+    plantaEdad1: plantaEdad1,
+    plantaTransferencia1: plantaTransferencia1,
+    plantaVoltaje1: plantaVoltaje1,
+    plantaCobertura1: plantaCobertura1,
+    plantaNumero2: plantaNumero2,
+    plantaMarca2: plantaMarca2,
+    plantaTipo2: plantaTipo2,
+    plantaCapacidad2: plantaCapacidad2,
+    plantaEdad2: plantaEdad2,
+    plantaTransferencia2: plantaTransferencia2,
+    plantaVoltaje2: plantaVoltaje2,
+    plantaCobertura2: plantaCobertura2,
+    aguaFuente: aguaFuente,
+    aguaUso: aguaUso,
+    aguaAlmacenamiento: aguaAlmacenamiento,
+    aguaBombeo: aguaBombeo,
+    aguaComentarios: aguaComentarios,
+    extintor: extintor,
+    rci: rci,
+    rociadores: rociadores,
+    deteccion: deteccion,
+    alarmas: alarmas,
+    brigadas: brigadas,
+    bomberos: bomberos,
+    seguridadDescripcion: seguridadDescripcion,
+    siniestralidad: siniestralidad,
+    maquinariaDescripcion: maquinariaDescripcion,
+    tablaRiesgos: tablaRiesgos,
+    barrio: barrio,
+    departamento: departamento,
+    horarioLaboral: horarioLaboral,
+    nombreEmpresa: nombreEmpresa,
+    municipio: municipio,
+    personaEntrevistada: personaEntrevistada,
+    imagen: imagen,
+    imagenesRegistro: imagenesRegistro,
+  };
+
+  const resultado = await guardarEnHistorial(datos, 'en_proceso');
+  alert(resultado.message);
+};
+
+const handleExportar = async () => {
+  try {
+    const datos = {
+      numeroActa: nombreCliente || "N/A",
+      fechaInspeccion: fecha,
+      horaInspeccion: new Date().toLocaleTimeString(),
+      ciudad: formData.ciudad_siniestro,
+      aseguradora: formData.aseguradora,
+      sucursal: "N/A",
+      asegurado: nombreCliente,
+      tipoMaquinaria: "N/A",
+      marca: "N/A",
+      modelo: "N/A",
+      serie: "N/A",
+      ano: "N/A",
+      estadoGeneral: "N/A",
+      tipoProteccion: "N/A",
+      observaciones: recomendaciones,
+      recomendaciones: recomendaciones,
+      firmanteInspector: cargo,
+      codigoInspector: colaboladores,
+      direccion: formData.direccion,
+      departamento: formData.departamento_siniestro,
+      descripcionEmpresa: descripcionEmpresa,
+      infraestructura: infraestructura,
+      analisisRiesgos: analisisRiesgos,
+      antiguedad: antiguedad,
+      areaLote: areaLote,
+      areaConstruida: areaConstruida,
+      numeroEdificios: numeroEdificios,
+      numeroPisos: numeroPisos,
+      sotanos: sotanos,
+      tenencia: tenencia,
+      descripcionInfraestructura: descripcionInfraestructura,
+      procesos: procesos,
+      areas: areas,
+      datosEquipos: datosEquipos,
+      linderoNorte: linderoNorte,
+      linderoSur: linderoSur,
+      linderoOriente: linderoOriente,
+      linderoOccidente: linderoOccidente,
+      energiaProveedor: energiaProveedor,
+      energiaTension: energiaTension,
+      energiaPararrayos: energiaPararrayos,
+      transformadores: transformadores,
+      alarmaMonitoreada: alarmaMonitoreada,
+      cctv: cctv,
+      mantenimientoSeguridad: mantenimientoSeguridad,
+      comentariosSeguridadElectronica: comentariosSeguridadElectronica,
+      tipoVigilancia: tipoVigilancia,
+      horariosVigilancia: horariosVigilancia,
+      accesos: accesos,
+      personalCierre: personalCierre,
+      cerramientoPredio: cerramientoPredio,
+      otrosCerramiento: otrosCerramiento,
+      comentariosSeguridadFisica: comentariosSeguridadFisica,
+      plantasElectricas: plantasElectricas,
+      energiaComentarios: energiaComentarios,
+      transformadorSubestacion: transformadorSubestacion,
+      transformadorMarca: transformadorMarca,
+      transformadorTipo: transformadorTipo,
+      transformadorCapacidad: transformadorCapacidad,
+      transformadorEdad: transformadorEdad,
+      transformadorRelacionVoltaje: transformadorRelacionVoltaje,
+      plantaNumero1: plantaNumero1,
+      plantaMarca1: plantaMarca1,
+      plantaTipo1: plantaTipo1,
+      plantaCapacidad1: plantaCapacidad1,
+      plantaEdad1: plantaEdad1,
+      plantaTransferencia1: plantaTransferencia1,
+      plantaVoltaje1: plantaVoltaje1,
+      plantaCobertura1: plantaCobertura1,
+      plantaNumero2: plantaNumero2,
+      plantaMarca2: plantaMarca2,
+      plantaTipo2: plantaTipo2,
+      plantaCapacidad2: plantaCapacidad2,
+      plantaEdad2: plantaEdad2,
+      plantaTransferencia2: plantaTransferencia2,
+      plantaVoltaje2: plantaVoltaje2,
+      plantaCobertura2: plantaCobertura2,
+      aguaFuente: aguaFuente,
+      aguaUso: aguaUso,
+      aguaAlmacenamiento: aguaAlmacenamiento,
+      aguaBombeo: aguaBombeo,
+      aguaComentarios: aguaComentarios,
+      extintor: extintor,
+      rci: rci,
+      rociadores: rociadores,
+      deteccion: deteccion,
+      alarmas: alarmas,
+      brigadas: brigadas,
+      bomberos: bomberos,
+      seguridadDescripcion: seguridadDescripcion,
+      siniestralidad: siniestralidad,
+      maquinariaDescripcion: maquinariaDescripcion,
+      tablaRiesgos: tablaRiesgos,
+      barrio: barrio,
+      departamento: departamento,
+      horarioLaboral: horarioLaboral,
+      nombreEmpresa: nombreEmpresa,
+      municipio: municipio,
+      personaEntrevistada: personaEntrevistada,
+      imagen: imagen,
+      imagenesRegistro: imagenesRegistro,
+    };
+
+    // Primero exportar el documento
+    await generarWord();
+
+    // Luego guardar en el historial como completado
+    const resultado = await guardarEnHistorial(datos, 'completado');
+    alert(resultado.message);
+    
+  } catch (error) {
+    console.error('Error en exportación:', error);
+    alert(`❌ Error en la exportación: ${error.message}`);
+  }
+};
+
 return (
   <div className="min-h-screen bg-gray-100 p-8">
     <div className="max-w-4xl mx-auto bg-white shadow-lg rounded-lg p-6">
@@ -1947,10 +2180,11 @@ return (
                 ["5.", "LINDEROS", "13"],
                 ["6.", "MAQUINARIA, EQUIPOS Y MANTENIMIENTO", "13"],
                 ["7.", "SERVICIOS INDUSTRIALES", "15"],
-                ["9", "SEGURIDAD", "17"],
-                ["10", "SINIESTRALIDAD", "18"],
-                ["11", "RECOMENDACIONES", "19"],
-                ["12", "REGISTRO FOTOGRÁFICO", "21"]
+                ["8.", "PROTECCIONES CONTRA INCENDIOS", "16"], // 👉 Aquí está la corrección
+                ["9.", "SEGURIDAD", "17"],
+                ["10.", "SINIESTRALIDAD", "18"],
+                ["11.", "RECOMENDACIONES", "19"],
+                ["12.", "REGISTRO FOTOGRÁFICO", "21"]
               ].map(([num, title, page], idx) => (
                 <tr key={idx}>
                   <td className="border px-3 py-1">{num}</td>
@@ -2862,14 +3096,45 @@ return (
 
 
       {/* Botón de acción */}
-      <div className="text-right">
-      <button
-type="button"
-onClick={() => generarWord (datosEquipos)}
-className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded mt-4"
->
-📝 Exportar Word
-</button>
+      <div className="mt-8 bg-white p-6 border rounded shadow-sm">
+        <h2 className="text-xl font-bold mb-4 text-center border-b border-gray-300 pb-2">
+          Acciones del Formulario
+        </h2>
+        
+        {/* Botones de historial */}
+        <div className="mb-6">
+          <BotonesHistorial
+            onGuardarEnHistorial={handleGuardarEnHistorial}
+            onExportar={handleExportar}
+            tipoFormulario={TIPOS_FORMULARIOS.INSPECCION}
+            tituloFormulario="Inspección"
+            deshabilitado={!nombreCliente || !formData.ciudad_siniestro || !formData.aseguradora}
+            guardando={guardando}
+            exportando={exportando}
+          />
+        </div>
+
+        {/* Campos adicionales para exportación */}
+        <div className="grid md:grid-cols-2 gap-4 mb-6">
+          <div>
+            <label className="block text-sm font-semibold mb-1">Nombre del Inspector</label>
+            <input
+              value={cargo}
+              onChange={e => setCargo(e.target.value)}
+              placeholder="Nombre del inspector"
+              className="w-full border border-gray-300 rounded px-3 py-2"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-semibold mb-1">Fecha de Inspección</label>
+            <input
+              type="date"
+              value={fecha}
+              onChange={e => setFecha(e.target.value)}
+              className="w-full border border-gray-300 rounded px-3 py-2"
+            />
+          </div>
+        </div>
       </div>
     </div>
   </div>

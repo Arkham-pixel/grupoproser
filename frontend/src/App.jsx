@@ -25,6 +25,7 @@ import AdminUsuarios from './components/AdminUsuarios';
 import TestEmail from './components/TestEmail';
 import EditarPerfilUsuario from './components/EditarPerfilUsuario';
 import SessionSettings from './components/SessionSettings';
+import HistorialFormularios from './components/HistorialFormularios';
 
 import { CasosRiesgoProvider } from './context/CasosRiesgoContext'
 import RequireAuth from './components/RequireAuth'
@@ -124,11 +125,12 @@ export default function App() {
           <Route path="micuenta" element={<MiCuenta />} />
           <Route path="formulario-maquinaria" element={<FormularioMaquinaria />} />
           <Route path="reporte-pol" element={<ReportePolPadre />} />
-                            <Route path="siniestros" element={<SiniestrosList />} />
-                                          <Route path="admin/usuarios" element={<AdminUsuarios />} />
-                                          <Route path="admin/session-settings" element={<SessionSettings />} />
-                        <Route path="test-email" element={<TestEmail />} />
-                        <Route path="editar-perfil-usuario" element={<EditarPerfilUsuario />} />
+          <Route path="historial" element={<HistorialFormularios />} />
+          <Route path="siniestros" element={<SiniestrosList />} />
+          <Route path="admin/usuarios" element={<AdminUsuarios />} />
+          <Route path="admin/session-settings" element={<SessionSettings />} />
+          <Route path="test-email" element={<TestEmail />} />
+          <Route path="editar-perfil-usuario" element={<EditarPerfilUsuario />} />
         </Route>
 
         {/* Cualquier otra ruta redirige a la raíz */}
