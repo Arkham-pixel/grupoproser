@@ -193,30 +193,96 @@ class HistorialService {
   // Descargar un formulario
   async descargarFormulario(id) {
     try {
-      const response = await fetch(`${this.baseURL}/api/historial-formularios/${id}/descargar`, {
+      console.log('📥 Iniciando descarga del formulario:', id);
+      
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('No hay token de autenticación');
+      }
+      
+      const url = `${this.baseURL}/api/historial-formularios/${id}/descargar`;
+      console.log('🌐 URL de descarga:', url);
+      
+      const response = await fetch(url, {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${token}`,
+          'Accept': '*/*'
         }
       });
 
+      console.log('📥 Response status:', response.status);
+      console.log('📥 Response headers:', response.headers);
+      console.log('📥 Content-Type:', response.headers.get('content-type'));
+
       if (!response.ok) {
-        throw new Error(`Error HTTP: ${response.status}`);
+        let errorMessage = `Error HTTP: ${response.status}`;
+        
+        // Intentar obtener más detalles del error
+        try {
+          const errorText = await response.text();
+          console.error('❌ Error response body:', errorText);
+          
+          if (errorText) {
+            try {
+              const errorJson = JSON.parse(errorText);
+              errorMessage = errorJson.message || errorJson.error || errorText;
+            } catch {
+              errorMessage = `${errorMessage}: ${errorText}`;
+            }
+          }
+        } catch (e) {
+          console.error('❌ No se pudo leer el body del error:', e);
+        }
+        
+        throw new Error(errorMessage);
+      }
+
+      // Verificar que la respuesta sea un archivo
+      const contentType = response.headers.get('content-type');
+      if (!contentType || contentType.includes('application/json')) {
+        console.warn('⚠️ La respuesta no parece ser un archivo, content-type:', contentType);
       }
 
       const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
+      console.log('📦 Blob recibido:', blob);
+      console.log('📦 Tamaño del blob:', blob.size, 'bytes');
+      
+      if (blob.size === 0) {
+        throw new Error('El archivo descargado está vacío');
+      }
+
+      // Obtener nombre del archivo del header o usar uno por defecto
+      let filename = 'formulario.docx';
+      const contentDisposition = response.headers.get('content-disposition');
+      if (contentDisposition) {
+        const filenameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
+        if (filenameMatch && filenameMatch[1]) {
+          filename = filenameMatch[1].replace(/['"]/g, '');
+        }
+      }
+      
+      console.log('📁 Nombre del archivo:', filename);
+
+      // Crear y descargar el archivo
+      const downloadUrl = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
-      a.href = url;
-      a.download = response.headers.get('content-disposition')?.split('filename=')[1] || 'formulario.docx';
+      a.href = downloadUrl;
+      a.download = filename;
+      a.style.display = 'none';
       document.body.appendChild(a);
       a.click();
-      window.URL.revokeObjectURL(url);
+      
+      // Limpiar
+      window.URL.revokeObjectURL(downloadUrl);
       document.body.removeChild(a);
 
+      console.log('✅ Descarga completada exitosamente');
       return true;
+      
     } catch (error) {
-      console.error('Error descargando formulario:', error);
+      console.error('❌ Error descargando formulario:', error);
+      console.error('❌ Stack trace:', error.stack);
       throw error;
     }
   }

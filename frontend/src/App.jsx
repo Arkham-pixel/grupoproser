@@ -112,6 +112,7 @@ export default function App() {
             element={<FormularioCasoComplex onSave={guardarCasoComplex} />}
           />
           <Route path="formularioinspeccion" element={<FormularioInspeccion />} />
+          <Route path="formularioinspeccion/editar/:id" element={<FormularioInspeccion />} />
           <Route path="complex/agregar" element={<FormularioCasoComplex onSave={guardarCasoComplex} />} />
           <Route path="complex/excel" element={<ReporteComplex />} />
           <Route path="complex/mis-casos" element={<ReporteResponsables />} />
@@ -124,6 +125,7 @@ export default function App() {
           <Route path="cuenta" element={<Cuenta />} />
           <Route path="micuenta" element={<MiCuenta />} />
           <Route path="formulario-maquinaria" element={<FormularioMaquinaria />} />
+          <Route path="formulario-maquinaria/editar/:id" element={<FormularioMaquinaria />} />
           <Route path="reporte-pol" element={<ReportePolPadre />} />
           <Route path="historial" element={<HistorialFormularios />} />
           <Route path="siniestros" element={<SiniestrosList />} />

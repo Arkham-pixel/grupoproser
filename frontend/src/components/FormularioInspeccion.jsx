@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useParams, useNavigate } from "react-router-dom";
 import {
   Document,
   Packer,
@@ -42,7 +42,14 @@ import historialService, { TIPOS_FORMULARIOS } from '../services/historialServic
 
 export default function FormularioInspeccion() {
   const location = useLocation();
+  const { id } = useParams(); // Obtener ID de la URL si estamos en modo edición
+  const navigate = useNavigate();
   const datosPrevios = location.state || {};
+  
+  // Estado para modo edición
+  const [modoEdicion, setModoEdicion] = useState(false);
+  const [cargando, setCargando] = useState(false);
+  
   // Información general
   const municipios = ciudadesData.flatMap(dep =>
     dep.ciudades.map(ciudad => ({
@@ -125,6 +132,7 @@ const [nombreCliente, setNombreCliente] = useState(datosPrevios.nombreCliente ||
   const [linderoOccidente, setLinderoOccidente] = useState("");
   // Mapa
   const mapaRef = useRef(null);
+  const [mapaListo, setMapaListo] = useState(false);
 
   //Servicios Industriales
   const [energiaProveedor, setEnergiaProveedor] = useState("");
@@ -267,7 +275,6 @@ const [recomendaciones, setRecomendaciones] = useState("");
       "LOS MEDIDORES DE NIVEL DE LOS TANQUES DE COMBUSTIBLE, TENDRÁN QUE SER PREFERIBLEMENTE EN UN MATERIAL RESISTENTE AL FUEGO, EVITANDO EL USO DE MANGUERAS DE PLÁSTICO, LAS CUALES SON CONSUMIDAS DE INMEDIATO EN UN INCENDIO, OCASIONANDO EL CORRESPONDIENTE DERRAME DE COMBUSTIBLE",
       "SE RECOMIENDA QUE EN LAS BODEGAS DONDE EXISTE ALMACENAMIENTO DE AEROSOLES EXISTA UNA JAULA METÁLICA ESPECIAL PARA EL ALMACENAMIENTO DE LOS MISMOS; DE IGUAL MANERA, ES CONVENIENTE QUE EL ESPACIO ENTRE LOS ESLABONES TENGA UNA SEPARACIÓN MÁXIMA DE 51 MM QUE IMPIDA, EN CASO DE INCENDIO, LA SALIDA DE UN AEROSOL DISPARADO POR EL FUEGO. ",
       "ES CONVENIENTE QUE LOS DUCTOS DE ESCAPE DE HUMOS (CHIMENEAS O CAMPANAS) DE LOS RESTAURANTES CUENTEN CON UN PROGRAMA DE MANTENIMIENTO SEMESTRAL, CON EL ÁNIMO DE EVITAR LA ACUMULACIÓN DE GRASA Y ELEMENTOS EN SU INTERIOR QUE PUEDAN LLEGAR A GENERAR EL INICIO DE UN INCENDIO EN SU INTERIOR."
-   
     ],
     "ROTURA DE MAQUINARIA": [
       "DE ACUERDO A LAS CLÁUSULAS DE MANTENIMIENTO DE MAQUINARIA Y EQUIPO, SEGÚN LAS RECOMENDACIONES DE LOS FABRICANTES, ES NECESARIO ESTABLECER UN PLAN DE MANTENIMIENTO PREVENTIVO; ÉSTE MANTENIMIENTO DEBE SER REALIZADO POR PERSONAL ESPECIALIZADO PARA TODOS LOS EQUIPOS ELECTRÓNICOS, DONDE DEBE INCLUIRSE UNA REVISIÓN GENERAL COMO MÍNIMO CADA SEIS MESES. DE IGUAL MANERA, SE SUGIERE LLEVAR Y MANTENER LOS REGISTROS DE LAS ACTIVIDADES EJECUTADAS.",
@@ -1084,25 +1091,130 @@ docContent.push(
 
     // ✅ Bloque para insertar MAPA
   try {
-    const mapaDataUrl = await toPng(mapaRef.current);
-    const mapaBuffer = await fetch(mapaDataUrl).then((res) => res.arrayBuffer());
+    if (!mapaListo) {
+      console.log('⚠️ Mapa no está listo, esperando...');
+      // Esperar hasta que el mapa esté listo
+      await new Promise(resolve => {
+        const checkMapa = () => {
+          if (mapaListo) {
+            resolve();
+          } else {
+            setTimeout(checkMapa, 500);
+          }
+        };
+        checkMapa();
+      });
+    }
+    
+    // Esperar un poco más para asegurar que el mapa esté completamente renderizado
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    
+    if (mapaRef.current) {
+      console.log('🔍 Capturando mapa...');
+      
+      try {
+        const mapaDataUrl = await toPng(mapaRef.current, {
+          quality: 0.95,
+          backgroundColor: '#ffffff',
+          style: {
+            transform: 'scale(1)',
+            transformOrigin: 'top left'
+          },
+          filter: (node) => {
+            // Filtrar nodos problemáticos
+            if (node.classList && node.classList.contains('leaflet-control')) {
+              return false;
+            }
+            return true;
+          }
+        });
+        
+        console.log('✅ Mapa capturado, convirtiendo a buffer...');
+        const mapaBuffer = await fetch(mapaDataUrl).then((res) => res.arrayBuffer());
 
-    const mapaImage = new ImageRun({
-      data: mapaBuffer,
-      transformation: {
-        width: 500,
-        height: 300,
-      },
-    });
+        const mapaImage = new ImageRun({
+          data: mapaBuffer,
+          transformation: {
+            width: 500,
+            height: 300,
+          },
+        });
 
+        docContent.push(
+          new Paragraph({ text: "", spacing: { after: 300 } }), 
+          seccion("MAPA DE UBICACIÓN"),
+          new Paragraph({ children: [mapaImage], alignment: AlignmentType.CENTER }),
+          linea("Coordenadas basadas en la ubicación actual del dispositivo")
+        );
+        
+        console.log('✅ Mapa insertado en el documento');
+      } catch (captureError) {
+        console.error("❌ Error específico en captura del mapa:", captureError);
+        
+        // Determinar si es un error de CSP
+        const isCSPError = captureError.message.includes('Content Security Policy') || 
+                          captureError.message.includes('violates') ||
+                          captureError.message.includes('connect-src') ||
+                          captureError.message.includes('Refused to connect');
+        
+        if (isCSPError) {
+          console.log('🔄 Intentando generar mapa estático como alternativa...');
+          
+          // Generar mapa estático usando coordenadas
+          try {
+            const coordenadas = mapaRef.current?.querySelector('.leaflet-marker-icon')?.getAttribute('data-coords') || 
+                               '7.921417, -72.566972'; // Coordenadas por defecto
+            
+            docContent.push(
+              new Paragraph({ text: "", spacing: { after: 300 } }), 
+              seccion("MAPA DE UBICACIÓN"),
+              linea("📍 Ubicación del Siniestro"),
+              linea("Coordenadas: " + coordenadas),
+              linea(""),
+              linea("⚠️ Nota: El mapa dinámico no pudo ser capturado debido a restricciones de seguridad"),
+              linea("Se muestran las coordenadas exactas de la ubicación"),
+              linea(""),
+              linea("Para ver el mapa completo, consulte la aplicación web o genere el documento desde el navegador")
+            );
+            
+            console.log('✅ Mapa estático generado como alternativa');
+          } catch (staticError) {
+            console.error("❌ Error generando mapa estático:", staticError);
+            docContent.push(
+              new Paragraph({ text: "", spacing: { after: 300 } }), 
+              seccion("MAPA DE UBICACIÓN"),
+              linea("⚠️ Mapa no disponible debido a restricciones de seguridad del navegador"),
+              linea("El mapa no se puede capturar para incluir en el documento Word"),
+              linea("Se recomienda configurar el CSP para permitir conexiones a OpenStreetMap"),
+              linea("Error técnico: " + captureError.message.substring(0, 100) + "...")
+            );
+          }
+        } else {
+          docContent.push(
+            new Paragraph({ text: "", spacing: { after: 300 } }), 
+            seccion("MAPA DE UBICACIÓN"),
+            linea("Error: No se pudo generar la imagen del mapa"),
+            linea("Detalles: " + captureError.message)
+          );
+        }
+      }
+    } else {
+      console.warn('⚠️ mapaRef.current no está disponible');
+      docContent.push(
+        new Paragraph({ text: "", spacing: { after: 300 } }), 
+        seccion("MAPA DE UBICACIÓN"),
+        linea("⚠️ Referencia del mapa no disponible"),
+        linea("No se pudo acceder al elemento del mapa para la captura")
+      );
+    }
+  } catch (error) {
+    console.error("❌ Error general en el bloque del mapa:", error);
     docContent.push(
       new Paragraph({ text: "", spacing: { after: 300 } }), 
       seccion("MAPA DE UBICACIÓN"),
-      new Paragraph({ children: [mapaImage], alignment: AlignmentType.CENTER }),
-      linea("Coordenadas basadas en la ubicación actual del dispositivo")
+      linea("Error general: No se pudo procesar la sección del mapa"),
+      linea("Detalles: " + error.message)
     );
-  } catch (error) {
-    console.error("No se pudo capturar el mapa:", error);
   }
 
   const rows = [
@@ -1751,117 +1863,19 @@ L.Icon.Default.mergeOptions({
 })
 
 const handleGuardarEnHistorial = async () => {
+  console.log('🔘 Botón Guardar en Historial clickeado');
+  
+  // Obtener información del usuario del localStorage
+  const nombre = localStorage.getItem('nombre') || 'Usuario';
+  const login = localStorage.getItem('login') || 'ID';
+
   const datos = {
-    numeroActa: nombreCliente || "N/A",
-    fechaInspeccion: fecha,
-    horaInspeccion: new Date().toLocaleTimeString(),
-    ciudad: formData.ciudad_siniestro,
-    aseguradora: formData.aseguradora,
-    sucursal: "N/A",
-    asegurado: nombreCliente,
-    tipoMaquinaria: "N/A",
-    marca: "N/A",
-    modelo: "N/A",
-    serie: "N/A",
-    ano: "N/A",
-    estadoGeneral: "N/A",
-    tipoProteccion: "N/A",
-    observaciones: recomendaciones,
-    recomendaciones: recomendaciones,
-    firmanteInspector: cargo,
-    codigoInspector: colaboladores,
-    direccion: formData.direccion,
-    departamento: formData.departamento_siniestro,
-    descripcionEmpresa: descripcionEmpresa,
-    infraestructura: infraestructura,
-    analisisRiesgos: analisisRiesgos,
-    antiguedad: antiguedad,
-    areaLote: areaLote,
-    areaConstruida: areaConstruida,
-    numeroEdificios: numeroEdificios,
-    numeroPisos: numeroPisos,
-    sotanos: sotanos,
-    tenencia: tenencia,
-    descripcionInfraestructura: descripcionInfraestructura,
-    procesos: procesos,
-    areas: areas,
-    datosEquipos: datosEquipos,
-    linderoNorte: linderoNorte,
-    linderoSur: linderoSur,
-    linderoOriente: linderoOriente,
-    linderoOccidente: linderoOccidente,
-    energiaProveedor: energiaProveedor,
-    energiaTension: energiaTension,
-    energiaPararrayos: energiaPararrayos,
-    transformadores: transformadores,
-    alarmaMonitoreada: alarmaMonitoreada,
-    cctv: cctv,
-    mantenimientoSeguridad: mantenimientoSeguridad,
-    comentariosSeguridadElectronica: comentariosSeguridadElectronica,
-    tipoVigilancia: tipoVigilancia,
-    horariosVigilancia: horariosVigilancia,
-    accesos: accesos,
-    personalCierre: personalCierre,
-    cerramientoPredio: cerramientoPredio,
-    otrosCerramiento: otrosCerramiento,
-    comentariosSeguridadFisica: comentariosSeguridadFisica,
-    plantasElectricas: plantasElectricas,
-    energiaComentarios: energiaComentarios,
-    transformadorSubestacion: transformadorSubestacion,
-    transformadorMarca: transformadorMarca,
-    transformadorTipo: transformadorTipo,
-    transformadorCapacidad: transformadorCapacidad,
-    transformadorEdad: transformadorEdad,
-    transformadorRelacionVoltaje: transformadorRelacionVoltaje,
-    plantaNumero1: plantaNumero1,
-    plantaMarca1: plantaMarca1,
-    plantaTipo1: plantaTipo1,
-    plantaCapacidad1: plantaCapacidad1,
-    plantaEdad1: plantaEdad1,
-    plantaTransferencia1: plantaTransferencia1,
-    plantaVoltaje1: plantaVoltaje1,
-    plantaCobertura1: plantaCobertura1,
-    plantaNumero2: plantaNumero2,
-    plantaMarca2: plantaMarca2,
-    plantaTipo2: plantaTipo2,
-    plantaCapacidad2: plantaCapacidad2,
-    plantaEdad2: plantaEdad2,
-    plantaTransferencia2: plantaTransferencia2,
-    plantaVoltaje2: plantaVoltaje2,
-    plantaCobertura2: plantaCobertura2,
-    aguaFuente: aguaFuente,
-    aguaUso: aguaUso,
-    aguaAlmacenamiento: aguaAlmacenamiento,
-    aguaBombeo: aguaBombeo,
-    aguaComentarios: aguaComentarios,
-    extintor: extintor,
-    rci: rci,
-    rociadores: rociadores,
-    deteccion: deteccion,
-    alarmas: alarmas,
-    brigadas: brigadas,
-    bomberos: bomberos,
-    seguridadDescripcion: seguridadDescripcion,
-    siniestralidad: siniestralidad,
-    maquinariaDescripcion: maquinariaDescripcion,
-    tablaRiesgos: tablaRiesgos,
-    barrio: barrio,
-    departamento: departamento,
-    horarioLaboral: horarioLaboral,
-    nombreEmpresa: nombreEmpresa,
-    municipio: municipio,
-    personaEntrevistada: personaEntrevistada,
-    imagen: imagen,
-    imagenesRegistro: imagenesRegistro,
-  };
-
-  const resultado = await guardarEnHistorial(datos, 'en_proceso');
-  alert(resultado.message);
-};
-
-const handleExportar = async () => {
-  try {
-    const datos = {
+    tipo: 'inspeccion',
+    titulo: `Inspección - ${nombreCliente || 'Cliente'} - ${formData.ciudad_siniestro || 'Ciudad'}`,
+    usuario: nombre,
+    userId: login,
+    estado: 'en_proceso',
+    datos: {
       numeroActa: nombreCliente || "N/A",
       fechaInspeccion: fecha,
       horaInspeccion: new Date().toLocaleTimeString(),
@@ -1889,7 +1903,7 @@ const handleExportar = async () => {
       areaLote: areaLote,
       areaConstruida: areaConstruida,
       numeroEdificios: numeroEdificios,
-      numeroPisos: numeroPisos,
+      numeroPisos: numeroEdificios,
       sotanos: sotanos,
       tenencia: tenencia,
       descripcionInfraestructura: descripcionInfraestructura,
@@ -1933,7 +1947,7 @@ const handleExportar = async () => {
       plantaCobertura1: plantaCobertura1,
       plantaNumero2: plantaNumero2,
       plantaMarca2: plantaMarca2,
-      plantaTipo2: plantaTipo2,
+      plantaTipo2: plantaNumero2,
       plantaCapacidad2: plantaCapacidad2,
       plantaEdad2: plantaEdad2,
       plantaTransferencia2: plantaTransferencia2,
@@ -1963,6 +1977,130 @@ const handleExportar = async () => {
       personaEntrevistada: personaEntrevistada,
       imagen: imagen,
       imagenesRegistro: imagenesRegistro,
+    }
+  };
+
+  const resultado = await guardarEnHistorial(datos, 'en_proceso');
+  alert(resultado.message);
+};
+
+const handleExportar = async () => {
+  try {
+    console.log('🔘 Botón Exportar clickeado');
+    
+    // Obtener información del usuario del localStorage
+    const nombre = localStorage.getItem('nombre') || 'Usuario';
+    const login = localStorage.getItem('login') || 'ID';
+
+    const datos = {
+      tipo: 'inspeccion',
+      titulo: `Inspección - ${nombreCliente || 'Cliente'} - ${formData.ciudad_siniestro || 'Ciudad'}`,
+      usuario: nombre,
+      userId: login,
+      estado: 'completado',
+      datos: {
+        numeroActa: nombreCliente || "N/A",
+        fechaInspeccion: fecha,
+        horaInspeccion: new Date().toLocaleTimeString(),
+        ciudad: formData.ciudad_siniestro,
+        aseguradora: formData.aseguradora,
+        sucursal: "N/A",
+        asegurado: nombreCliente,
+        tipoMaquinaria: "N/A",
+        marca: "N/A",
+        modelo: "N/A",
+        serie: "N/A",
+        ano: "N/A",
+        estadoGeneral: "N/A",
+        tipoProteccion: "N/A",
+        observaciones: recomendaciones,
+        recomendaciones: recomendaciones,
+        firmanteInspector: cargo,
+        codigoInspector: colaboladores,
+        direccion: formData.direccion,
+        departamento: formData.departamento_siniestro,
+        descripcionEmpresa: descripcionEmpresa,
+        infraestructura: infraestructura,
+        analisisRiesgos: analisisRiesgos,
+        antiguedad: antiguedad,
+        areaLote: areaLote,
+        areaConstruida: areaConstruida,
+        numeroEdificios: numeroEdificios,
+        numeroPisos: numeroEdificios,
+        sotanos: sotanos,
+        tenencia: tenencia,
+        descripcionInfraestructura: descripcionInfraestructura,
+        procesos: procesos,
+        areas: areas,
+        datosEquipos: datosEquipos,
+        linderoNorte: linderoNorte,
+        linderoSur: linderoSur,
+        linderoOriente: linderoOriente,
+        linderoOccidente: linderoOccidente,
+        energiaProveedor: energiaProveedor,
+        energiaTension: energiaTension,
+        energiaPararrayos: energiaPararrayos,
+        transformadores: transformadores,
+        alarmaMonitoreada: alarmaMonitoreada,
+        cctv: cctv,
+        mantenimientoSeguridad: mantenimientoSeguridad,
+        comentariosSeguridadElectronica: comentariosSeguridadElectronica,
+        tipoVigilancia: tipoVigilancia,
+        horariosVigilancia: horariosVigilancia,
+        accesos: accesos,
+        personalCierre: personalCierre,
+        cerramientoPredio: cerramientoPredio,
+        otrosCerramiento: otrosCerramiento,
+        comentariosSeguridadFisica: comentariosSeguridadFisica,
+        plantasElectricas: plantasElectricas,
+        energiaComentarios: energiaComentarios,
+        transformadorSubestacion: transformadorSubestacion,
+        transformadorMarca: transformadorMarca,
+        transformadorTipo: transformadorTipo,
+        transformadorCapacidad: transformadorCapacidad,
+        transformadorEdad: transformadorEdad,
+        transformadorRelacionVoltaje: transformadorRelacionVoltaje,
+        plantaNumero1: plantaNumero1,
+        plantaMarca1: plantaMarca1,
+        plantaTipo1: plantaTipo1,
+        plantaCapacidad1: plantaCapacidad1,
+        plantaEdad1: plantaEdad1,
+        plantaTransferencia1: plantaTransferencia1,
+        plantaVoltaje1: plantaVoltaje1,
+        plantaCobertura1: plantaCobertura1,
+        plantaNumero2: plantaNumero2,
+        plantaMarca2: plantaMarca2,
+        plantaTipo2: plantaNumero2,
+        plantaCapacidad2: plantaCapacidad2,
+        plantaEdad2: plantaEdad2,
+        plantaTransferencia2: plantaTransferencia2,
+        plantaVoltaje2: plantaVoltaje2,
+        plantaCobertura2: plantaCobertura2,
+        aguaFuente: aguaFuente,
+        aguaUso: aguaUso,
+        aguaAlmacenamiento: aguaAlmacenamiento,
+        aguaBombeo: aguaBombeo,
+        aguaComentarios: aguaComentarios,
+        extintor: extintor,
+        rci: rci,
+        rociadores: rociadores,
+        deteccion: deteccion,
+        alarmas: alarmas,
+        brigadas: brigadas,
+        bomberos: bomberos,
+        seguridadDescripcion: seguridadDescripcion,
+        siniestralidad: siniestralidad,
+        maquinariaDescripcion: maquinariaDescripcion,
+        tablaRiesgos: tablaRiesgos,
+        barrio: barrio,
+        departamento: departamento,
+        horarioLaboral: horarioLaboral,
+        nombreEmpresa: nombreEmpresa,
+        municipio: municipio,
+        personaEntrevistada: personaEntrevistada,
+        imagen: imagen,
+        imagenesRegistro: imagenesRegistro,
+      }
     };
 
     // Primero exportar el documento
@@ -1978,22 +2116,315 @@ const handleExportar = async () => {
   }
 };
 
+// Efecto para detectar modo edición y cargar datos
+useEffect(() => {
+  console.log('🔍 useEffect ejecutándose, ID:', id);
+  if (id) {
+    console.log('✅ ID detectado, activando modo edición');
+    setModoEdicion(true);
+    setCargando(true);
+    cargarDatosFormulario(id);
+  } else {
+    console.log('❌ No hay ID, modo normal');
+  }
+}, [id]);
+
+// Efecto para monitorear cambios en los estados principales cuando se cargan datos
+useEffect(() => {
+  if (modoEdicion && !cargando) {
+    console.log('🔍 Estados actualizados después de la carga:');
+    console.log('  - nombreCliente:', nombreCliente);
+    console.log('  - formData:', formData);
+    console.log('  - fecha:', fecha);
+    console.log('  - barrio:', barrio);
+    console.log('  - departamento:', departamento);
+    console.log('  - horarioLaboral:', horarioLaboral);
+    console.log('  - cargo:', cargo);
+    console.log('  - colaboladores:', colaboladores);
+    console.log('  - nombreEmpresa:', nombreEmpresa);
+    console.log('  - direccion:', direccion);
+    console.log('  - municipio:', municipio);
+    console.log('  - personaEntrevistada:', personaEntrevistada);
+    console.log('  - descripcionEmpresa:', descripcionEmpresa);
+    console.log('  - infraestructura:', infraestructura);
+  }
+}, [modoEdicion, cargando, nombreCliente, formData, fecha, barrio, departamento, horarioLaboral, cargo, colaboladores, nombreEmpresa, direccion, municipio, personaEntrevistada, descripcionEmpresa, infraestructura]);
+
+// Función para cargar datos del formulario existente
+const cargarDatosFormulario = async (formularioId) => {
+  try {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      console.error('❌ No hay token disponible');
+      setCargando(false);
+      return;
+    }
+
+    console.log('🔍 Iniciando carga de formulario con ID:', formularioId);
+    
+    const response = await fetch(`http://localhost:3000/api/historial-formularios/${formularioId}`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error(`Error HTTP: ${response.status}`);
+    }
+
+    const data = await response.json();
+    
+    if (data.success && data.formulario) {
+      const formulario = data.formulario;
+      console.log('📥 Datos del formulario cargados:', formulario);
+      console.log('🔍 Estructura de datos:', formulario.datos);
+      console.log('🔍 Tipo de formulario:', formulario.tipo);
+      console.log('🔍 Claves disponibles en datos:', Object.keys(formulario.datos || {}));
+      console.log('🔍 Valores específicos de prueba:');
+      console.log('  - asegurado:', formulario.datos?.asegurado);
+      console.log('  - nombreCliente:', formulario.datos?.nombreCliente);
+      console.log('  - ciudad:', formulario.datos?.ciudad);
+      console.log('  - direccion:', formulario.datos?.direccion);
+      console.log('  - barrio:', formulario.datos?.barrio);
+      
+      // Cargar todos los campos del formulario
+      const nombreClienteValue = formulario.datos?.asegurado || formulario.datos?.nombreCliente || '';
+      console.log('👤 Nombre cliente a establecer:', nombreClienteValue);
+      setNombreCliente(nombreClienteValue);
+      
+      const formDataValue = {
+        ciudad_siniestro: formulario.datos?.ciudad || '',
+        departamento_siniestro: formulario.datos?.departamento || '',
+        aseguradora: formulario.datos?.aseguradora || '',
+        direccion: formulario.datos?.direccion || ''
+      };
+      console.log('🏠 FormData a establecer:', formDataValue);
+      setFormData(prev => ({
+        ...prev,
+        ...formDataValue
+      }));
+      
+      const fechaValue = formulario.datos?.fechaInspeccion || new Date().toISOString().split("T")[0];
+      console.log('📅 Fecha a establecer:', fechaValue);
+      setFecha(fechaValue);
+      
+      const barrioValue = formulario.datos?.barrio || '';
+      console.log('🏘️ Barrio a establecer:', barrioValue);
+      setBarrio(barrioValue);
+      
+      const departamentoValue = formulario.datos?.departamento || '';
+      console.log('🏛️ Departamento a establecer:', departamentoValue);
+      setDepartamento(departamentoValue);
+      
+      const horarioLaboralValue = formulario.datos?.horarioLaboral || '';
+      console.log('⏰ Horario laboral a establecer:', horarioLaboralValue);
+      setHorarioLaboral(horarioLaboralValue);
+      
+      const cargoValue = formulario.datos?.firmanteInspector || '';
+      console.log('👔 Cargo a establecer:', cargoValue);
+      setCargo(cargoValue);
+      
+      const colaboladoresValue = formulario.datos?.codigoInspector || '';
+      console.log('👥 Colaboradores a establecer:', colaboladoresValue);
+      setColaboladores(colaboladoresValue);
+      
+      const nombreEmpresaValue = formulario.datos?.nombreEmpresa || '';
+      console.log('🏢 Nombre empresa a establecer:', nombreEmpresaValue);
+      setNombreEmpresa(nombreEmpresaValue);
+      
+      const direccionValue = formulario.datos?.direccion || '';
+      console.log('📍 Dirección a establecer:', direccionValue);
+      setDireccion(direccionValue);
+      
+      const municipioValue = formulario.datos?.municipio || '';
+      console.log('🏙️ Municipio a establecer:', municipioValue);
+      setMunicipio(municipioValue);
+      
+      const personaEntrevistadaValue = formulario.datos?.personaEntrevistada || '';
+      console.log('👤 Persona entrevistada a establecer:', personaEntrevistadaValue);
+      setPersonaEntrevistada(personaEntrevistadaValue);
+      
+      const descripcionEmpresaValue = formulario.datos?.descripcionEmpresa || '';
+      console.log('📝 Descripción empresa a establecer:', descripcionEmpresaValue);
+      setDescripcionEmpresa(descripcionEmpresaValue);
+      
+      const infraestructuraValue = formulario.datos?.infraestructura || '';
+      console.log('🏗️ Infraestructura a establecer:', infraestructuraValue);
+      setInfraestructura(infraestructuraValue);
+      
+      // Análisis de riesgos
+      if (formulario.datos?.analisisRiesgos) {
+        setAnalisisRiesgos(formulario.datos.analisisRiesgos);
+      }
+      
+      // Infraestructura
+      setAntiguedad(formulario.datos?.antiguedad || '');
+      setAreaLote(formulario.datos?.areaLote || '');
+      setAreaConstruida(formulario.datos?.areaConstruida || '');
+      setNumeroEdificios(formulario.datos?.numeroEdificios || '');
+      setNumeroPisos(formulario.datos?.numeroPisos || '');
+      setSotanos(formulario.datos?.sotanos || '');
+      setTenencia(formulario.datos?.tenencia || '');
+      setDescripcionInfraestructura(formulario.datos?.descripcionInfraestructura || '');
+      
+      // Procesos y áreas
+      setProcesos(formulario.datos?.procesos || '');
+      if (formulario.datos?.areas) {
+        setAreas(formulario.datos.areas);
+      }
+      if (formulario.datos?.datosEquipos) {
+        setDatosEquipos(formulario.datos.datosEquipos);
+      }
+      
+      // Linderos
+      setLinderoNorte(formulario.datos?.linderoNorte || '');
+      setLinderoSur(formulario.datos?.linderoSur || '');
+      setLinderoOriente(formulario.datos?.linderoOriente || '');
+      setLinderoOccidente(formulario.datos?.linderoOccidente || '');
+      
+      // Servicios industriales
+      setEnergiaProveedor(formulario.datos?.energiaProveedor || '');
+      setEnergiaTension(formulario.datos?.energiaTension || '');
+      setEnergiaPararrayos(formulario.datos?.energiaPararrayos || '');
+      if (formulario.datos?.transformadores) {
+        setTransformadores(formulario.datos.transformadores);
+      }
+      
+      // Seguridad electrónica
+      setAlarmaMonitoreada(formulario.datos?.alarmaMonitoreada || '');
+      setCctv(formulario.datos?.cctv || '');
+      setMantenimientoSeguridad(formulario.datos?.mantenimientoSeguridad || '');
+      setComentariosSeguridadElectronica(formulario.datos?.comentariosSeguridadElectronica || '');
+      
+      // Seguridad física
+      setTipoVigilancia(formulario.datos?.tipoVigilancia || '');
+      setHorariosVigilancia(formulario.datos?.horariosVigilancia || '');
+      setAccesos(formulario.datos?.accesos || '');
+      setPersonalCierre(formulario.datos?.personalCierre || '');
+      setCerramientoPredio(formulario.datos?.cerramientoPredio || '');
+      setOtrosCerramiento(formulario.datos?.otrosCerramiento || '');
+      setComentariosSeguridadFisica(formulario.datos?.comentariosSeguridadFisica || '');
+      
+      // Plantas eléctricas
+      if (formulario.datos?.plantasElectricas) {
+        setPlantasElectricas(formulario.datos.plantasElectricas);
+      }
+      setEnergiaComentarios(formulario.datos?.energiaComentarios || '');
+      
+      // Transformadores individuales
+      setTransformadorSubestacion(formulario.datos?.transformadorSubestacion || '');
+      setTransformadorMarca(formulario.datos?.transformadorMarca || '');
+      setTransformadorTipo(formulario.datos?.transformadorTipo || '');
+      setTransformadorCapacidad(formulario.datos?.transformadorCapacidad || '');
+      setTransformadorEdad(formulario.datos?.transformadorEdad || '');
+      setTransformadorRelacionVoltaje(formulario.datos?.transformadorRelacionVoltaje || '');
+      
+      // Plantas eléctricas individuales
+      setPlantaNumero1(formulario.datos?.plantaNumero1 || '');
+      setPlantaMarca1(formulario.datos?.plantaMarca1 || '');
+      setPlantaTipo1(formulario.datos?.plantaTipo1 || '');
+      setPlantaCapacidad1(formulario.datos?.plantaCapacidad1 || '');
+      setPlantaEdad1(formulario.datos?.plantaEdad1 || '');
+      setPlantaTransferencia1(formulario.datos?.plantaTransferencia1 || '');
+      setPlantaVoltaje1(formulario.datos?.plantaVoltaje1 || '');
+      setPlantaCobertura1(formulario.datos?.plantaCobertura1 || '');
+      
+      setPlantaNumero2(formulario.datos?.plantaNumero2 || '');
+      setPlantaMarca2(formulario.datos?.plantaMarca2 || '');
+      setPlantaTipo2(formulario.datos?.plantaTipo2 || '');
+      setPlantaCapacidad2(formulario.datos?.plantaCapacidad2 || '');
+      setPlantaEdad2(formulario.datos?.plantaEdad2 || '');
+      setPlantaTransferencia2(formulario.datos?.plantaTransferencia2 || '');
+      setPlantaVoltaje2(formulario.datos?.plantaVoltaje2 || '');
+      setPlantaCobertura2(formulario.datos?.plantaCobertura2 || '');
+      
+      // Sistema de agua
+      setAguaFuente(formulario.datos?.aguaFuente || '');
+      setAguaUso(formulario.datos?.aguaUso || '');
+      setAguaAlmacenamiento(formulario.datos?.aguaAlmacenamiento || '');
+      setAguaBombeo(formulario.datos?.aguaBombeo || '');
+      setAguaComentarios(formulario.datos?.aguaComentarios || '');
+      
+      // Protección contra incendios
+      setExtintor(formulario.datos?.extintor || '');
+      setRci(formulario.datos?.rci || '');
+      setRociadores(formulario.datos?.rociadores || '');
+      setDeteccion(formulario.datos?.deteccion || '');
+      setAlarmas(formulario.datos?.alarmas || '');
+      setBrigadas(formulario.datos?.brigadas || '');
+      setBomberos(formulario.datos?.bomberos || '');
+      
+      // Seguridad y siniestralidad
+      setSeguridadDescripcion(formulario.datos?.seguridadDescripcion || '');
+      setSiniestralidad(formulario.datos?.siniestralidad || '');
+      setMaquinariaDescripcion(formulario.datos?.maquinariaDescripcion || '');
+      
+      // Tabla de riesgos
+      if (formulario.datos?.tablaRiesgos) {
+        setTablaRiesgos(formulario.datos.tablaRiesgos);
+      }
+      
+      // Recomendaciones
+      setRecomendaciones(formulario.datos?.recomendaciones || '');
+      
+      // Imágenes (si existen)
+      if (formulario.datos?.imagen) {
+        // Aquí podrías cargar la imagen si tienes la URL
+        console.log('📸 Imagen del formulario:', formulario.datos.imagen);
+      }
+      
+      if (formulario.datos?.imagenesRegistro) {
+        setImagenesRegistro(formulario.datos.imagenesRegistro);
+      }
+      
+      console.log('✅ Formulario cargado exitosamente en modo edición');
+      console.log('🔍 Todos los estados han sido actualizados');
+    }
+  } catch (error) {
+    console.error('❌ Error cargando formulario:', error);
+    alert(`Error cargando formulario: ${error.message}`);
+  } finally {
+    setCargando(false);
+  }
+};
+
 return (
   <div className="min-h-screen bg-gray-100 p-8">
     <div className="max-w-4xl mx-auto bg-white shadow-lg rounded-lg p-6">
       {/* Encabezado */}
       <div className="flex justify-between items-center border-b pb-4 mb-6">
-      <img src={Logo} alt="Logo PROSER" className="h-16 object-contain" />
-      <div className="text-right">
+        <div className="flex items-center gap-4">
+          <img src={Logo} alt="Logo PROSER" className="h-16 object-contain" />
+          {modoEdicion && (
+            <div className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">
+              ✏️ Modo Edición
+            </div>
+          )}
+        </div>
+        <div className="text-right">
           <p className="text-sm font-semibold">FECHA:</p>
           <input
             type="date"
             value={fecha}
             onChange={(e) => setFecha(e.target.value)}
             className="text-sm border border-gray-300 rounded px-2 py-1"
+            disabled={cargando}
           />
         </div>
       </div>
+
+      {/* Indicador de carga */}
+      {cargando && (
+        <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+          <div className="flex items-center gap-3">
+            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+            <span className="text-blue-800 font-medium">
+              Cargando formulario existente...
+            </span>
+          </div>
+        </div>
+      )}
 
       {/* Información Cliente */}
       <div className="mb-6">
@@ -2006,6 +2437,7 @@ return (
           onChange={(e) => setNombreCliente(e.target.value)}
           className="w-full border border-gray-300 rounded px-3 py-2"
           placeholder="Ej: LADRILLERA CASABLANCA S.A.S."
+          disabled={cargando}
         />
       </div>
 
@@ -2019,6 +2451,7 @@ return (
           onChange={e => setFormData({ ...formData, direccion: e.target.value })}
           className="w-full border border-gray-300 rounded px-3 py-2"
           placeholder="Dirección"
+          disabled={cargando}
         />
       </div>
 
@@ -2034,6 +2467,7 @@ return (
         placeholder="Selecciona una ciudad..."
         isSearchable
         className="w-full"
+        isDisabled={cargando}
       />
       </div>
 
@@ -2048,6 +2482,7 @@ return (
             setFormData({ ...formData, aseguradora: e.target.value })
           }
           className="w-full border border-gray-300 rounded px-3 py-2"
+          disabled={cargando}
         >
           <option value="">Selecciona una aseguradora</option>    <option value="PORTO & COMPAÑIA LTDA">PORTO & COMPAÑIA LTDA</option>
     <option value="UNISEG RIESGOS Y SEGUROS">UNISEG RIESGOS Y SEGUROS</option>
@@ -2090,6 +2525,7 @@ return (
           accept="image/*"
           onChange={handleImagenChange}
           className="mb-2"
+          disabled={cargando}
         />
         {preview && (
           <div className="mt-2">
@@ -2232,6 +2668,7 @@ return (
   onChange={(e) =>
     setAnalisisRiesgos({ ...analisisRiesgos, [riesgo]: e.target.value })
   }
+  disabled={cargando}
 />
 
       </td>
@@ -2294,6 +2731,7 @@ return (
           value={tablaRiesgos[idx]?.probabilidad || ""}
           onChange={(e) => actualizarRiesgo(idx, "probabilidad", e.target.value)}
           className="w-full border border-gray-300 px-1 py-0.5 text-sm"
+          disabled={cargando}
         />
       </td>
       <td className="border border-black px-2 py-1">
@@ -2302,6 +2740,7 @@ return (
           value={tablaRiesgos[idx]?.severidad || ""}
           onChange={(e) => actualizarRiesgo(idx, "severidad", e.target.value)}
           className="w-full border border-gray-300 px-1 py-0.5 text-sm"
+          disabled={cargando}
         />
       </td>
       <td className="border border-black px-2 py-1">
@@ -2310,6 +2749,7 @@ return (
           value={tablaRiesgos[idx]?.clasificacion || ""}
           onChange={(e) => actualizarRiesgo(idx, "clasificacion", e.target.value)}
           className="w-full border border-gray-300 px-1 py-0.5 text-sm"
+          disabled={cargando}
         />
       </td>
     </tr>
@@ -2338,10 +2778,10 @@ return (
         <tr key={i}>
           <td>{item.riesgo}</td>
           <td>
-            <input type="number" value={item.probabilidad} onChange={e => actualizarRiesgo(i, "probabilidad", e.target.value)} />
+            <input type="number" value={item.probabilidad} onChange={e => actualizarRiesgo(i, "probabilidad", e.target.value)} disabled={cargando} />
           </td>
           <td>
-            <input type="number" value={item.severidad} onChange={e => actualizarRiesgo(i, "severidad", e.target.value)} />
+            <input type="number" value={item.severidad} onChange={e => actualizarRiesgo(i, "severidad", e.target.value)} disabled={cargando} />
           </td>
           <td>{item.r}</td>
           <td>{item.indice}%</td>
@@ -2369,6 +2809,7 @@ return (
         value={nombreEmpresa}
         onChange={(e) => setNombreEmpresa(e.target.value)}
         className="w-full border border-gray-300 rounded px-3 py-2"
+        disabled={cargando}
       />
     </div>
     <div>
@@ -2379,6 +2820,7 @@ return (
         value={direccion}
         onChange={(e) => setDireccion(e.target.value)}
         className="w-full border border-gray-300 rounded px-3 py-2"
+        disabled={cargando}
       />
     </div>
 
@@ -2405,6 +2847,7 @@ return (
         value={personaEntrevistada}
         onChange={(e) => setPersonaEntrevistada(e.target.value)}
         className="w-full border border-gray-300 rounded px-3 py-2"
+        disabled={cargando}
       />
     </div>
     <div>
@@ -2415,6 +2858,7 @@ return (
         value={barrio}
         onChange={(e) => setBarrio(e.target.value)}
         className="w-full border border-gray-300 rounded px-3 py-2"
+        disabled={cargando}
       />
     </div>
     <div>
@@ -2425,6 +2869,7 @@ return (
         value={formData.departamento_siniestro}
         onChange={e => setFormData({ ...formData, departamento_siniestro: e.target.value })}
         className="w-full border border-gray-300 rounded px-3 py-2"
+        disabled={cargando}
       />
     </div>
     <div>
@@ -2435,6 +2880,7 @@ return (
         value={cargo}
         onChange={(e) => setCargo(e.target.value)}
         className="w-full border border-gray-300 rounded px-3 py-2"
+        disabled={cargando}
       />
     </div>
         <div>
@@ -2445,6 +2891,7 @@ return (
         value={horarioLaboral} // <--- aquí debe ir horarioLaboral
         onChange={(e) => setHorarioLaboral(e.target.value)} // <--- aquí debe ir setHorarioLaboral
         className="w-full border border-gray-300 rounded px-3 py-2"
+        disabled={cargando}
       />
     </div>
     <div>
@@ -2455,6 +2902,7 @@ return (
         value={colaboladores} // <--- aquí debe ir colaboladores
         onChange={(e) => setColaboladores(e.target.value)} // <--- aquí debe ir setColaboladores
         className="w-full border border-gray-300 rounded px-3 py-2"
+        disabled={cargando}
       />
     </div>
   </div>
@@ -2473,6 +2921,7 @@ return (
   value={descripcionEmpresa}
   onChange={(e) => setDescripcionEmpresa(e.target.value)}
   className="w-full border border-gray-300 rounded px-3 py-2"
+  disabled={cargando}
 ></textarea>
 </div>
 
@@ -2484,79 +2933,86 @@ return (
 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
   <div>
     <label className="block text-sm font-semibold mb-1">Antigüedad</label>
-    <input
-      type="text"
-      placeholder="Ej: 76 años aprox"
-      value={antiguedad}
-      onChange={(e) => setAntiguedad(e.target.value)}
-      className="w-full border border-gray-300 rounded px-3 py-2"
-    />
+          <input
+        type="text"
+        placeholder="Ej: 76 años aprox"
+        value={antiguedad}
+        onChange={(e) => setAntiguedad(e.target.value)}
+        className="w-full border border-gray-300 rounded px-3 py-2"
+        disabled={cargando}
+      />
   </div>
 
   <div>
     <label className="block text-sm font-semibold mb-1">Área Lote</label>
-    <input
-      type="text"
-      placeholder="Ej: 450.000 m²"
-      value={areaLote}
-      onChange={(e) => setAreaLote(e.target.value)}
-      className="w-full border border-gray-300 rounded px-3 py-2"
-    />
+          <input
+        type="text"
+        placeholder="Ej: 450.000 m²"
+        value={areaLote}
+        onChange={(e) => setAreaLote(e.target.value)}
+        className="w-full border border-gray-300 rounded px-3 py-2"
+        disabled={cargando}
+      />
   </div>
 
   <div>
     <label className="block text-sm font-semibold mb-1">Área Construida</label>
-    <input
-      type="text"
-      placeholder="Ej: 35.000 m²"
-      value={areaConstruida}
-      onChange={(e) => setAreaConstruida(e.target.value)}
-      className="w-full border border-gray-300 rounded px-3 py-2"
-    />
+          <input
+        type="text"
+        placeholder="Ej: 35.000 m²"
+        value={areaConstruida}
+        onChange={(e) => setAreaConstruida(e.target.value)}
+        className="w-full border border-gray-300 rounded px-3 py-2"
+        disabled={cargando}
+      />
   </div>
 
   <div>
     <label className="block text-sm font-semibold mb-1">Nº de Edificios</label>
-    <input
-      type="text"
-      placeholder="Ej: 2"
-      value={numeroEdificios}
-      onChange={(e) => setNumeroEdificios(e.target.value)}
-      className="w-full border border-gray-300 rounded px-3 py-2"
-    />
+          <input
+        type="text"
+        placeholder="Ej: 2"
+        value={numeroEdificios}
+        onChange={(e) => setNumeroEdificios(e.target.value)}
+        className="w-full border border-gray-300 rounded px-3 py-2"
+        disabled={cargando}
+      />
   </div>
 
   <div>
     <label className="block text-sm font-semibold mb-1">Nº de Pisos</label>
-    <input
-      type="text"
-      placeholder="Ej: 3"
-      value={numeroPisos}
-      onChange={(e) => setNumeroPisos(e.target.value)}
-      className="w-full border border-gray-300 rounded px-3 py-2"
-    />
+          <input
+        type="text"
+        placeholder="Ej: 3"
+        value={numeroPisos}
+        onChange={(e) => setNumeroPisos(e.target.value)}
+        className="w-full border border-gray-300 rounded px-3 py-2"
+        disabled={cargando}
+      />
   </div>
 
   <div>
     <label className="block text-sm font-semibold mb-1">Sótanos</label>
-    <input
-      type="text"
-      placeholder="Ej: No"
-      value={sotanos}
-      onChange={(e) => setSotanos(e.target.value)}
-      className="w-full border border-gray-300 rounded px-3 py-2"
-    />
+          <input
+        type="text"
+        placeholder="Ej: No"
+        value={sotanos}
+        onChange={(e) => setSotanos(e.target.value)}
+        className="w-full border border-gray-300 rounded px-3 py-2"
+        disabled={cargando}
+      />
   </div>
 
   <div>
     <label className="block text-sm font-semibold mb-1">Propio o Arrendado</label>
-    <input
-      type="text"
-      placeholder="Ej: Propio"
-      value={tenencia}
-      onChange={(e) => setTenencia(e.target.value)}
-      className="w-full border border-gray-300 rounded px-3 py-2"
-    />
+          <input
+        type="text"
+        placeholder="Ej: Propio"
+        value={tenencia}
+        onChange={(e) => setTenencia(e.target.value)}
+        className="w-full border border-gray-300 rounded px-3 py-2"
+        disabled={cargando}
+      />
   </div>
 
   <div className="md:col-span-2">
@@ -2567,6 +3023,7 @@ return (
       value={descripcionInfraestructura}
       onChange={(e) => setDescripcionInfraestructura(e.target.value)}
       className="w-full border border-gray-300 rounded px-3 py-2"
+      disabled={cargando}
     />
   </div>
 </div>
@@ -2584,6 +3041,7 @@ return (
     onChange={(e) => setProcesos(e.target.value)}
     rows={5}
     className="w-full border border-gray-300 rounded px-3 py-2"
+    disabled={cargando}
   />
 </div>
 
@@ -2601,6 +3059,7 @@ return (
       onChange={(e) => setLinderoNorte(e.target.value)}
       placeholder="Ej. Vía pública"
       className="border px-2 py-1 rounded w-full"
+      disabled={cargando}
     />
 
     <label className="font-semibold" htmlFor="sur">SUR:</label>
@@ -2611,6 +3070,7 @@ return (
       onChange={(e) => setLinderoSur(e.target.value)}
       placeholder="Ej. Vía pública"
       className="border px-2 py-1 rounded w-full"
+      disabled={cargando}
     />
 
     <label className="font-semibold" htmlFor="oriente">ORIENTE:</label>
@@ -2621,6 +3081,7 @@ return (
       onChange={(e) => setLinderoOriente(e.target.value)}
       placeholder="Ej. Lote Baldío"
       className="border px-2 py-1 rounded w-full"
+      disabled={cargando}
     />
 
     <label className="font-semibold" htmlFor="occidente">OCCIDENTE:</label>
@@ -2631,15 +3092,31 @@ return (
       onChange={(e) => setLinderoOccidente(e.target.value)}
       placeholder="Ej. Edificación"
       className="border px-2 py-1 rounded w-full"
+      disabled={cargando}
     />
   </div>
 
 {/* Mapa Leaflet para referencia */}
-<div ref={mapaRef} className="mt-4">
-  <MapaUbicacion />
+<div className="mt-4">
+  <div className="mb-2 flex items-center justify-between">
+    <h3 className="text-lg font-semibold">📍 Mapa de Ubicación</h3>
+    <div className={`text-xs px-2 py-1 rounded ${
+      mapaListo 
+        ? 'text-green-700 bg-green-100' 
+        : 'text-yellow-700 bg-yellow-100'
+    }`}>
+      {mapaListo ? '✅ Listo para captura' : '🔄 Preparando mapa...'}
+    </div>
+  </div>
+  
+  <div ref={mapaRef} className="border-2 border-gray-300 rounded-lg overflow-hidden">
+    <MapaUbicacion onMapReady={setMapaListo} />
+  </div>
+  
+  <p className="text-xs mt-2 italic text-center text-gray-600">
+    Coordenadas basadas en la ubicación actual del dispositivo
+  </p>
 </div>
-
-<p className="text-xs mt-2 italic text-center">Coordenadas basadas en la ubicación actual del dispositivo</p>
 </div>
 
 
@@ -2654,6 +3131,7 @@ return (
   value={maquinariaDescripcion}
   onChange={(e) => setMaquinariaDescripcion(e.target.value)}
   className="w-full border border-gray-300 rounded px-3 py-2"
+  disabled={cargando}
 />
 </div>
 
@@ -2677,6 +3155,7 @@ return (
         onChange={(e) => setEnergiaProveedor(e.target.value)}
         placeholder="Ej: Centrales Eléctricas de Norte de Santander (CENS)."
         className="w-full border rounded px-2 py-1"
+        disabled={cargando}
       />
     </div>
 
@@ -2688,6 +3167,7 @@ return (
         onChange={(e) => setEnergiaTension(e.target.value)}
         placeholder="Ej: Alta tensión de la red pública (34,5Kv) y la entrega a 440v"
         className="w-full border rounded px-2 py-1"
+        disabled={cargando}
       />
     </div>
 
@@ -2699,36 +3179,42 @@ return (
         placeholder="Subestación"
         value={transformadorSubestacion}
         onChange={(e) => setTransformadorSubestacion(e.target.value)}
+        disabled={cargando}
       />
-      <input
-        className="border rounded px-2 py-1"
-        placeholder="Marca"
-        value={transformadorMarca}
-        onChange={(e) => setTransformadorMarca(e.target.value)}
-      />
-      <input
-        className="border rounded px-2 py-1"
-        placeholder="Tipo"
-        value={transformadorTipo}
-        onChange={(e) => setTransformadorTipo(e.target.value)}
-      />
-      <input
-        className="border rounded px-2 py-1"
-        placeholder="Capacidad"
-        value={transformadorCapacidad}
-        onChange={(e) => setTransformadorCapacidad(e.target.value)}
-      />
-      <input
-        className="border rounded px-2 py-1"
-        placeholder="Edad"
-        value={transformadorEdad}
-        onChange={(e) => setTransformadorEdad(e.target.value)}
-      />
+              <input
+          className="border rounded px-2 py-1"
+          placeholder="Marca"
+          value={transformadorMarca}
+          onChange={(e) => setTransformadorMarca(e.target.value)}
+          disabled={cargando}
+        />
+              <input
+          className="border rounded px-2 py-1"
+          placeholder="Tipo"
+          value={transformadorTipo}
+          onChange={(e) => setTransformadorTipo(e.target.value)}
+          disabled={cargando}
+        />
+              <input
+          className="border rounded px-2 py-1"
+          placeholder="Capacidad"
+          value={transformadorCapacidad}
+          onChange={(e) => setTransformadorCapacidad(e.target.value)}
+          disabled={cargando}
+        />
+              <input
+          className="border rounded px-2 py-1"
+          placeholder="Edad"
+          value={transformadorEdad}
+          onChange={(e) => setTransformadorEdad(e.target.value)}
+          disabled={cargando}
+        />
       <input
         className="border rounded px-2 py-1"
         placeholder="Relación voltaje"
         value={transformadorRelacionVoltaje}
         onChange={(e) => setTransformadorRelacionVoltaje(e.target.value)}
+        disabled={cargando}
       />
     </div>
 
@@ -2740,42 +3226,49 @@ return (
         placeholder="Número"
         value={plantaNumero1}
         onChange={(e) => setPlantaNumero1(e.target.value)}
+        disabled={cargando}
       />
       <input
         className="border rounded px-2 py-1"
         placeholder="Marca"
         value={plantaMarca1}
         onChange={(e) => setPlantaMarca1(e.target.value)}
+        disabled={cargando}
       />
       <input
         className="border rounded px-2 py-1"
         placeholder="Tipo"
         value={plantaTipo1}
         onChange={(e) => setPlantaTipo1(e.target.value)}
+        disabled={cargando}
       />
       <input
         className="border rounded px-2 py-1"
         placeholder="Capacidad"
         value={plantaCapacidad1}
         onChange={(e) => setPlantaCapacidad1(e.target.value)}
+        disabled={cargando}
       />
       <input
         className="border rounded px-2 py-1"
         placeholder="Edad"
         value={plantaEdad1}
         onChange={(e) => setPlantaEdad1(e.target.value)}
+        disabled={cargando}
       />
       <input
         className="border rounded px-2 py-1"
         placeholder="Transferencia"
         value={plantaTransferencia1}
         onChange={(e) => setPlantaTransferencia1(e.target.value)}
+        disabled={cargando}
       />
       <input
         className="border rounded px-2 py-1"
         placeholder="Voltaje/Cobertura"
         value={plantaCobertura1}
         onChange={(e) => setPlantaCobertura1(e.target.value)}
+        disabled={cargando}
       />
     </div>
 
@@ -2788,6 +3281,7 @@ return (
         onChange={(e) => setEnergiaPararrayos(e.target.value)}
         placeholder="Sí / No"
         className="w-full border rounded px-2 py-1"
+        disabled={cargando}
       />
     </div>
 
@@ -2799,6 +3293,7 @@ return (
       onChange={(e) => setEnergiaComentarios(e.target.value)}
       className="w-full border border-gray-300 rounded px-3 py-2"
       placeholder="Escribe observaciones del sistema eléctrico..."
+      disabled={cargando}
     ></textarea>
   </div>
 
@@ -2828,6 +3323,7 @@ return (
             onChange={(e) => setAguaFuente(e.target.value)}
             placeholder="Ej: Compra de carro tanque"
             className="w-full border rounded px-2 py-1"
+            disabled={cargando}
           />
         </td>
         <td className="px-4 py-2 border">
@@ -2837,6 +3333,7 @@ return (
             onChange={(e) => setAguaUso(e.target.value)}
             placeholder="Ej: En toda la edificación"
             className="w-full border rounded px-2 py-1"
+            disabled={cargando}
           />
         </td>
         <td className="px-4 py-2 border">
@@ -2846,6 +3343,7 @@ return (
             onChange={(e) => setAguaAlmacenamiento(e.target.value)}
             placeholder="Ej: Tanques"
             className="w-full border rounded px-2 py-1"
+            disabled={cargando}
           />
         </td>
         <td className="px-4 py-2 border">
@@ -2854,7 +3352,8 @@ return (
             value={aguaBombeo}
             onChange={(e) => setAguaBombeo(e.target.value)}
             placeholder="Ej: A presión"
-            className="w-full border rounded px-2 py-1"
+            className="w-full border rounded px-3 py-2"
+            disabled={cargando}
           />
         </td>
       </tr>
@@ -2875,6 +3374,7 @@ return (
         onChange={(e) => setExtintor(e.target.value)}
         placeholder="Ej: 27 extintores multipropósito, 10lbs y 2 tipo satélite de CO2"
         className="col-span-9 border border-gray-300 rounded px-3 py-2"
+        disabled={cargando}
       />
     </div>
 
@@ -2886,6 +3386,7 @@ return (
         onChange={(e) => setRci(e.target.value)}
         placeholder="Ej: No cuentan con RCI"
         className="col-span-9 border border-gray-300 rounded px-3 py-2"
+        disabled={cargando}
       />
     </div>
 
@@ -2897,6 +3398,7 @@ return (
         onChange={(e) => setRociadores(e.target.value)}
         placeholder="Ej: No cuentan con sistema de rociadores"
         className="col-span-9 border border-gray-300 rounded px-3 py-2"
+        disabled={cargando}
       />
     </div>
 
@@ -2908,6 +3410,7 @@ return (
         onChange={(e) => setDeteccion(e.target.value)}
         placeholder="Ej: No cuentan con detección de humo"
         className="col-span-9 border border-gray-300 rounded px-3 py-2"
+        disabled={cargando}
       />
     </div>
 
@@ -2919,6 +3422,7 @@ return (
         onChange={(e) => setAlarmas(e.target.value)}
         placeholder="Ej: Cuentan con pulsadores de alarma"
         className="col-span-9 border border-gray-300 rounded px-3 py-2"
+        disabled={cargando}
       />
     </div>
 
@@ -2930,6 +3434,7 @@ return (
         onChange={(e) => setBrigadas(e.target.value)}
         placeholder="Ej: 20 brigadistas, simulacros anuales, camillas y botiquines"
         className="col-span-9 border border-gray-300 rounded px-3 py-2"
+        disabled={cargando}
       />
     </div>
 
@@ -2941,6 +3446,7 @@ return (
         onChange={(e) => setBomberos(e.target.value)}
         placeholder="Ej: Estación de Atalaya, tiempo de reacción aprox. 20 min"
         className="col-span-9 border border-gray-300 rounded px-3 py-2"
+        disabled={cargando}
       />
     </div>
   </div>
@@ -2953,40 +3459,40 @@ return (
 <h3 className="text-lg font-semibold mb-2">Seguridad Electrónica</h3>
 
 <label>Alarma Monitoreada</label>
-<input type="text" value={alarmaMonitoreada} onChange={(e) => setAlarmaMonitoreada(e.target.value)} className="w-full border rounded px-2 py-1 mb-2" />
+<input type="text" value={alarmaMonitoreada} onChange={(e) => setAlarmaMonitoreada(e.target.value)} className="w-full border rounded px-2 py-1 mb-2" disabled={cargando} />
 
 <label>CCTV (cámaras, monitoreo)</label>
-<input type="text" value={cctv} onChange={(e) => setCctv(e.target.value)} className="w-full border rounded px-2 py-1 mb-2" />
+<input type="text" value={cctv} onChange={(e) => setCctv(e.target.value)} className="w-full border rounded px-2 py-1 mb-2" disabled={cargando} />
 
 <label>Mantenimiento</label>
-<input type="text" value={mantenimientoSeguridad} onChange={(e) => setMantenimientoSeguridad(e.target.value)} className="w-full border rounded px-2 py-1 mb-2" />
+<input type="text" value={mantenimientoSeguridad} onChange={(e) => setMantenimientoSeguridad(e.target.value)} className="w-full border rounded px-2 py-1 mb-2" disabled={cargando} />
 
 <label>Comentarios</label>
-<textarea value={comentariosSeguridadElectronica} onChange={(e) => setComentariosSeguridadElectronica(e.target.value)} className="w-full border rounded px-2 py-1 mb-4" rows={3} />
+<textarea value={comentariosSeguridadElectronica} onChange={(e) => setComentariosSeguridadElectronica(e.target.value)} className="w-full border rounded px-2 py-1 mb-4" rows={3} disabled={cargando} />
 
 {/* Seguridad Física */}
 <h3 className="text-lg font-semibold mb-2">Seguridad Física</h3>
 
 <label>Tipo de Vigilancia</label>
-<input type="text" value={tipoVigilancia} onChange={(e) => setTipoVigilancia(e.target.value)} className="w-full border rounded px-2 py-1 mb-2" />
+<input type="text" value={tipoVigilancia} onChange={(e) => setTipoVigilancia(e.target.value)} className="w-full border rounded px-2 py-1 mb-2" disabled={cargando} />
 
 <label>Horarios, turnos, dotación</label>
-<input type="text" value={horariosVigilancia} onChange={(e) => setHorariosVigilancia(e.target.value)} className="w-full border rounded px-2 py-1 mb-2" />
+<input type="text" value={horariosVigilancia} onChange={(e) => setHorariosVigilancia(e.target.value)} className="w-full border rounded px-2 py-1 mb-2" disabled={cargando} />
 
 <label>Accesos</label>
-<input type="text" value={accesos} onChange={(e) => setAccesos(e.target.value)} className="w-full border rounded px-2 py-1 mb-2" />
+<input type="text" value={accesos} onChange={(e) => setAccesos(e.target.value)} className="w-full border rounded px-2 py-1 mb-2" disabled={cargando} />
 
 <label>Personal de cierre y apertura</label>
-<input type="text" value={personalCierre} onChange={(e) => setPersonalCierre(e.target.value)} className="w-full border rounded px-2 py-1 mb-2" />
+<input type="text" value={personalCierre} onChange={(e) => setPersonalCierre(e.target.value)} className="w-full border rounded px-2 py-1 mb-2" disabled={cargando} />
 
 <label>Cerramiento del predio</label>
-<input type="text" value={cerramientoPredio} onChange={(e) => setCerramientoPredio(e.target.value)} className="w-full border rounded px-2 py-1 mb-2" />
+<input type="text" value={cerramientoPredio} onChange={(e) => setCerramientoPredio(e.target.value)} className="w-full border rounded px-2 py-1 mb-2" disabled={cargando} />
 
 <label>Otros (rejas, concertina, etc)</label>
-<input type="text" value={otrosCerramiento} onChange={(e) => setOtrosCerramiento(e.target.value)} className="w-full border rounded px-2 py-1 mb-2" />
+<input type="text" value={otrosCerramiento} onChange={(e) => setOtrosCerramiento(e.target.value)} className="w-full border rounded px-2 py-1 mb-2" disabled={cargando} />
 
 <label>Comentarios</label>
-<textarea value={comentariosSeguridadFisica} onChange={(e) => setComentariosSeguridadFisica(e.target.value)} className="w-full border rounded px-2 py-1 mb-4" rows={3} />
+<textarea value={comentariosSeguridadFisica} onChange={(e) => setComentariosSeguridadFisica(e.target.value)} className="w-full border rounded px-2 py-1 mb-4" rows={3} disabled={cargando} />
 
 
 
@@ -3002,6 +3508,7 @@ return (
     onChange={(e) => setSiniestralidad(e.target.value)}
     className="w-full border border-gray-300 rounded px-3 py-2"
     placeholder="Incluye el detalle de los siniestros reportados, fechas, causas y acciones correctivas."
+    disabled={cargando}
   />
 </div>
 
@@ -3015,6 +3522,7 @@ return (
     value={categoriaSeleccionada}
     onChange={(e) => setCategoriaSeleccionada(e.target.value)}
     className="w-full border border-gray-300 rounded px-3 py-2 mb-4"
+    disabled={cargando}
   >
     <option value="">Seleccione una categoría...</option>
     {Object.keys(bancoRecomendaciones).map((categoria, index) => (
@@ -3032,6 +3540,7 @@ return (
         onChange={(e) => handleAgregarRecomendacion(e.target.value)}
         className="w-full border border-gray-300 rounded px-3 py-2 mb-4"
         defaultValue=""
+        disabled={cargando}
       >
         <option value="" disabled>
           Seleccione una recomendación...
@@ -3053,23 +3562,25 @@ return (
         onChange={(e) => setNuevaRecomendacion(e.target.value)}
         placeholder="Escribe una nueva recomendación..."
         className="w-full border border-gray-300 rounded px-3 py-2 mb-2"
+        disabled={cargando}
       />
-      <button
-        onClick={() => {
-          if (!nuevaRecomendacion.trim()) return;
-          setBancoRecomendaciones((prev) => ({
-            ...prev,
-            [categoriaSeleccionada]: [
-              ...prev[categoriaSeleccionada],
-              nuevaRecomendacion.trim(),
-            ],
-          }));
-          setNuevaRecomendacion("");
-        }}
-        className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
-      >
-        Agregar recomendación
-      </button>
+              <button
+          onClick={() => {
+            if (!nuevaRecomendacion.trim()) return;
+            setBancoRecomendaciones((prev) => ({
+              ...prev,
+              [categoriaSeleccionada]: [
+                ...prev[categoriaSeleccionada],
+                nuevaRecomendacion.trim(),
+              ],
+            }));
+            setNuevaRecomendacion("");
+          }}
+          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
+          disabled={cargando}
+        >
+          Agregar recomendación
+        </button>
     </>
   )}
 
@@ -3083,6 +3594,7 @@ return (
     onChange={(e) => setRecomendaciones(e.target.value)}
     placeholder="Escribe aquí las recomendaciones o selecciona desde el combo."
     className="w-full border border-gray-300 rounded px-3 py-2"
+    disabled={cargando}
   />
 </div>
 
@@ -3123,6 +3635,7 @@ return (
               onChange={e => setCargo(e.target.value)}
               placeholder="Nombre del inspector"
               className="w-full border border-gray-300 rounded px-3 py-2"
+              disabled={cargando}
             />
           </div>
           <div>
@@ -3132,6 +3645,7 @@ return (
               value={fecha}
               onChange={e => setFecha(e.target.value)}
               className="w-full border border-gray-300 rounded px-3 py-2"
+              disabled={cargando}
             />
           </div>
         </div>

@@ -14,6 +14,7 @@ const __dirname = path.dirname(__filename);
 
 // Verificar que las variables se cargaron
 console.log('🔧 Variables de entorno cargadas:');
+console.log('🔧 NODE_ENV:', process.env.NODE_ENV || 'development');
 console.log('📧 EMAIL_USER:', process.env.EMAIL_USER);
 console.log('📧 EMAIL_PASS:', process.env.EMAIL_PASS ? '***' : 'NO DEFINIDO');
 console.log('🌐 MONGO_URI:', process.env.MONGO_URI ? 'DEFINIDO' : 'NO DEFINIDO');

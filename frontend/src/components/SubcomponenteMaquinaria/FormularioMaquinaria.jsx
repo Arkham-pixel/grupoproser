@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
 import { Document, Packer, Paragraph, Table, TableRow, TableCell, TextRun, AlignmentType, HeadingLevel, ImageRun, Header, WidthType, Media } from "docx";
 import { saveAs } from "file-saver";
 import EncabezadoMaquinaria from "./EncabezadoMaquinaria";
@@ -14,8 +15,92 @@ import Logo from '../../img/Logo.png'; // Ajusta la ruta según tu estructura
 import BotonesHistorial from '../BotonesHistorial.jsx';
 import { useHistorialFormulario } from '../../hooks/useHistorialFormulario.js';
 import historialService, { TIPOS_FORMULARIOS } from '../../services/historialService.js';
+import { aseguradorasConFuncionarios } from '../../data/aseguradorasFuncionarios.js';
+import colombia from '../../data/colombia.json';
 
 //import proserLogo from "../../img/logo.png";
+
+// Datos maestros para llenado automático usando datos reales del proyecto
+const DATOS_MAESTROS = {
+  aseguradoras: Object.keys(aseguradorasConFuncionarios).map(nombre => ({
+    id: nombre.toLowerCase().replace(/\s+/g, '_'),
+    nombre: nombre,
+    funcionarios: aseguradorasConFuncionarios[nombre],
+    sucursales: ['Bogotá', 'Medellín', 'Cali', 'Barranquilla', 'Cartagena'],
+    direcciones: ['Calle Principal #123', 'Carrera Central #456', 'Avenida Comercial #789'],
+    telefonos: ['+57 1 2345678', '+57 4 5678901', '+57 2 3456789'],
+    emails: ['contacto@empresa.com', 'sucursal@empresa.com', 'atención@empresa.com']
+  })),
+  ciudades: colombia.flatMap(dep => 
+    dep.ciudades.map(ciudad => ({
+      id: ciudad.toLowerCase().replace(/\s+/g, '_'),
+      nombre: ciudad,
+      departamento: dep.departamento,
+      codigoPostal: '000000',
+      zona: 'Centro',
+      clima: 'Templado',
+      altitud: '1000 msnm'
+    }))
+  ),
+  asegurados: [
+    {
+      id: 'empresa1',
+      nombre: 'Constructora ABC Ltda',
+      tipo: 'Empresa',
+      nit: '900.123.456-7',
+      direccion: 'Calle 123 #45-67, Bogotá',
+      telefono: '+57 1 2345678',
+      email: 'contacto@abc.com',
+      sector: 'Construcción',
+      representante: 'Juan Pérez',
+      cargo: 'Gerente General'
+    },
+    {
+      id: 'empresa2',
+      nombre: 'Minería XYZ S.A.',
+      tipo: 'Empresa',
+      nit: '800.987.654-3',
+      direccion: 'Carrera 78 #90-12, Medellín',
+      telefono: '+57 4 5678901',
+      email: 'info@xyz.com',
+      sector: 'Minería',
+      representante: 'María García',
+      cargo: 'Directora Ejecutiva'
+    },
+    {
+      id: 'empresa3',
+      nombre: 'Transportes 123 SAS',
+      tipo: 'Empresa',
+      nit: '700.456.789-0',
+      direccion: 'Avenida 34 #56-78, Cali',
+      telefono: '+57 2 3456789',
+      email: 'admin@123.com',
+      sector: 'Transporte',
+      representante: 'Carlos López',
+      cargo: 'Presidente'
+    },
+    {
+      id: 'persona1',
+      nombre: 'Ana Rodríguez',
+      tipo: 'Persona Natural',
+      cedula: '52.345.678-9',
+      direccion: 'Calle 67 #89-01, Barranquilla',
+      telefono: '+57 5 9900112',
+      email: 'ana.rodriguez@email.com',
+      sector: 'Comercio',
+      representante: 'Ana Rodríguez',
+      cargo: 'Propietaria'
+    }
+  ]
+};
+
+// Debug: Verificar que los datos maestros se carguen correctamente
+console.log('🔍 DATOS_MAESTROS cargados:', {
+  aseguradoras: DATOS_MAESTROS.aseguradoras.length,
+  ciudades: DATOS_MAESTROS.ciudades.length,
+  asegurados: DATOS_MAESTROS.asegurados.length
+});
+console.log('🔍 Primera aseguradora:', DATOS_MAESTROS.aseguradoras[0]);
 
 const toArrayBuffer = (file) => {
   return new Promise((resolve, reject) => {
@@ -115,39 +200,198 @@ export default function FormularioMaquinaria() {
   const [firmanteInspector, setFirmanteInspector] = useState("");
   const [codigoInspector, setCodigoInspector] = useState("");
 
+  // Estados para modo edición
+  const [modoEdicion, setModoEdicion] = useState(false);
+  const [cargando, setCargando] = useState(false);
+  const [camposLlenadosAuto, setCamposLlenadosAuto] = useState({
+    aseguradora: false,
+    ciudad: false,
+    asegurado: false
+  });
+
   // Hook para manejar el historial
   const { guardando, exportando, guardarEnHistorial, exportarYGuardar } = useHistorialFormulario(TIPOS_FORMULARIOS.MAQUINARIA);
 
-  const handleGuardarEnHistorial = async () => {
-    const datos = {
-      numeroActa: nombre || "N/A",
-      fechaInspeccion: fecha,
-      horaInspeccion: new Date().toLocaleTimeString(),
-      ciudad: ciudadFecha,
-      aseguradora: aseguradora,
-      sucursal: "N/A",
-      asegurado: nombreAsegurado,
-      tipoMaquinaria: nombreMaquinaria,
-      marca: marca,
-      modelo: modelo,
-      serie: "N/A",
-      ano: "N/A",
-      estadoGeneral: "N/A",
-      tipoProteccion: tipoProteccion,
-      observaciones: recomendaciones,
-      recomendaciones: recomendaciones,
-      firmanteInspector: firmanteInspector,
-      codigoInspector: codigoInspector,
-      // Agregar otros campos según sea necesario
-    };
+  // Hooks de React Router
+  const { id } = useParams();
+  const navigate = useNavigate();
 
-    const resultado = await guardarEnHistorial(datos, 'en_proceso');
-    alert(resultado.message);
+  // Funciones para llenado automático de campos
+  const llenarCamposAseguradora = (aseguradoraId) => {
+    const aseguradoraSeleccionada = DATOS_MAESTROS.aseguradoras.find(a => a.id === aseguradoraId);
+    if (aseguradoraSeleccionada) {
+      setAseguradora(aseguradoraSeleccionada.nombre);
+      setDestinatario(aseguradoraSeleccionada.nombre);
+      setCamposLlenadosAuto(prev => ({ ...prev, aseguradora: true }));
+      console.log('✅ Campos de aseguradora llenados automáticamente:', aseguradoraSeleccionada.nombre);
+    }
   };
 
-  const handleExportar = async () => {
+  const llenarCamposCiudad = (ciudadId) => {
+    const ciudadSeleccionada = DATOS_MAESTROS.ciudades.find(c => c.id === ciudadId);
+    if (ciudadSeleccionada) {
+      setCiudadFecha(ciudadSeleccionada.nombre);
+      setDepartamento(ciudadSeleccionada.departamento);
+      setUbicacion(ciudadSeleccionada.zona);
+      setLugar(`${ciudadSeleccionada.nombre}, ${ciudadSeleccionada.departamento}`);
+      setCamposLlenadosAuto(prev => ({ ...prev, ciudad: true }));
+      console.log('✅ Campos de ciudad llenados automáticamente:', ciudadSeleccionada.nombre);
+      console.log('📍 Departamento:', ciudadSeleccionada.departamento);
+      console.log('🌍 Zona:', ciudadSeleccionada.zona);
+    }
+  };
+
+  const llenarCamposAsegurado = (aseguradoId) => {
+    const aseguradoSeleccionado = DATOS_MAESTROS.asegurados.find(a => a.id === aseguradoId);
+    if (aseguradoSeleccionado) {
+      setNombreAsegurado(aseguradoSeleccionado.nombre);
+      setTomador(aseguradoSeleccionado.representante);
+      setDestinatario(aseguradoSeleccionado.nombre);
+      setReferencia(aseguradoSeleccionado.nit || aseguradoSeleccionado.cedula);
+      setLugar(aseguradoSeleccionado.direccion);
+      setCamposLlenadosAuto(prev => ({ ...prev, asegurado: true }));
+      console.log('✅ Campos de asegurado llenados automáticamente:', aseguradoSeleccionado.nombre);
+    }
+  };
+
+  // Función para obtener opciones de los datos maestros
+  const obtenerOpcionesAseguradoras = () => {
+    const opciones = DATOS_MAESTROS.aseguradoras.map(a => ({ value: a.id, label: a.nombre }));
+    console.log('🔍 Opciones de aseguradoras generadas:', opciones);
+    return opciones;
+  };
+  const obtenerOpcionesCiudades = () => DATOS_MAESTROS.ciudades.map(c => ({ value: c.id, label: c.nombre }));
+  const obtenerOpcionesAsegurados = () => DATOS_MAESTROS.asegurados.map(a => ({ value: a.id, label: a.nombre }));
+
+  // Función para cargar datos del formulario existente
+  const cargarDatosFormulario = async (formularioId) => {
     try {
-      const datos = {
+      setCargando(true);
+      const token = localStorage.getItem('token');
+      
+      if (!token) {
+        console.error('❌ No hay token disponible');
+        return;
+      }
+
+      console.log('🔍 Iniciando carga de formulario de maquinaria con ID:', formularioId);
+
+      const response = await fetch(`http://localhost:3000/api/historial-formularios/${formularioId}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`Error HTTP: ${response.status}`);
+      }
+
+      const data = await response.json();
+      
+      if (data.success && data.formulario) {
+        const formulario = data.formulario;
+        
+        console.log('📥 Datos del formulario cargados:', formulario);
+        console.log('🔍 Estructura de datos:', formulario.datos);
+        console.log('🔍 Tipo de formulario:', formulario.tipo);
+        console.log('🔍 Claves disponibles en datos:', Object.keys(formulario.datos || {}));
+        
+        // Poblar todos los campos del formulario desde formulario.datos
+        setNombre(formulario.datos?.numeroActa || "");
+        setFecha(formulario.datos?.fechaInspeccion || "");
+        setNombreAsegurado(formulario.datos?.asegurado || "");
+        setNombreMaquinaria(formulario.datos?.tipoMaquinaria || "");
+        setCiudadFecha(formulario.datos?.ciudad || "");
+        setDestinatario(formulario.datos?.destinatario || "");
+        setReferencia(formulario.datos?.referencia || "");
+        setSaludo(formulario.datos?.saludo || "");
+        setCuerpo(formulario.datos?.cuerpo || "");
+        setFotos(formulario.datos?.fotos || [{ src: "", descripcion: "" }]);
+        setAseguradora(formulario.datos?.aseguradora || "");
+        setEquipo(formulario.datos?.equipo || "");
+        setMarca(formulario.datos?.marca || "");
+        setDescripcion(formulario.datos?.descripcion || "");
+        setMarcaBien(formulario.datos?.marcaBien || "");
+        setElectrico(formulario.datos?.electrico || "");
+        setTipoProteccion(formulario.datos?.tipoProteccion || "");
+        setRecomendaciones(formulario.datos?.recomendaciones || "");
+        setInspectorSeleccionado(formulario.datos?.inspectorSeleccionado || "");
+        setCargoSeleccionado(formulario.datos?.cargoSeleccionado || "");
+        setImagenesRegistro(formulario.datos?.imagenesRegistro || []);
+        setFotoPrincipal(formulario.datos?.fotoPrincipal || null);
+        setFotoPrincipalPreview(formulario.datos?.fotoPrincipalPreview || "");
+        setDescripcionFotoPrincipal(formulario.datos?.descripcionFotoPrincipal || "");
+        setTomador(formulario.datos?.tomador || "");
+        setLugar(formulario.datos?.lugar || "");
+        setUbicacion(formulario.datos?.ubicacion || "");
+        setDepartamento(formulario.datos?.departamento || "");
+        setModelo(formulario.datos?.modelo || "");
+        setLinea(formulario.datos?.linea || "");
+        setMotorDiesel(formulario.datos?.motorDiesel || "");
+        setSistemaLocomocion(formulario.datos?.sistemaLocomocion || "");
+        setColor(formulario.datos?.color || "");
+        setEstadoOperativo(formulario.datos?.estadoOperativo || "");
+        setCabina(formulario.datos?.cabina || "");
+        setFuncion(formulario.datos?.funcion || "");
+        setEquipoContraincendio(formulario.datos?.equipoContraincendio || "");
+        setEquipoRadio(formulario.datos?.equipoRadio || "");
+        setRadiodeOperacion(formulario.datos?.radiodeOperacion || "");
+        setMecanico(formulario.datos?.mecanico || "");
+        setHidraulico(formulario.datos?.hidraulico || "");
+        setPintura(formulario.datos?.pintura || "");
+        setChasis(formulario.datos?.chasis || "");
+        setLocomocion(formulario.datos?.locomocion || "");
+        setMantenimiento(formulario.datos?.mantenimiento || "");
+        setFuncionamiento(formulario.datos?.funcionamiento || "");
+        setRegistroFotografico(formulario.datos?.registroFotografico || []);
+        setFirmanteInspector(formulario.datos?.firmanteInspector || "");
+        setCodigoInspector(formulario.datos?.codigoInspector || "");
+        
+        console.log('✅ Formulario de maquinaria cargado exitosamente en modo edición');
+        console.log('🔍 Todos los estados han sido actualizados');
+      }
+    } catch (error) {
+      console.error('❌ Error cargando datos del formulario:', error);
+      alert('Error al cargar los datos del formulario. Por favor, inténtalo de nuevo.');
+    } finally {
+      setCargando(false);
+    }
+  };
+
+  // useEffect para detectar modo edición
+  useEffect(() => {
+    if (id) {
+      setModoEdicion(true);
+      setCargando(true);
+      cargarDatosFormulario(id);
+    }
+  }, [id]);
+
+  // Efecto para monitorear cambios en los estados principales cuando se cargan datos
+  useEffect(() => {
+    if (modoEdicion && !cargando) {
+      console.log('🔍 Estados actualizados después de la carga:');
+      console.log('  - nombre:', nombre);
+      console.log('  - fecha:', fecha);
+      console.log('  - nombreAsegurado:', nombreAsegurado);
+      console.log('  - nombreMaquinaria:', nombreMaquinaria);
+      console.log('  - ciudadFecha:', ciudadFecha);
+      console.log('  - aseguradora:', aseguradora);
+      console.log('  - marca:', marca);
+      console.log('  - modelo:', modelo);
+      console.log('  - tipoProteccion:', tipoProteccion);
+      console.log('  - recomendaciones:', recomendaciones);
+      console.log('  - firmanteInspector:', firmanteInspector);
+      console.log('  - codigoInspector:', codigoInspector);
+    }
+  }, [modoEdicion, cargando, nombre, fecha, nombreAsegurado, nombreMaquinaria, ciudadFecha, aseguradora, marca, modelo, tipoProteccion, recomendaciones, firmanteInspector, codigoInspector]);
+
+  const handleGuardarEnHistorial = async () => {
+    const datos = {
+      titulo: `Inspección de Maquinaria - ${nombreAsegurado || 'Asegurado'} - ${nombreMaquinaria || 'Maquinaria'}`,
+      datos: {
         numeroActa: nombre || "N/A",
         fechaInspeccion: fecha,
         horaInspeccion: new Date().toLocaleTimeString(),
@@ -166,6 +410,38 @@ export default function FormularioMaquinaria() {
         recomendaciones: recomendaciones,
         firmanteInspector: firmanteInspector,
         codigoInspector: codigoInspector,
+        // Agregar otros campos según sea necesario
+      }
+    };
+
+    const resultado = await guardarEnHistorial(datos, 'en_proceso');
+    alert(resultado.message);
+  };
+
+  const handleExportar = async () => {
+    try {
+      const datos = {
+        titulo: `Inspección de Maquinaria - ${nombreAsegurado || 'Asegurado'} - ${nombreMaquinaria || 'Maquinaria'}`,
+        datos: {
+          numeroActa: nombre || "N/A",
+          fechaInspeccion: fecha,
+          horaInspeccion: new Date().toLocaleTimeString(),
+          ciudad: ciudadFecha,
+          aseguradora: aseguradora,
+          sucursal: "N/A",
+          asegurado: nombreAsegurado,
+          tipoMaquinaria: nombreMaquinaria,
+          marca: marca,
+          modelo: modelo,
+          serie: "N/A",
+          ano: "N/A",
+          estadoGeneral: "N/A",
+          tipoProteccion: tipoProteccion,
+          observaciones: recomendaciones,
+          recomendaciones: recomendaciones,
+          firmanteInspector: firmanteInspector,
+          codigoInspector: codigoInspector,
+        }
       };
 
       // Primero exportar el documento
@@ -778,6 +1054,97 @@ const blob = await Packer.toBlob(doc);
   return (
     <div className="bg-gray-900 min-h-screen p-6">
       <div className="max-w-6xl mx-auto bg-gray-800 rounded-lg shadow-lg p-8 text-white">
+        {/* Encabezado con indicadores de modo edición y carga */}
+        <div className="mb-6">
+          <h1 className="text-3xl font-bold text-center mb-4">
+            📋 Formulario de Inspección de Maquinaria
+            {modoEdicion && (
+              <span className="ml-3 text-yellow-400 text-xl">
+                ✏️ Modo Edición
+              </span>
+            )}
+          </h1>
+          
+          {/* Información del sistema de datos maestros */}
+          <div className="mt-4 p-3 bg-blue-900 rounded-lg border border-blue-600">
+            <h3 className="text-sm font-semibold text-blue-200 mb-2">
+              📊 Sistema de Datos Maestros Disponibles:
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-xs text-blue-300">
+              <div className="flex items-center">
+                <span className="mr-2">🏢</span>
+                Aseguradoras: {DATOS_MAESTROS.aseguradoras.length}
+              </div>
+              <div className="flex items-center">
+                <span className="mr-2">🌆</span>
+                Ciudades: {DATOS_MAESTROS.ciudades.length}
+              </div>
+              <div className="flex items-center">
+                <span className="mr-2">👥</span>
+                Asegurados: {DATOS_MAESTROS.asegurados.length}
+              </div>
+            </div>
+            <p className="text-xs text-blue-400 mt-2">
+              💡 Selecciona del dropdown para llenado automático, o escribe manualmente
+            </p>
+          </div>
+          
+          {cargando && (
+            <div className="text-center py-4">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-400 mx-auto"></div>
+              <p className="mt-2 text-blue-400">🔄 Cargando datos del formulario...</p>
+            </div>
+          )}
+
+          {/* Indicador de campos llenados automáticamente */}
+          {(camposLlenadosAuto.aseguradora || camposLlenadosAuto.ciudad || camposLlenadosAuto.asegurado) && (
+            <div className="mt-4 p-3 bg-green-900 rounded-lg border border-green-600">
+              <h3 className="text-sm font-semibold text-green-200 mb-2">
+                🤖 Campos Llenados Automáticamente:
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-xs text-green-300">
+                {camposLlenadosAuto.aseguradora && (
+                  <div className="flex items-center">
+                    <span className="mr-2">✅</span>
+                    Aseguradora: {aseguradora}
+                  </div>
+                )}
+                {camposLlenadosAuto.ciudad && (
+                  <div className="flex items-center">
+                    <span className="mr-2">✅</span>
+                    Ciudad: {ciudadFecha}
+                  </div>
+                )}
+                {camposLlenadosAuto.asegurado && (
+                  <div className="flex items-center">
+                    <span className="mr-2">✅</span>
+                    Asegurado: {nombreAsegurado}
+                  </div>
+                )}
+              </div>
+              
+              {/* Mostrar funcionarios disponibles si se seleccionó una aseguradora */}
+              {camposLlenadosAuto.aseguradora && aseguradora && (
+                <div className="mt-3 p-2 bg-blue-900 rounded border border-blue-600">
+                  <h4 className="text-xs font-semibold text-blue-200 mb-1">
+                    🏢 Aseguradora Seleccionada:
+                  </h4>
+                  <div className="text-xs text-blue-300">
+                    <div className="flex items-center">
+                      <span className="mr-2">✅</span>
+                      {aseguradora}
+                    </div>
+                  </div>
+                </div>
+              )}
+              
+              <p className="text-xs text-green-400 mt-2">
+                💡 Los campos se pueden editar manualmente después del llenado automático
+              </p>
+            </div>
+          )}
+        </div>
+
         {/* Encabezado */}
         <EncabezadoMaquinaria
           nombreAsegurado={nombreAsegurado}
@@ -786,6 +1153,16 @@ const blob = await Packer.toBlob(doc);
           setNombreMaquinaria={setNombreMaquinaria}
           fecha={fecha}
           setFecha={setFecha}
+          opcionesAsegurados={obtenerOpcionesAsegurados()}
+          opcionesAseguradoras={obtenerOpcionesAseguradoras()}
+          opcionesCiudades={obtenerOpcionesCiudades()}
+          onAseguradoChange={llenarCamposAsegurado}
+          onAseguradoraChange={llenarCamposAseguradora}
+          onCiudadChange={llenarCamposCiudad}
+          aseguradora={aseguradora}
+          setAseguradora={setAseguradora}
+          ciudadFecha={ciudadFecha}
+          setCiudadFecha={setCiudadFecha}
         />
 
         {/* DATOS GENERALES */}
@@ -804,6 +1181,10 @@ const blob = await Packer.toBlob(doc);
                 setSaludo={setSaludo}
                 cuerpo={cuerpo}
                 setCuerpo={setCuerpo}
+                opcionesCiudades={obtenerOpcionesCiudades()}
+                opcionesAseguradoras={obtenerOpcionesAseguradoras()}
+                onCiudadChange={llenarCamposCiudad}
+                onAseguradoraChange={llenarCamposAseguradora}
               />
             </div>
             <div className="bg-gray-700 rounded-lg p-4 mb-4">
@@ -825,6 +1206,7 @@ const blob = await Packer.toBlob(doc);
                   }
                 }}
                 className="mb-2"
+                disabled={cargando}
               />
               {fotoPrincipalPreview && (
                 <img
@@ -839,6 +1221,7 @@ const blob = await Packer.toBlob(doc);
                 value={descripcionFotoPrincipal}
                 onChange={e => setDescripcionFotoPrincipal(e.target.value)}
                 placeholder="Descripción de la foto principal"
+                disabled={cargando}
               />
             </div>
           </div>
@@ -923,6 +1306,30 @@ const blob = await Packer.toBlob(doc);
           
           <div className="bg-gray-700 rounded-lg p-4 mb-4">
             <h2 className="text-lg font-bold mb-2 border-b border-gray-600 pb-1">Firma</h2>
+            <div className="grid md:grid-cols-2 gap-4 mb-4">
+              <div>
+                <label className="block text-sm font-medium mb-2">Nombre del Inspector</label>
+                <input
+                  type="text"
+                  value={firmanteInspector}
+                  onChange={e => setFirmanteInspector(e.target.value)}
+                  placeholder="Nombre del inspector"
+                  className="w-full bg-gray-800 border border-gray-600 px-3 py-2 text-white rounded focus:border-blue-500 focus:outline-none"
+                  disabled={cargando}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-2">Cargo del Inspector</label>
+                <input
+                  type="text"
+                  value={codigoInspector}
+                  onChange={e => setCodigoInspector(e.target.value)}
+                  placeholder="Cargo del inspector"
+                  className="w-full bg-gray-800 border border-gray-600 px-3 py-2 text-white rounded focus:border-blue-500 focus:outline-none"
+                  disabled={cargando}
+                />
+              </div>
+            </div>
             <FirmaMaquinaria
               firmanteInspector={firmanteInspector}
               setFirmanteInspector={setFirmanteInspector}
@@ -940,12 +1347,33 @@ const blob = await Packer.toBlob(doc);
           
           {/* Botones de historial */}
           <div className="mb-6">
+            {/* Información sobre campos obligatorios */}
+            <div className="mb-4 p-3 bg-blue-900 rounded-lg border border-blue-600">
+              <h3 className="text-sm font-semibold text-blue-200 mb-2">
+                📋 Campos Obligatorios para Guardar:
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-xs text-blue-300">
+                <div className={`flex items-center ${nombreAsegurado ? 'text-green-400' : 'text-red-400'}`}>
+                  <span className="mr-2">{nombreAsegurado ? '✅' : '❌'}</span>
+                  Asegurado: {nombreAsegurado || 'Faltante'}
+                </div>
+                <div className={`flex items-center ${nombreMaquinaria ? 'text-green-400' : 'text-red-400'}`}>
+                  <span className="mr-2">{nombreMaquinaria ? '✅' : '❌'}</span>
+                  Tipo Maquinaria: {nombreMaquinaria || 'Faltante'}
+                </div>
+                <div className={`flex items-center ${aseguradora ? 'text-green-400' : 'text-red-400'}`}>
+                  <span className="mr-2">{aseguradora ? '✅' : '❌'}</span>
+                  Aseguradora: {aseguradora || 'Faltante'}
+                </div>
+              </div>
+            </div>
+            
             <BotonesHistorial
               onGuardarEnHistorial={handleGuardarEnHistorial}
               onExportar={handleExportar}
               tipoFormulario={TIPOS_FORMULARIOS.MAQUINARIA}
               tituloFormulario="Maquinaria"
-              deshabilitado={!nombre || !ciudadFecha || !aseguradora}
+              deshabilitado={!nombreAsegurado || !nombreMaquinaria || !aseguradora}
               guardando={guardando}
               exportando={exportando}
             />
@@ -954,21 +1382,13 @@ const blob = await Packer.toBlob(doc);
           {/* Campos adicionales para exportación */}
           <div className="grid md:grid-cols-2 gap-4 mb-6">
             <div>
-              <label className="block text-sm font-medium mb-2">Nombre del Inspector</label>
-              <input
-                value={nombre}
-                onChange={e => setNombre(e.target.value)}
-                placeholder="Nombre del inspector"
-                className="w-full bg-gray-800 border border-gray-600 px-3 py-2 text-white rounded focus:border-blue-500 focus:outline-none"
-              />
-            </div>
-            <div>
               <label className="block text-sm font-medium mb-2">Fecha de Inspección</label>
               <input
                 type="date"
                 value={fecha}
                 onChange={e => setFecha(e.target.value)}
                 className="w-full bg-gray-800 border border-gray-600 px-3 py-2 text-white rounded focus:border-blue-500 focus:outline-none"
+                disabled={cargando}
               />
             </div>
           </div>

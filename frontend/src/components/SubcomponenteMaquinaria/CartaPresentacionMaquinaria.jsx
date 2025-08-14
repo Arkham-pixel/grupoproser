@@ -1,19 +1,5 @@
 import React from "react";
 import Select from "react-select";
-import { aseguradorasConFuncionarios } from "../../data/aseguradorasFuncionarios";
-import colombia from "../../data/colombia.json";
-
-// Obtén solo los nombres de las aseguradoras
-const aseguradoras = Object.keys(aseguradorasConFuncionarios).map(nombre => ({
-  value: nombre,
-  label: nombre,
-}));
-
-const saludosPredeterminados = [
-  "Estimados señores:",
-  "Cordial saludo.",
-  "Apreciados señores:",
-];
 
 export default function CartaPresentacionMaquinaria({
   ciudadFecha,
@@ -34,13 +20,17 @@ export default function CartaPresentacionMaquinaria({
   setCuerpo,
   foto,
   setFoto,
+  // Nuevas props para datos maestros
+  opcionesCiudades = [],
+  opcionesAseguradoras = [],
+  onCiudadChange,
+  onAseguradoraChange
 }) {
-  // Opciones de ciudades para react-select
-  const ciudadesOptions = colombia
-    .flatMap(dep => dep.ciudades.map(ciudad => ({
-      value: ciudad,
-      label: `${ciudad} (${dep.departamento})`
-    })));
+  const saludosPredeterminados = [
+    "Estimados señores:",
+    "Cordial saludo.",
+    "Apreciados señores:",
+  ];
 
   return (
     <div className="text-white text-sm">
@@ -48,9 +38,18 @@ export default function CartaPresentacionMaquinaria({
       <div className="mb-2">
         <label className="block mb-1 font-semibold">Ciudad</label>
         <Select
-          options={ciudadesOptions}
-          value={ciudadesOptions.find(opt => opt.value === ciudadFecha) || null}
-          onChange={opt => setCiudadFecha(opt ? opt.value : "")}
+          options={opcionesCiudades}
+          value={opcionesCiudades.find(opt => opt.value === ciudadFecha) || null}
+          onChange={(opt) => {
+            if (opt) {
+              setCiudadFecha(opt.label);
+              if (onCiudadChange) {
+                onCiudadChange(opt.value);
+              }
+            } else {
+              setCiudadFecha("");
+            }
+          }}
           placeholder="Seleccione ciudad"
           isClearable
           className="text-sm"
@@ -71,6 +70,14 @@ export default function CartaPresentacionMaquinaria({
             }),
           }}
         />
+        {/* Campo editable para ciudad */}
+        <input
+          type="text"
+          value={ciudadFecha}
+          onChange={e => setCiudadFecha(e.target.value)}
+          className="w-full mt-1 bg-gray-800 text-white border-b border-gray-600 px-2 py-1"
+          placeholder="Ciudad (editable)"
+        />
       </div>
 
       {/* Fecha */}
@@ -89,16 +96,25 @@ export default function CartaPresentacionMaquinaria({
       <div className="mb-2">
         <label className="block mb-1 font-semibold">Aseguradora</label>
         <Select
-          options={aseguradoras}
-          value={aseguradoras.find(opt => opt.value === destinatario) || null}
-          onChange={opt => setDestinatario(opt ? opt.value : "")}
+          options={opcionesAseguradoras}
+          value={opcionesAseguradoras.find(opt => opt.value === destinatario) || null}
+          onChange={(opt) => {
+            if (opt) {
+              setDestinatario(opt.label);
+              if (onAseguradoraChange) {
+                onAseguradoraChange(opt.value);
+              }
+            } else {
+              setDestinatario("");
+            }
+          }}
           placeholder="Seleccione aseguradora"
           isClearable
           className="text-sm"
           styles={{
             control: styles => ({
               ...styles,
-              backgroundColor: "#1F2937",
+              backgroundColor: "#1F2937", // bg-gray-800
               color: "white",
               borderColor: "#4B5563",
             }),
@@ -111,6 +127,14 @@ export default function CartaPresentacionMaquinaria({
               color: "white",
             }),
           }}
+        />
+        {/* Campo editable para aseguradora */}
+        <input
+          type="text"
+          value={destinatario}
+          onChange={e => setDestinatario(e.target.value)}
+          className="w-full mt-1 bg-gray-800 text-white border-b border-gray-600 px-2 py-1"
+          placeholder="Aseguradora (editable)"
         />
       </div>
 

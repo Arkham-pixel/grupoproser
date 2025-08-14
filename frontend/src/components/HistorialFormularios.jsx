@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { 
   FaFileAlt, 
   FaDownload, 
@@ -33,6 +33,8 @@ export default function HistorialFormularios() {
 
   const [busqueda, setBusqueda] = useState('');
   const [filtroTipo, setFiltroTipo] = useState('todos');
+  const [exportando, setExportando] = useState({});
+  const navigate = useNavigate();
 
   // Tipos de formularios disponibles
   const tiposFormularios = [
@@ -50,6 +52,8 @@ export default function HistorialFormularios() {
     aplicarFiltros({ tipo: filtroTipo });
   }, [filtroTipo, aplicarFiltros]);
 
+
+
   // Filtrar formularios por búsqueda
   const formulariosFiltrados = formularios.filter(formulario => {
     const cumpleBusqueda = formulario.titulo.toLowerCase().includes(busqueda.toLowerCase()) ||
@@ -58,29 +62,123 @@ export default function HistorialFormularios() {
     return cumpleBusqueda;
   });
 
-  // Función para descargar formulario
-  const handleDescargarFormulario = async (formulario) => {
+  // Función para exportar formulario (guardar cambios y descargar)
+  const handleExportarFormulario = async (formulario) => {
     try {
+      // Verificar si el formulario tiene archivo
+      if (!formulario.archivo || !formulario.archivo.nombre) {
+        alert('❌ Este formulario no tiene archivo adjunto para exportar');
+        return;
+      }
+      
+      console.log('📤 Iniciando exportación de:', formulario.archivo.nombre);
+      console.log('🔍 Información del archivo:', formulario.archivo);
+      
+      // Mostrar indicador de carga
+      setExportando(prev => ({ ...prev, [formulario.id]: true }));
+      
+      // Primero guardar/actualizar el formulario
+      await guardarFormulario(formulario);
+      
+      // Luego descargar el archivo actualizado
       await descargarFormulario(formulario.id);
-      alert(`📥 Descargando: ${formulario.archivo}`);
+      
+      // Mostrar mensaje de éxito
+      alert(`✅ Exportación completada: ${formulario.archivo.nombre}\n\nEl formulario ha sido guardado y descargado exitosamente.`);
+      
     } catch (error) {
-      alert(`❌ Error al descargar: ${error.message}`);
+      console.error('Error en exportación:', error);
+      
+      // Mensaje de error más específico y útil
+      let mensajeError = 'Error al exportar el formulario';
+      
+      if (error.message.includes('500')) {
+        mensajeError = '❌ Error del servidor: No se pudo procesar la exportación.\n\nPosibles causas:\n• Error al guardar los cambios\n• Problema con el archivo\n• Error en la base de datos';
+      } else if (error.message.includes('404')) {
+        mensajeError = '❌ Formulario no encontrado en el servidor.';
+      } else if (error.message.includes('401')) {
+        mensajeError = '❌ Sesión expirada. Por favor, inicia sesión nuevamente.';
+      } else if (error.message.includes('403')) {
+        mensajeError = '❌ No tienes permisos para exportar este formulario.';
+      } else if (error.message.includes('NetworkError')) {
+        mensajeError = '❌ Error de conexión. Verifica tu conexión a internet.';
+      } else {
+        mensajeError = `❌ Error al exportar: ${error.message}`;
+      }
+      
+      alert(mensajeError);
+      
+    } finally {
+      // Ocultar indicador de carga
+      setExportando(prev => ({ ...prev, [formulario.id]: false }));
     }
   };
 
   // Función para editar formulario
   const handleEditarFormulario = async (formulario) => {
     try {
+      console.log('🔍 Obteniendo formulario para editar:', formulario.id);
+      
       const formularioCompleto = await obtenerFormulario(formulario.id);
-      console.log('Formulario para editar:', formularioCompleto);
+      console.log('✅ Formulario obtenido para editar:', formularioCompleto);
       
-      // Aquí se implementaría la lógica de redirección a la edición
-      alert(`✏️ Editando: ${formulario.titulo}\n\nRedirigiendo al formulario...`);
+      // Redirección según el tipo de formulario
+      let rutaEdicion = '';
+      let mensajeInfo = '';
       
-      // Ejemplo de redirección (ajustar según tus rutas)
-      // window.location.href = `/editar/${formulario.tipo}/${formulario.id}`;
+      switch (formulario.tipo) {
+        case 'complex':
+          rutaEdicion = `/editar-caso/${formulario.id}`;
+          mensajeInfo = '🏢 Redirigiendo al editor de Complex...';
+          break;
+        case 'riesgos':
+          rutaEdicion = `/riesgos/editar/${formulario.id}`;
+          mensajeInfo = '⚠️ Redirigiendo al editor de Riesgos...';
+          break;
+        case 'pol':
+          rutaEdicion = `/reporte-pol`;
+          mensajeInfo = '📄 Redirigiendo al formulario POL (modo creación)...';
+          break;
+        case 'inspeccion':
+          rutaEdicion = `/formularioinspeccion/editar/${formulario.id}`;
+          mensajeInfo = '🔍 Redirigiendo al formulario de Inspección (modo edición)...';
+          break;
+        case 'maquinaria':
+          rutaEdicion = `/formulario-maquinaria/editar/${formulario.id}`;
+          mensajeInfo = '⚙️ Redirigiendo al formulario de Maquinaria (modo edición)...';
+          break;
+        case 'siniestros':
+          rutaEdicion = `/siniestros`;
+          mensajeInfo = '🚨 Redirigiendo a la lista de Siniestros...';
+          break;
+        default:
+          rutaEdicion = `/inicio`;
+          mensajeInfo = '🏠 Redirigiendo al inicio...';
+      }
+      
+      // Mostrar mensaje informativo antes de redirigir
+      alert(`${mensajeInfo}\n\nFormulario: ${formulario.titulo}\nTipo: ${formulario.tipo.toUpperCase()}`);
+      
+      // Redirección real usando React Router
+      navigate(rutaEdicion);
     } catch (error) {
-      alert(`❌ Error al obtener formulario: ${error.message}`);
+      console.error('❌ Error al obtener formulario para editar:', error);
+      
+      let mensajeError = 'Error al obtener formulario para editar';
+      
+      if (error.message.includes('401')) {
+        mensajeError = '❌ Sesión expirada. Por favor, inicia sesión nuevamente.';
+      } else if (error.message.includes('404')) {
+        mensajeError = '❌ Formulario no encontrado en el servidor.';
+      } else if (error.message.includes('500')) {
+        mensajeError = '❌ Error del servidor. Intenta nuevamente más tarde.';
+      } else if (error.message.includes('NetworkError')) {
+        mensajeError = '❌ Error de conexión. Verifica tu conexión a internet.';
+      } else {
+        mensajeError = `❌ Error: ${error.message}`;
+      }
+      
+      alert(mensajeError);
     }
   };
 
@@ -96,34 +194,58 @@ export default function HistorialFormularios() {
     }
   };
 
+  // Estado para el modal de detalles
+  const [modalDetalles, setModalDetalles] = useState({ visible: false, formulario: null });
+
   // Función para ver detalles del formulario
   const handleVerDetalles = async (formulario) => {
     try {
+      console.log('🔍 Obteniendo detalles del formulario:', formulario.id);
+      
+      // Mostrar indicador de carga
+      setModalDetalles({ visible: true, formulario: null });
+      
+      // Obtener formulario completo
       const formularioCompleto = await obtenerFormulario(formulario.id);
       
-      const detalles = `
-📋 DETALLES DEL FORMULARIO
-
-Título: ${formularioCompleto.titulo}
-Tipo: ${formularioCompleto.tipo.toUpperCase()}
-Usuario: ${formularioCompleto.usuario}
-Fecha de Creación: ${new Date(formularioCompleto.fechaCreacion).toLocaleString()}
-Última Modificación: ${new Date(formularioCompleto.fechaModificacion).toLocaleString()}
-Estado: ${formularioCompleto.estado}
-Archivo: ${formularioCompleto.archivo}
-
-Datos adicionales: ${JSON.stringify(formularioCompleto.datos, null, 2)}
-
-Metadata:
-- Versión: ${formularioCompleto.metadata?.version || 'N/A'}
-- Creado por: ${formularioCompleto.metadata?.creadoPor || 'N/A'}
-- Modificado por: ${formularioCompleto.metadata?.modificadoPor || 'N/A'}
-      `;
+      console.log('✅ Formulario completo obtenido:', formularioCompleto);
       
-      alert(detalles);
+      // Validar que el formulario tenga la estructura esperada
+      if (!formularioCompleto || typeof formularioCompleto !== 'object') {
+        throw new Error('Formulario no válido recibido del servidor');
+      }
+      
+      // Actualizar modal con el formulario completo
+      setModalDetalles({ visible: true, formulario: formularioCompleto });
+      
     } catch (error) {
-      alert(`❌ Error al obtener detalles: ${error.message}`);
+      console.error('❌ Error obteniendo detalles:', error);
+      
+      // Cerrar modal en caso de error
+      setModalDetalles({ visible: false, formulario: null });
+      
+      // Mostrar mensaje de error más específico
+      let mensajeError = 'Error al obtener detalles del formulario';
+      
+      if (error.message.includes('401')) {
+        mensajeError = 'Sesión expirada. Por favor, inicia sesión nuevamente.';
+      } else if (error.message.includes('404')) {
+        mensajeError = 'Formulario no encontrado en el servidor.';
+      } else if (error.message.includes('500')) {
+        mensajeError = 'Error del servidor. Intenta nuevamente más tarde.';
+      } else if (error.message.includes('NetworkError')) {
+        mensajeError = 'Error de conexión. Verifica tu conexión a internet.';
+      } else {
+        mensajeError = `Error: ${error.message}`;
+      }
+      
+      alert(`❌ ${mensajeError}`);
     }
+  };
+
+  // Función para cerrar modal
+  const cerrarModal = () => {
+    setModalDetalles({ visible: false, formulario: null });
   };
 
   // Función para obtener el color del estado
@@ -332,10 +454,10 @@ Metadata:
                               <FaCalendarAlt className="h-4 w-4 mr-1" />
                               Creado: {new Date(formulario.fechaCreacion).toLocaleDateString()}
                             </div>
-                            <div className="flex items-center">
-                              <FaFileAlt className="h-4 w-4 mr-1" />
-                              {formulario.archivo}
-                            </div>
+                                                         <div className="flex items-center">
+                               <FaFileAlt className="h-4 w-4 mr-1" />
+                               {formulario.archivo?.nombre || 'Sin archivo'}
+                             </div>
                           </div>
                         </div>
                       </div>
@@ -356,21 +478,28 @@ Metadata:
                         <FaEye className="h-5 w-5" />
                       </button>
 
-                      <button
-                        onClick={() => handleDescargarFormulario(formulario)}
-                        className="p-2 text-gray-400 hover:text-green-600 transition-colors duration-200"
-                        title="Descargar"
-                      >
-                        <FaDownload className="h-5 w-5" />
-                      </button>
+                                             <button
+                         onClick={() => handleExportarFormulario(formulario)}
+                         disabled={exportando[formulario.id]}
+                         className={`p-2 text-gray-400 hover:text-green-600 transition-colors duration-200 ${
+                           exportando[formulario.id] ? 'opacity-50 cursor-not-allowed' : ''
+                         }`}
+                         title={exportando[formulario.id] ? 'Exportando...' : 'Exportar y Descargar'}
+                       >
+                         {exportando[formulario.id] ? (
+                           <div className="animate-spin h-5 w-5 border-2 border-green-600 border-t-transparent rounded-full"></div>
+                         ) : (
+                           <FaFileAlt className="h-5 w-5" />
+                         )}
+                       </button>
 
-                      <button
-                        onClick={() => handleEditarFormulario(formulario)}
-                        className="p-2 text-gray-400 hover:text-blue-600 transition-colors duration-200"
-                        title="Editar"
-                      >
-                        <FaEdit className="h-5 w-5" />
-                      </button>
+                                             <button
+                         onClick={() => handleEditarFormulario(formulario)}
+                         className="p-2 text-gray-400 hover:text-blue-600 transition-colors duration-200"
+                         title={`Editar formulario ${formulario.tipo}`}
+                       >
+                         <FaEdit className="h-5 w-5" />
+                       </button>
 
                       <button
                         onClick={() => handleEliminarFormulario(formulario)}
@@ -387,6 +516,167 @@ Metadata:
           )}
         </div>
       </div>
+
+      {/* Modal de Detalles */}
+      {modalDetalles.visible && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+          <div className="relative top-20 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-1/2 shadow-lg rounded-md bg-white">
+            <div className="mt-3">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-medium text-gray-900">
+                  📋 Detalles del Formulario
+                </h3>
+                <button
+                  onClick={cerrarModal}
+                  className="text-gray-400 hover:text-gray-600 text-2xl font-bold"
+                >
+                  ×
+                </button>
+              </div>
+              
+              {/* Indicador de carga o contenido del formulario */}
+              {!modalDetalles.formulario ? (
+                <div className="flex items-center justify-center py-12">
+                  <div className="text-center">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
+                    <p className="mt-4 text-gray-600">Cargando detalles del formulario...</p>
+                  </div>
+                </div>
+              ) : (
+              <div className="space-y-4">
+                {/* Información básica */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Título</label>
+                    <p className="mt-1 text-sm text-gray-900">
+                      {modalDetalles.formulario.titulo || 'N/A'}
+                    </p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Tipo</label>
+                    <p className="mt-1 text-sm text-gray-900 uppercase">
+                      {modalDetalles.formulario.tipo || 'N/A'}
+                    </p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Usuario</label>
+                    <p className="mt-1 text-sm text-gray-900">
+                      {modalDetalles.formulario.usuario || 'N/A'}
+                    </p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Estado</label>
+                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getColorEstado(modalDetalles.formulario.estado)}`}>
+                      {getNombreEstado(modalDetalles.formulario.estado)}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Fechas */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Fecha de Creación</label>
+                    <p className="mt-1 text-sm text-gray-900">
+                      {modalDetalles.formulario.fechaCreacion 
+                        ? new Date(modalDetalles.formulario.fechaCreacion).toLocaleString() 
+                        : 'N/A'
+                      }
+                    </p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Última Modificación</label>
+                    <p className="mt-1 text-sm text-gray-900">
+                      {modalDetalles.formulario.fechaModificacion 
+                        ? new Date(modalDetalles.formulario.fechaModificacion).toLocaleString() 
+                        : 'N/A'
+                      }
+                    </p>
+                  </div>
+                </div>
+
+                {/* Archivo - Con validación robusta */}
+                {modalDetalles.formulario.archivo && typeof modalDetalles.formulario.archivo === 'object' && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Archivo</label>
+                    <div className="mt-1 p-3 bg-gray-50 rounded-md">
+                      <p className="text-sm text-gray-900">
+                        <strong>Nombre:</strong> {modalDetalles.formulario.archivo.nombre || 'N/A'}
+                      </p>
+                      <p className="text-sm text-gray-600">
+                        <strong>Tipo:</strong> {modalDetalles.formulario.archivo.tipoMime || 'N/A'}
+                      </p>
+                      {modalDetalles.formulario.archivo.tamaño && (
+                        <p className="text-sm text-gray-600">
+                          <strong>Tamaño:</strong> {(modalDetalles.formulario.archivo.tamaño / 1024 / 1024).toFixed(2)} MB
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Metadata - Con validación robusta */}
+                {modalDetalles.formulario.metadata && typeof modalDetalles.formulario.metadata === 'object' && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Metadata</label>
+                    <div className="mt-1 p-3 bg-gray-50 rounded-md">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
+                        <p><strong>Versión:</strong> {modalDetalles.formulario.metadata.version || 'N/A'}</p>
+                        <p><strong>Creado por:</strong> {modalDetalles.formulario.metadata.creadoPor || 'N/A'}</p>
+                        <p><strong>Modificado por:</strong> {modalDetalles.formulario.metadata.modificadoPor || 'N/A'}</p>
+                        <p><strong>Prioridad:</strong> {modalDetalles.formulario.metadata.prioridad || 'N/A'}</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Datos del formulario - Con validación robusta */}
+                {modalDetalles.formulario.datos && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Datos del Formulario</label>
+                    <div className="mt-1 p-3 bg-gray-50 rounded-md max-h-40 overflow-y-auto">
+                      <pre className="text-xs text-gray-700 whitespace-pre-wrap">
+                        {typeof modalDetalles.formulario.datos === 'object' 
+                          ? JSON.stringify(modalDetalles.formulario.datos, null, 2)
+                          : String(modalDetalles.formulario.datos)
+                        }
+                      </pre>
+                    </div>
+                  </div>
+                )}
+              </div>
+              )}
+              
+              {/* Botones de acción */}
+              <div className="flex justify-end space-x-3 mt-6 pt-4 border-t">
+                <button
+                  onClick={cerrarModal}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+                >
+                  Cerrar
+                </button>
+                                 <button
+                   onClick={() => {
+                     cerrarModal();
+                     handleExportarFormulario(modalDetalles.formulario);
+                   }}
+                   className="px-4 py-2 text-sm font-medium text-white bg-green-600 border border-transparent rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                 >
+                   📤 Exportar
+                 </button>
+                 <button
+                   onClick={() => {
+                     cerrarModal();
+                     handleEditarFormulario(modalDetalles.formulario);
+                   }}
+                   className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                 >
+                   ✏️ Editar
+                 </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

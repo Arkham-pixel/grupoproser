@@ -1,6 +1,13 @@
 import HistorialFormulario from '../models/HistorialFormulario.js';
 import fs from 'fs/promises';
+import fsSync from 'fs';
 import path from 'path';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+
+// Obtener __dirname equivalente para módulos ES6
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 class HistorialController {
   // Obtener todos los formularios del historial con filtros
@@ -310,40 +317,161 @@ class HistorialController {
   async descargarFormulario(req, res) {
     try {
       const { id } = req.params;
+      console.log('📥 Descarga solicitada para formulario:', id);
+      console.log(`🔧 Entorno actual: ${process.env.NODE_ENV || 'development'}`);
       
       const formulario = await HistorialFormulario.findById(id);
       
       if (!formulario) {
+        console.error('❌ Formulario no encontrado:', id);
         return res.status(404).json({
           success: false,
           error: 'Formulario no encontrado'
         });
       }
 
-      // Verificar si el archivo existe
-      const rutaArchivo = path.join(__dirname, '..', formulario.archivo.ruta);
+      console.log('🔍 Formulario encontrado:', {
+        id: formulario._id,
+        titulo: formulario.titulo,
+        archivo: formulario.archivo
+      });
+
+      // Verificar que el formulario tenga archivo
+      if (!formulario.archivo || !formulario.archivo.ruta) {
+        console.error('❌ Formulario no tiene archivo:', formulario._id);
+        return res.status(400).json({
+          success: false,
+          error: 'Este formulario no tiene archivo adjunto'
+        });
+      }
+
+      // Construir ruta del archivo
+      let rutaArchivo;
       
       try {
-        await fs.access(rutaArchivo);
+        // 🔄 SEPARACIÓN DESARROLLO/PRODUCCIÓN
+        const nombreArchivo = formulario.archivo.nombre;
+        let rutasAlternativas;
+        
+        // 🔍 DEBUG DETALLADO DE NODE_ENV
+        console.log('🔍 DEBUG NODE_ENV:');
+        console.log('  - Valor raw:', JSON.stringify(process.env.NODE_ENV));
+        console.log('  - Longitud:', process.env.NODE_ENV ? process.env.NODE_ENV.length : 'undefined');
+        console.log('  - Comparación === "development":', process.env.NODE_ENV === 'development');
+        console.log('  - Comparación === "production":', process.env.NODE_ENV === 'production');
+        console.log('  - Comparación includes "dev":', process.env.NODE_ENV && process.env.NODE_ENV.includes('dev'));
+        
+        if (process.env.NODE_ENV === 'development') {
+          // 🖥️ DESARROLLO LOCAL - Buscar en uploads directo
+          console.log('🔧 [DESARROLLO] Buscando archivo en entorno local...');
+          rutasAlternativas = [
+            path.join(__dirname, '..', 'uploads', nombreArchivo),
+            path.join(process.cwd(), 'uploads', nombreArchivo)
+          ];
+        } else {
+          // 🚀 PRODUCCIÓN - Buscar en rutas del servidor
+          console.log('🔧 [PRODUCCIÓN] Buscando archivo en servidor...');
+          const rutaRelativa = formulario.archivo.ruta.replace('/uploads/', '');
+          rutasAlternativas = [
+            path.join('/var/www/uploads', nombreArchivo),
+            path.join('/home/ubuntu/uploads', nombreArchivo),
+            path.join(process.cwd(), 'uploads', nombreArchivo),
+            path.join(__dirname, '..', 'uploads', nombreArchivo),
+            path.join(process.cwd(), 'uploads', rutaRelativa),
+            path.join(__dirname, '..', 'uploads', nombreArchivo),
+            path.join(process.cwd(), 'uploads', rutaRelativa)
+          ];
+        }
+        
+        console.log(`🔍 [${process.env.NODE_ENV || 'development'}] Intentando encontrar archivo en rutas:`, rutasAlternativas);
+        
+        for (const rutaAlt of rutasAlternativas) {
+          try {
+            await fs.access(rutaAlt);
+            console.log(`✅ [${process.env.NODE_ENV || 'development'}] Archivo encontrado en:`, rutaAlt);
+            rutaArchivo = rutaAlt;
+            break;
+          } catch (e) {
+            console.log(`❌ [${process.env.NODE_ENV || 'development'}] No encontrado en:`, rutaAlt);
+          }
+        }
+        
+        if (!rutaArchivo) {
+          return res.status(404).json({
+            success: false,
+            error: 'Archivo no encontrado en el servidor',
+            detalles: {
+              rutaOriginal: formulario.archivo.ruta,
+              nombreArchivo: nombreArchivo,
+              rutasIntentadas: rutasAlternativas
+            }
+          });
+        }
+        
+        // Verificar que el archivo no esté vacío
+        const stats = await fs.stat(rutaArchivo);
+        console.log('📊 Tamaño del archivo:', stats.size, 'bytes');
+        
+        if (stats.size === 0) {
+          console.error('❌ Archivo está vacío:', rutaArchivo);
+          return res.status(400).json({
+            success: false,
+            error: 'El archivo está vacío'
+          });
+        }
+        
       } catch (error) {
-        return res.status(404).json({
+        console.error('❌ Error accediendo al archivo:', error);
+        return res.status(500).json({
           success: false,
-          error: 'Archivo no encontrado en el servidor'
+          error: 'Error interno del servidor',
+          detalles: error.message
         });
       }
 
       // Configurar headers para descarga
-      res.setHeader('Content-Type', formulario.archivo.tipoMime);
-      res.setHeader('Content-Disposition', `attachment; filename="${formulario.archivo.nombre}"`);
+      const contentType = formulario.archivo.tipoMime || 'application/octet-stream';
+      const filename = formulario.archivo.nombre || 'formulario';
       
-      // Enviar archivo
-      res.sendFile(rutaArchivo);
-    } catch (error) {
-      console.error('Error descargando formulario:', error);
-      res.status(500).json({
-        success: false,
-        error: 'Error interno del servidor'
+      console.log('📋 Headers configurados:', {
+        'Content-Type': contentType,
+        'Content-Disposition': `attachment; filename="${filename}"`
       });
+      
+      res.setHeader('Content-Type', contentType);
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+      res.setHeader('Cache-Control', 'no-cache');
+      
+      // Enviar archivo usando stream para mejor rendimiento
+      const fileStream = fsSync.createReadStream(rutaArchivo);
+      
+      fileStream.on('error', (error) => {
+        console.error('❌ Error leyendo archivo:', error);
+        if (!res.headersSent) {
+          res.status(500).json({
+            success: false,
+            error: 'Error leyendo el archivo'
+          });
+        }
+      });
+      
+      fileStream.on('end', () => {
+        console.log('✅ Archivo enviado exitosamente');
+      });
+      
+      fileStream.pipe(res);
+      
+    } catch (error) {
+      console.error('❌ Error descargando formulario:', error);
+      console.error('❌ Stack trace:', error.stack);
+      
+      if (!res.headersSent) {
+        res.status(500).json({
+          success: false,
+          error: 'Error interno del servidor',
+          detalles: error.message
+        });
+      }
     }
   }
 
