@@ -1970,7 +1970,6 @@ const handleGuardarEnHistorial = async () => {
       maquinariaDescripcion: maquinariaDescripcion,
       tablaRiesgos: tablaRiesgos,
       barrio: barrio,
-      departamento: departamento,
       horarioLaboral: horarioLaboral,
       nombreEmpresa: nombreEmpresa,
       municipio: municipio,
@@ -2091,10 +2090,9 @@ const handleExportar = async () => {
         seguridadDescripcion: seguridadDescripcion,
         siniestralidad: siniestralidad,
         maquinariaDescripcion: maquinariaDescripcion,
-        tablaRiesgos: tablaRiesgos,
-        barrio: barrio,
-        departamento: departamento,
-        horarioLaboral: horarioLaboral,
+              tablaRiesgos: tablaRiesgos,
+      barrio: barrio,
+      horarioLaboral: horarioLaboral,
         nombreEmpresa: nombreEmpresa,
         municipio: municipio,
         personaEntrevistada: personaEntrevistada,
@@ -2162,7 +2160,17 @@ const cargarDatosFormulario = async (formularioId) => {
 
     console.log('🔍 Iniciando carga de formulario con ID:', formularioId);
     
-    const response = await fetch(`http://localhost:3000/api/historial-formularios/${formularioId}`, {
+    // Usar la misma lógica de entorno que otros servicios
+    const baseURL = window.location.hostname === 'localhost' || 
+                   window.location.hostname === '127.0.0.1' ||
+                   window.location.port === '5173' || 
+                   window.location.port === '3000'
+      ? 'http://localhost:3000'
+      : 'https://aplicacion.grupoproser.com.co';
+    
+    console.log('🌐 URL base para edición:', baseURL);
+    
+    const response = await fetch(`${baseURL}/api/historial-formularios/${formularioId}`, {
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json'

@@ -276,7 +276,17 @@ export default function FormularioMaquinaria() {
 
       console.log('🔍 Iniciando carga de formulario de maquinaria con ID:', formularioId);
 
-      const response = await fetch(`http://localhost:3000/api/historial-formularios/${formularioId}`, {
+      // Usar la misma lógica de entorno que otros servicios
+      const baseURL = window.location.hostname === 'localhost' || 
+                     window.location.hostname === '127.0.0.1' ||
+                     window.location.port === '5173' || 
+                     window.location.port === '3000'
+        ? 'http://localhost:3000'
+        : 'https://aplicacion.grupoproser.com.co';
+      
+      console.log('🌐 URL base para edición:', baseURL);
+
+      const response = await fetch(`${baseURL}/api/historial-formularios/${formularioId}`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
