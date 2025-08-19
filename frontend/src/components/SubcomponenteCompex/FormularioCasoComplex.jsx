@@ -1,13 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
+import { useDropzone } from 'react-dropzone';
 import DatosGenerales from './DatosGenerales';
-import ValoresPrestaciones from './ValoresPrestaciones';
-import Trazabilidad from './Trazabilidad';
 import Facturacion from './Facturacion';
 import Honorarios from './Honorarios';
-import Seguimiento from './Seguimiento';
 import ObservacionesCliente from './ObservacionesCliente';
-import { useDropzone } from 'react-dropzone';
-import config from '../../config.js';
+import { BASE_URL } from '../../config/apiConfig.js';
 // Importa aquí los demás subcomponentes cuando los crees
 
 export default function FormularioCasoComplex({ initialData, onSave, onCancel }) {
@@ -166,7 +164,7 @@ export default function FormularioCasoComplex({ initialData, onSave, onCancel })
       // Buscar el cliente seleccionado para obtener su código
       const cliente = aseguradoraOptionsRaw.find(c => c.rzonSocial === formData.aseguradora);
       if (cliente && cliente.codiAsgrdra) {
-        fetch(`${config.API_BASE_URL}/api/funcionarios-aseguradora?codiAsgrdra=${cliente.codiAsgrdra}`)
+        fetch(`${BASE_URL}/api/funcionarios-aseguradora?codiAsgrdra=${cliente.codiAsgrdra}`)
           .then(res => res.json())
           .then(data => {
             setFuncionarios(data.map(f => f.nmbrContcto));
@@ -181,7 +179,7 @@ export default function FormularioCasoComplex({ initialData, onSave, onCancel })
 
   // Guardar los datos crudos de clientes para obtener el código
   useEffect(() => {
-            fetch(`${config.API_BASE_URL}/api/clientes`)
+            fetch(`${BASE_URL}/api/clientes`)
       .then(res => res.json())
       .then(data => {
         setAseguradoraOptionsRaw(data);
@@ -190,7 +188,7 @@ export default function FormularioCasoComplex({ initialData, onSave, onCancel })
   }, []);
 
   useEffect(() => {
-            fetch(`${config.API_BASE_URL}/api/ciudades`)
+            fetch(`${BASE_URL}/api/ciudades`)
       .then(res => res.json())
       .then(data => {
         // Transformar para react-select: { value, label }
@@ -203,7 +201,7 @@ export default function FormularioCasoComplex({ initialData, onSave, onCancel })
   }, []);
 
   useEffect(() => {
-            fetch(`${config.API_BASE_URL}/api/responsables`)
+            fetch(`${BASE_URL}/api/responsables`)
       .then(res => res.json())
       .then(data => {
         setResponsables(data.map(r => r.nmbrRespnsble));
@@ -211,7 +209,7 @@ export default function FormularioCasoComplex({ initialData, onSave, onCancel })
   }, []);
 
   useEffect(() => {
-            fetch(`${config.API_BASE_URL}/api/estados`)
+            fetch(`${BASE_URL}/api/estados`)
       .then(res => res.json())
       .then(data => {
         const mapped = (data || [])
@@ -226,7 +224,7 @@ export default function FormularioCasoComplex({ initialData, onSave, onCancel })
 
   // Cargar intermediarios desde la API
   useEffect(() => {
-            fetch(`${config.API_BASE_URL}/api/complex/intermediarios`)
+            fetch(`${BASE_URL}/api/complex/intermediarios`)
       .then(res => {
         if (!res.ok) {
           throw new Error(`HTTP error! status: ${res.status}`);
@@ -253,57 +251,80 @@ export default function FormularioCasoComplex({ initialData, onSave, onCancel })
   // Función para mapear los campos del frontend a los del backend
   function mapFormDataToBackend(formData) {
     return {
-      numero_ajuste: formData.nmroAjste,
-      codigo_workflow: formData.codWorkflow,
-      numero_siniestro: formData.nmroSinstro,
-      intermediario: formData.nombIntermediario,
-      aseguradora: formData.aseguradora,
-      funcionario_aseguradora: formData.funcionario_aseguradora,
-      responsable: formData.codiRespnsble || formData.responsable,
-      asegurado: formData.asgrBenfcro,
-      tipo_documento: formData.tipoDucumento,
-      numero_documento: formData.numDocumento,
-      fecha_siniestro: formData.fchaSinstro,
-      ciudad_siniestro: formData.ciudadSiniestro || formData.ciudad_siniestro,
-      descripcion_siniestro: formData.descSinstro,
-      estado: formData.estado,
-      tipo_poliza: formData.tipoPoliza,
+      // Campos principales con nombres correctos del modelo
+      nmroAjste: formData.nmroAjste,
+      nmroSinstro: formData.nmroSinstro,
+      nombIntermediario: formData.nombIntermediario,
+      codWorkflow: formData.codWorkflow,
+      nmroPolza: formData.nmroPolza,
+      codiRespnsble: formData.codiRespnsble,
+      codiAsgrdra: formData.codiAsgrdra,
+      funcAsgrdra: formData.funcAsgrdra,
+      asgrBenfcro: formData.asgrBenfcro,
+      tipoDucumento: formData.tipoDucumento,
+      numDocumento: formData.numDocumento,
+      tipoPoliza: formData.tipoPoliza,
+      ciudadSiniestro: formData.ciudadSiniestro,
+      amprAfctdo: formData.amprAfctdo,
+      descSinstro: formData.descSinstro,
       causa_siniestro: formData.causa_siniestro,
-      valor_reserva: formData.valor_reserva,
-      valor_reclamo: formData.valor_reclamo,
-      monto_indemnizar: formData.monto_indemnizar,
-      fecha_contacto_inicial: formData.fchaContIni,
-      observaciones_contacto_inicial: formData.observaciones_contacto_inicial,
-      adjuntos_contacto_inicial: formData.adjuntos_contacto_inicial,
-      fecha_inspeccion: formData.fchaInspccion,
-      observacion_inspeccion: formData.observacion_inspeccion,
-      adjunto_acta_inspeccion: formData.adjunto_acta_inspeccion,
-      fecha_solicitud_documentos: formData.fecha_solicitud_documentos,
-      observacion_solicitud_documento: formData.observacion_solicitud_documento,
-      adjunto_solicitud_documento: formData.adjunto_solicitud_documento,
-      fecha_informe_preliminar: formData.fecha_informe_preliminar,
-      adjunto_informe_preliminar: formData.adjunto_informe_preliminar,
-      observacion_informe_preliminar: formData.observacion_informe_preliminar,
-      fecha_informe_final: formData.fecha_informe_final,
-      adjunto_informe_final: formData.adjunto_informe_final,
-      observacion_informe_final: formData.observacion_informe_final,
-      fecha_ultimo_documento: formData.fecha_ultimo_documento,
-      adjunto_entrega_ultimo_documento: formData.adjunto_entrega_ultimo_documento,
-      numero_factura: formData.numero_factura,
-      valor_servicio: formData.valor_servicio,
-      valor_gastos: formData.valor_gastos,
-      fecha_factura: formData.fecha_factura,
-      fecha_ultima_revision: formData.fecha_ultima_revision,
-      observacion_compromisos: formData.observacion_compromisos,
-      adjunto_factura: formData.adjunto_factura,
-      fecha_ultimo_seguimiento: formData.fecha_ultimo_seguimiento,
-      observacion_seguimiento_pendientes: formData.observacion_seguimiento_pendientes,
-      adjunto_seguimientos_pendientes: formData.adjunto_seguimientos_pendientes,
-      numero_poliza: formData.nmroPolza,
-      fecha_asignacion: formData.fchaAsgncion,
-      creado_en: formData.creado_en,
+      codiEstdo: formData.estado,
+      fchaAsgncion: formData.fchaAsgncion,
+      fchaSinstro: formData.fchaSinstro,
+      fchaInspccion: formData.fchaInspccion,
+      fchaContIni: formData.fchaContIni,
+      
+      // Campos adicionales
+      obse_cont_ini: formData.obse_cont_ini,
+      anex_cont_ini: formData.anex_cont_ini,
+      obse_inspccion: formData.obse_inspccion,
+      anex_acta_inspccion: formData.anex_acta_inspccion,
+      anex_sol_doc: formData.anex_sol_doc,
+      obse_soli_docu: formData.obse_soli_docu,
+      anxo_inf_prelim: formData.anxo_inf_prelim,
+      obse_info_prelm: formData.obse_info_prelm,
+      anxo_info_fnal: formData.anxo_info_fnal,
+      obse_info_fnal: formData.obse_info_fnal,
+      anxo_repo_acti: formData.anxo_repo_acti,
+      obse_repo_acti: formData.obse_repo_acti,
+      anxo_factra: formData.anxo_factra,
+      anxo_honorarios: formData.anxo_honorarios,
+      anxo_honorariosdefinit: formData.anxo_honorariosdefinit,
+      anxo_autorizacion: formData.anxo_autorizacion,
+      obse_comprmsi: formData.obse_comprmsi,
+      obse_segmnto: formData.obse_segmnto,
+      
+      // Campos de fechas
+      fcha_soli_docu: formData.fcha_soli_docu,
+      fcha_info_prelm: formData.fcha_info_prelm,
+      fcha_info_fnal: formData.fcha_info_fnal,
+      fcha_repo_acti: formData.fcha_repo_acti,
+      fcha_ult_segui: formData.fcha_ult_segui,
+      fcha_act_segui: formData.fcha_act_segui,
+      fcha_finqto_indem: formData.fcha_finqto_indem,
+      fcha_factra: formData.fcha_factra,
+      fcha_ult_revi: formData.fcha_ult_revi,
+      
+      // Campos numéricos
+      dias_transcrrdo: formData.dias_transcrrdo,
+      vlor_resrva: formData.vlor_resrva,
+      vlor_reclmo: formData.vlor_reclmo,
+      monto_indmzar: formData.monto_indmzar,
+      vlor_servcios: formData.vlor_servcios,
+      vlor_gastos: formData.vlor_gastos,
+      total: formData.total,
+      total_general: formData.total_general,
+      total_pagado: formData.total_pagado,
+      iva: formData.iva,
+      reteiva: formData.reteiva,
+      retefuente: formData.retefuente,
+      reteica: formData.reteica,
+      porc_iva: formData.porc_iva,
+      porc_reteiva: formData.porc_reteiva,
+      porc_retefuente: formData.porc_retefuente,
+      porc_reteica: formData.porc_reteica,
+      
       historialDocs: formData.historialDocs
-      // Agrega aquí más campos si es necesario
     };
   }
 

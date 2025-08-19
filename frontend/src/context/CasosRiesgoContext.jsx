@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import axios from "axios";
-import config from "../config.js";
+import { BASE_URL } from "../config/apiConfig.js";
 
 // Configurar axios con timeouts más largos para Firebase -> AWS
 const api = axios.create({
@@ -24,7 +24,7 @@ export const CasosRiesgoProvider = ({ children }) => {
 
   const cargarCasos = async () => {
     try {
-      const res = await api.get(`${config.API_BASE_URL}/api/riesgos`);
+      const res = await api.get(`${BASE_URL}/api/riesgos`);
       setCasos(Array.isArray(res.data) ? res.data : []);
     } catch (err) {
       console.error("Error al cargar casos de riesgo:", err);
@@ -56,7 +56,7 @@ export const CasosRiesgoProvider = ({ children }) => {
       
       console.log('📤 ENVIANDO AL BACKEND:', dataToSend);
       
-      const response = await api.post(`${config.API_BASE_URL}/api/riesgos`, dataToSend, requestConfig);
+      const response = await api.post(`${BASE_URL}/api/riesgos`, dataToSend, requestConfig);
       
       console.log('✅ RESPUESTA DEL BACKEND:', response.data);
       
@@ -96,7 +96,7 @@ export const CasosRiesgoProvider = ({ children }) => {
         dataToSend = formData;
         requestConfig.headers = { 'Content-Type': 'multipart/form-data' };
       }
-      await api.put(`${config.API_BASE_URL}/api/riesgos/${caso._id}`, dataToSend, requestConfig);
+      await api.put(`${BASE_URL}/api/riesgos/${caso._id}`, dataToSend, requestConfig);
       await cargarCasos();
     } catch (err) {
       console.error('Error al editar caso de riesgo:', err);

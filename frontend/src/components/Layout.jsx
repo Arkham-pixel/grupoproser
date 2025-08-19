@@ -174,6 +174,12 @@ export default function Layout() {
                   Formulario POL
                 </Link>
                 <Link
+                  to="/ajuste"
+                  className="block px-4 py-2 hover:bg-blue-50"
+                >
+                  📊 Informe Inspección de Siniestro
+                </Link>
+                <Link
                   to="/historial"
                   className="block px-4 py-2 hover:bg-blue-50"
                 >

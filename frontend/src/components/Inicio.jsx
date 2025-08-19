@@ -1,9 +1,9 @@
 // src/components/Inicio.jsx
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import config from '../config.js';
+import { BASE_URL } from '../config/apiConfig.js';
 
-const API = `${config.API_BASE_URL}/api`;
+const API = `${BASE_URL}/api`;
 
 // Simulación de comunicados reales (reemplaza por tu backend o contexto)
 const comunicadosIniciales = [

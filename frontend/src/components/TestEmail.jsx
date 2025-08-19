@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import axios from 'axios';
-import config from '../config.js';
+import { BASE_URL } from '../config/apiConfig.js';
 
 export default function TestEmail() {
   const [emailDestino, setEmailDestino] = useState('danalyst@proserpuertos.com.co');
@@ -15,7 +15,7 @@ export default function TestEmail() {
     setError(null);
 
     try {
-      const response = await axios.post(`${config.API_BASE_URL}/api/riesgos/test-email`, {
+      const response = await axios.post(`${BASE_URL}/api/riesgos/test-email`, {
         emailDestino
       });
 

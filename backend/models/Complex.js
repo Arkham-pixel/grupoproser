@@ -66,6 +66,10 @@ const ComplexSchema = new mongoose.Schema({
       comentario: String
     }
   ],
-}, { collection: 'gsk3cAppsiniestro' });
+}, { 
+  collection: 'gsk3cAppsiniestro',
+  // Usar la conexión principal de MongoDB
+  connection: mongoose.connection
+});
 
 export default mongoose.model('Complex', ComplexSchema);

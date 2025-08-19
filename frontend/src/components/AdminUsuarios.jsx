@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import config from '../config.js';
+import { BASE_URL } from '../config/apiConfig.js';
 
 const AdminUsuarios = () => {
   const [usuarios, setUsuarios] = useState([]);
@@ -23,7 +23,7 @@ const AdminUsuarios = () => {
   const cargarUsuarios = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(`${config.API_BASE_URL}/api/secur-auth/usuarios`);
+      const response = await axios.get(`${BASE_URL}/api/secur-auth/usuarios`);
       setUsuarios(response.data.usuarios);
     } catch (error) {
       console.error('Error cargando usuarios:', error);
@@ -42,7 +42,7 @@ const AdminUsuarios = () => {
     }
 
     try {
-      const response = await axios.post(`${config.API_BASE_URL}/api/secur-auth/cambiar-password`, {
+      const response = await axios.post(`${BASE_URL}/api/secur-auth/cambiar-password`, {
         login: selectedUser.login,
         nuevaPassword: newPassword,
         adminLogin: adminCredentials.adminLogin,

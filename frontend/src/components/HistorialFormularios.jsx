@@ -44,7 +44,8 @@ export default function HistorialFormularios() {
     { id: TIPOS_FORMULARIOS.POL, nombre: 'POL', icono: '📄', color: 'bg-green-500' },
     { id: TIPOS_FORMULARIOS.INSPECCION, nombre: 'Inspección', icono: '🔍', color: 'bg-yellow-500' },
     { id: TIPOS_FORMULARIOS.MAQUINARIA, nombre: 'Maquinaria', icono: '⚙️', color: 'bg-purple-500' },
-    { id: TIPOS_FORMULARIOS.SINIESTROS, nombre: 'Siniestros', icono: '🚨', color: 'bg-orange-500' }
+    { id: TIPOS_FORMULARIOS.SINIESTROS, nombre: 'Siniestros', icono: '🚨', color: 'bg-orange-500' },
+    { id: TIPOS_FORMULARIOS.AJUSTE, nombre: 'Ajuste', icono: '📊', color: 'bg-indigo-500' }
   ];
 
   // Aplicar filtros cuando cambien
@@ -150,6 +151,10 @@ export default function HistorialFormularios() {
         case 'siniestros':
           rutaEdicion = `/siniestros`;
           mensajeInfo = '🚨 Redirigiendo a la lista de Siniestros...';
+          break;
+        case 'ajuste':
+          rutaEdicion = `/ajuste/editar/${formulario.id}`;
+          mensajeInfo = '📊 Redirigiendo al formulario de Ajuste (modo edición)...';
           break;
         default:
           rutaEdicion = `/inicio`;

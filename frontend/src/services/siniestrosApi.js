@@ -1,6 +1,6 @@
-import config from "../config.js";
+import { BASE_URL } from "../config/apiConfig.js";
 
-const API_URL = `${config.API_BASE_URL}/api/siniestros`;
+const API_URL = `${BASE_URL}/api/siniestros`;
 
 export const getSiniestros = async (params = {}) => {
   const query = new URLSearchParams(params).toString();

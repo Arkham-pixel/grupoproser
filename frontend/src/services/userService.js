@@ -1,6 +1,6 @@
 // src/services/userService.js
 import axios from "axios";
-import config from "../config.js";
+import { BASE_URL } from "../config/apiConfig.js";
 
 
 // Asegúrate de usar el protocolo correcto:
@@ -20,8 +20,8 @@ export const loginUsuario = async (datos) => {
 export const obtenerPerfil = async (token, tipo = "normal") => {
   const url =
     tipo === "secur"
-          ? `${config.API_BASE_URL}/api/secur-auth/perfil`
-    : `${config.API_BASE_URL}/api/usuarios/perfil`;
+          ? `${BASE_URL}/api/secur-auth/perfil`
+    : `${BASE_URL}/api/usuarios/perfil`;
   
   console.log('🌐 obtenerPerfil - configuración:', {
     tipo,
@@ -50,8 +50,8 @@ export const actualizarFoto = (formData, token) =>
 export const actualizarPerfil = async (data, token, tipo = "normal") => {
   const url =
     tipo === "secur"
-          ? `${config.API_BASE_URL}/api/secur-auth/perfil`
-    : `${config.API_BASE_URL}/api/usuarios/perfil`;
+          ? `${BASE_URL}/api/secur-auth/perfil`
+    : `${BASE_URL}/api/usuarios/perfil`;
   return axios.put(url, data, {
     headers: { Authorization: `Bearer ${token}` }
   });

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import axios from 'axios';
-import config from '../config.js';
+import { BASE_URL } from '../config/apiConfig.js';
 
 export default function EditarPerfilUsuario() {
   const [userLogin, setUserLogin] = useState('');
@@ -28,7 +28,7 @@ export default function EditarPerfilUsuario() {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get(`${config.API_BASE_URL}/api/secur-auth/usuario/${userLogin}`, {
+      const response = await axios.get(`${BASE_URL}/api/secur-auth/usuario/${userLogin}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
 
@@ -60,7 +60,7 @@ export default function EditarPerfilUsuario() {
 
     try {
       const token = localStorage.getItem('token');
-      await axios.put(`${config.API_BASE_URL}/api/secur-auth/actualizar-usuario/${userLogin}`, form, {
+      await axios.put(`${BASE_URL}/api/secur-auth/actualizar-usuario/${userLogin}`, form, {
         headers: { Authorization: `Bearer ${token}` }
       });
 

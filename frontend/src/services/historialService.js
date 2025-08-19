@@ -8,7 +8,8 @@ export const TIPOS_FORMULARIOS = {
   POL: 'pol',
   INSPECCION: 'inspeccion',
   MAQUINARIA: 'maquinaria',
-  SINIESTROS: 'siniestros'
+  SINIESTROS: 'siniestros',
+  AJUSTE: 'ajuste'
 };
 
 // Estados de formularios

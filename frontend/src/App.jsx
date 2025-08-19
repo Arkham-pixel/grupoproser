@@ -1,7 +1,7 @@
 // src/App.jsx
 import React from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
-import config from './config.js'
+import { BASE_URL } from './config/apiConfig.js'
 
 import Login from './components/login'
 import Register from './components/Register'
@@ -26,6 +26,7 @@ import TestEmail from './components/TestEmail';
 import EditarPerfilUsuario from './components/EditarPerfilUsuario';
 import SessionSettings from './components/SessionSettings';
 import HistorialFormularios from './components/HistorialFormularios';
+import FormularioAjuste from './components/SubcomponenteFormularioAjuste/FormularioAjuste';
 
 import { CasosRiesgoProvider } from './context/CasosRiesgoContext'
 import RequireAuth from './components/RequireAuth'
@@ -46,7 +47,7 @@ const guardarCasoComplex = async (formData) => {
   try {
     console.log('📝 Enviando datos del caso complex:', formData);
     
-    const response = await fetch(`${config.API_BASE_URL}/api/complex`, {
+    const response = await fetch(`${BASE_URL}/api/complex`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(formData)
@@ -127,6 +128,8 @@ export default function App() {
           <Route path="formulario-maquinaria" element={<FormularioMaquinaria />} />
           <Route path="formulario-maquinaria/editar/:id" element={<FormularioMaquinaria />} />
           <Route path="reporte-pol" element={<ReportePolPadre />} />
+          <Route path="ajuste" element={<FormularioAjuste />} />
+          <Route path="ajuste/editar/:id" element={<FormularioAjuste />} />
           <Route path="historial" element={<HistorialFormularios />} />
           <Route path="siniestros" element={<SiniestrosList />} />
           <Route path="admin/usuarios" element={<AdminUsuarios />} />

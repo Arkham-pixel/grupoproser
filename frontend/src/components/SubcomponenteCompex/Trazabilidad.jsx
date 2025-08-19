@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useDropzone } from 'react-dropzone';
-import config from '../../config.js';
+import { BASE_URL } from '../../config/apiConfig.js';
 
 const tiposSolicitud = [
   { value: 'anexo_solicitud_documento', label: 'Anexo de la Solicitud de Documento' },
@@ -100,7 +100,7 @@ export default function Trazabilidad({
     
     try {
       console.log('🌐 Enviando archivo al servidor...');
-      const resp = await fetch(`${config.API_BASE_URL}/api/complex/upload`, {
+      const resp = await fetch(`${BASE_URL}/api/complex/upload`, {
         method: 'POST',
         body: formDataFile
       });
