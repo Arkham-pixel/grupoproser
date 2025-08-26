@@ -87,6 +87,7 @@ export default function FormularioAjuste() {
     valorSiniestro: '',
     direccionRiesgo: '',
     coordenadasRiesgo: '',
+    descripcionRiesgo: '',
     fechaInspeccion: '',
     horaInspeccion: '',
     inspector: '',
@@ -110,10 +111,12 @@ export default function FormularioAjuste() {
     fechaActualizacion: '',
     cambiosDesdePreeliminar: '',
     nuevaInformacion: '',
+    observacionesActualizacion: '',
     // Campos para informe final
     fechaInformeFinal: '',
     conclusionesFinales: '',
-    recomendacionesFinales: ''
+    recomendacionesFinales: '',
+    observacionesInformeFinal: ''
   });
 
   // Nuevo estado para la información del mapa
@@ -1047,6 +1050,16 @@ export default function FormularioAjuste() {
                 crearTextoNormal(formData.reservaSugerida, { spacingAfter: 200 })
               ] : [
                 crearMensajeSinInformacion("Reserva Sugerida")
+              ]),
+
+              // 8. OBSERVACIONES DE ACTUALIZACIÓN
+              crearTextoNormal("8. OBSERVACIONES DE ACTUALIZACIÓN", { heading: HeadingLevel.HEADING_2, spacing: { before: 200, after: 200 } }),
+
+              // SOLO generar texto si hay información real
+              ...(formData.observacionesActualizacion ? [
+                crearTextoNormal(formData.observacionesActualizacion, { spacingAfter: 200 })
+              ] : [
+                crearMensajeSinInformacion("Observaciones de Actualización")
               ])
             ] : []),
 
@@ -1096,6 +1109,16 @@ export default function FormularioAjuste() {
                 crearTextoNormal(formData.reservaSugerida, { spacingAfter: 200 })
               ] : [
                 crearMensajeSinInformacion("Reserva Sugerida")
+              ]),
+
+              // 10. OBSERVACIONES DEL INFORME FINAL
+              crearTextoNormal("10. OBSERVACIONES DEL INFORME FINAL", { heading: HeadingLevel.HEADING_2, spacing: { before: 200, after: 200 } }),
+
+              // SOLO generar texto si hay información real
+              ...(formData.observacionesInformeFinal ? [
+                crearTextoNormal(formData.observacionesInformeFinal, { spacingAfter: 200 })
+              ] : [
+                crearMensajeSinInformacion("Observaciones del Informe Final")
               ])
             ] : []),
 
@@ -1460,7 +1483,8 @@ export default function FormularioAjuste() {
           ...prev,
           fechaActualizacion: new Date().toISOString().split('T')[0],
           cambiosDesdePreeliminar: '',
-          nuevaInformacion: ''
+          nuevaInformacion: '',
+          observacionesActualizacion: ''
         }));
       } else if (siguienteEstado === 'informeFinal') {
         // Para informe final, mantener todo pero agregar campos finales
@@ -1468,7 +1492,8 @@ export default function FormularioAjuste() {
           ...prev,
           fechaInformeFinal: new Date().toISOString().split('T')[0],
           conclusionesFinales: '',
-          recomendacionesFinales: ''
+          recomendacionesFinales: '',
+          observacionesInformeFinal: ''
         }));
       } else if (siguienteEstado === 'inicial') {
         // Para nuevo formulario, limpiar todo
@@ -1492,6 +1517,7 @@ export default function FormularioAjuste() {
           valorSiniestro: '',
           direccionRiesgo: '',
           coordenadasRiesgo: '',
+          descripcionRiesgo: '',
           fechaInspeccion: '',
           horaInspeccion: '',
           inspector: '',
@@ -1904,6 +1930,19 @@ export default function FormularioAjuste() {
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
+
+              <div className="mt-6">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Observaciones de Actualización
+                </label>
+                <textarea
+                  value={formData.observacionesActualizacion || ''}
+                  onChange={(e) => handleInputChange('observacionesActualizacion', e.target.value)}
+                  placeholder="Observaciones específicas de la actualización del caso..."
+                  rows={4}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
             </div>
           )}
 
@@ -1959,13 +1998,26 @@ export default function FormularioAjuste() {
               </div>
 
               <div className="mt-6">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="text-sm font-medium text-gray-700 mb-2">
                   Recomendaciones Finales
                 </label>
                 <textarea
                   value={formData.recomendacionesFinales || ''}
                   onChange={(e) => handleInputChange('recomendacionesFinales', e.target.value)}
                   placeholder="Recomendaciones definitivas para el caso..."
+                  rows={4}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div className="mt-6">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Observaciones del Informe Final
+                </label>
+                <textarea
+                  value={formData.observacionesInformeFinal || ''}
+                  onChange={(e) => handleInputChange('observacionesInformeFinal', e.target.value)}
+                  placeholder="Observaciones específicas del informe final..."
                   rows={4}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
@@ -2025,10 +2077,10 @@ export default function FormularioAjuste() {
             {/* Información sobre el Word generado */}
             <div className="mt-3 p-2 bg-green-50 rounded-lg border border-green-200">
               <p className="text-xs text-green-800 text-center">
-                {estadoActual === 'inicial' && '📄 Word incluirá: Secciones 1-6 (datos básicos, antecedentes, descripción, circunstancias, inspección, causa, reserva)'}
+                {estadoActual === 'inicial' && '📄 Word incluirá: Secciones 1-6 (datos básicos, antecedentes, descripción del riesgo, circunstancias, inspección, causa, reserva)'}
                 {estadoActual === 'preeliminar' && '📄 Word incluirá: Secciones 1-9 (todas las anteriores + observaciones preeliminares, análisis de cobertura, observaciones generales)'}
-                {estadoActual === 'actualizacion' && '📄 Word incluirá: Secciones 1-7 (datos básicos + actualización del caso con cambios y nueva información)'}
-                {estadoActual === 'informeFinal' && '📄 Word incluirá: Secciones 1-9 (datos básicos + conclusiones finales y recomendaciones definitivas)'}
+                {estadoActual === 'actualizacion' && '📄 Word incluirá: Secciones 1-8 (datos básicos + actualización del caso con cambios, nueva información y observaciones de actualización)'}
+                {estadoActual === 'informeFinal' && '📄 Word incluirá: Secciones 1-10 (datos básicos + conclusiones finales, recomendaciones definitivas y observaciones del informe final)'}
               </p>
             </div>
           </div>
