@@ -28,6 +28,7 @@ import SessionSettings from './components/SessionSettings';
 import HistorialFormularios from './components/HistorialFormularios';
 import FormularioAjuste from './components/SubcomponenteFormularioAjuste/FormularioAjuste';
 
+
 import { CasosRiesgoProvider } from './context/CasosRiesgoContext'
 import RequireAuth from './components/RequireAuth'
 import sessionManager from './services/sessionManager'
@@ -130,6 +131,7 @@ export default function App() {
           <Route path="reporte-pol" element={<ReportePolPadre />} />
           <Route path="ajuste" element={<FormularioAjuste />} />
           <Route path="ajuste/editar/:id" element={<FormularioAjuste />} />
+
           <Route path="historial" element={<HistorialFormularios />} />
           <Route path="siniestros" element={<SiniestrosList />} />
           <Route path="admin/usuarios" element={<AdminUsuarios />} />

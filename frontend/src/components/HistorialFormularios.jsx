@@ -58,7 +58,8 @@ export default function HistorialFormularios() {
   // Filtrar formularios por búsqueda
   const formulariosFiltrados = formularios.filter(formulario => {
     const cumpleBusqueda = formulario.titulo.toLowerCase().includes(busqueda.toLowerCase()) ||
-                           formulario.usuario.toLowerCase().includes(busqueda.toLowerCase());
+                           (formulario.nombreUsuario || formulario.usuario || '').toLowerCase().includes(busqueda.toLowerCase()) ||
+                           (formulario.carpetaCaso || '').toLowerCase().includes(busqueda.toLowerCase());
     
     return cumpleBusqueda;
   });
@@ -251,6 +252,20 @@ export default function HistorialFormularios() {
   // Función para cerrar modal
   const cerrarModal = () => {
     setModalDetalles({ visible: false, formulario: null });
+  };
+
+  // Función para ver formularios de la misma carpeta
+  const handleVerCarpeta = async (casoId) => {
+    try {
+      console.log('📁 Obteniendo formularios de la carpeta:', casoId);
+      
+      // Navegar a la ruta de ajuste con el casoId
+      navigate(`/ajuste?casoId=${casoId}`);
+      
+    } catch (error) {
+      console.error('❌ Error navegando a la carpeta:', error);
+      alert('❌ Error al abrir la carpeta del formulario');
+    }
   };
 
   // Función para obtener el color del estado
@@ -453,16 +468,22 @@ export default function HistorialFormularios() {
                           <div className="mt-2 flex items-center space-x-6 text-sm text-gray-500">
                             <div className="flex items-center">
                               <FaUser className="h-4 w-4 mr-1" />
-                              {formulario.usuario}
+                              {formulario.nombreUsuario || formulario.usuario}
                             </div>
                             <div className="flex items-center">
                               <FaCalendarAlt className="h-4 w-4 mr-1" />
                               Creado: {new Date(formulario.fechaCreacion).toLocaleDateString()}
                             </div>
-                                                         <div className="flex items-center">
-                               <FaFileAlt className="h-4 w-4 mr-1" />
-                               {formulario.archivo?.nombre || 'Sin archivo'}
-                             </div>
+                            <div className="flex items-center">
+                              <FaFileAlt className="h-4 w-4 mr-1" />
+                              {formulario.archivo?.nombre || 'Sin archivo'}
+                            </div>
+                            {formulario.carpetaCaso && (
+                              <div className="flex items-center">
+                                <FaFolder className="h-4 w-4 mr-1" />
+                                {formulario.carpetaCaso}
+                              </div>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -498,13 +519,23 @@ export default function HistorialFormularios() {
                          )}
                        </button>
 
-                                             <button
-                         onClick={() => handleEditarFormulario(formulario)}
-                         className="p-2 text-gray-400 hover:text-blue-600 transition-colors duration-200"
-                         title={`Editar formulario ${formulario.tipo}`}
-                       >
-                         <FaEdit className="h-5 w-5" />
-                       </button>
+                                                                   <button
+                        onClick={() => handleEditarFormulario(formulario)}
+                        className="p-2 text-gray-400 hover:text-blue-600 transition-colors duration-200"
+                        title={`Editar formulario ${formulario.tipo}`}
+                      >
+                        <FaEdit className="h-5 w-5" />
+                      </button>
+
+                      {formulario.casoId && (
+                        <button
+                          onClick={() => handleVerCarpeta(formulario.casoId)}
+                          className="p-2 text-gray-400 hover:text-purple-600 transition-colors duration-200"
+                          title="Ver formularios de la misma carpeta"
+                        >
+                          <FaFolder className="h-5 w-5" />
+                        </button>
+                      )}
 
                       <button
                         onClick={() => handleEliminarFormulario(formulario)}

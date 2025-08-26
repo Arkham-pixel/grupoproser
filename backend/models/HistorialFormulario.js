@@ -5,7 +5,7 @@ const historialFormularioSchema = new mongoose.Schema({
   tipo: {
     type: String,
     required: true,
-    enum: ['complex', 'riesgos', 'pol', 'inspeccion', 'maquinaria', 'siniestros'],
+    enum: ['complex', 'riesgos', 'pol', 'inspeccion', 'maquinaria', 'siniestros', 'ajuste', 'ajuste_inicial', 'ajuste_preeliminar', 'ajuste_actualizacion', 'ajuste_informeFinal'],
     index: true
   },
   
@@ -15,7 +15,35 @@ const historialFormularioSchema = new mongoose.Schema({
     trim: true
   },
   
+  // Sistema de carpetas por caso
+  casoId: {
+    type: String,
+    required: true,
+    index: true,
+    trim: true
+  },
+  
+  numeroCaso: {
+    type: String,
+    required: true,
+    index: true,
+    trim: true
+  },
+  
+  carpetaCaso: {
+    type: String,
+    required: true,
+    trim: true
+  },
+  
+  // Información del usuario que creó el formulario
   usuario: {
+    type: String,
+    required: true,
+    trim: true
+  },
+  
+  nombreUsuario: {
     type: String,
     required: true,
     trim: true
@@ -177,6 +205,11 @@ historialFormularioSchema.index({ 'datos.actaNumero': 1 });
 historialFormularioSchema.index({ 'datos.numeroAjuste': 1 });
 historialFormularioSchema.index({ 'datos.casoNumero': 1 });
 
+// Nuevos índices para el sistema de carpetas por caso
+historialFormularioSchema.index({ casoId: 1, tipo: 1 });
+historialFormularioSchema.index({ numeroCaso: 1, fechaCreacion: -1 });
+historialFormularioSchema.index({ carpetaCaso: 1, fechaCreacion: -1 });
+
 // Middleware para actualizar fechaModificacion automáticamente
 historialFormularioSchema.pre('save', function(next) {
   this.fechaModificacion = new Date();
@@ -225,6 +258,49 @@ historialFormularioSchema.statics.obtenerEstadisticas = function() {
       }
     }
   ]);
+};
+
+// Método para obtener casos organizados por carpeta
+historialFormularioSchema.statics.obtenerCasosOrganizados = function() {
+  return this.aggregate([
+    { $match: { eliminado: { $ne: true } } },
+    {
+      $group: {
+        _id: {
+          casoId: '$casoId',
+          numeroCaso: '$numeroCaso',
+          carpetaCaso: '$carpetaCaso'
+        },
+        totalFormularios: { $sum: 1 },
+        tipos: { $addToSet: '$tipo' },
+        usuarios: { $addToSet: '$nombreUsuario' },
+        fechaCreacion: { $min: '$fechaCreacion' },
+        fechaModificacion: { $max: '$fechaModificacion' },
+        formularios: {
+          $push: {
+            _id: '$_id',
+            tipo: '$tipo',
+            titulo: '$titulo',
+            estado: '$estado',
+            nombreUsuario: '$nombreUsuario',
+            fechaCreacion: '$fechaCreacion',
+            fechaModificacion: '$fechaModificacion'
+          }
+        }
+      }
+    },
+    {
+      $sort: { 'fechaModificacion': -1 }
+    }
+  ]);
+};
+
+// Método para obtener formularios de un caso específico
+historialFormularioSchema.statics.obtenerFormulariosPorCaso = function(casoId) {
+  return this.find({ 
+    casoId: casoId, 
+    eliminado: { $ne: true } 
+  }).sort({ fechaCreacion: -1 });
 };
 
 // Métodos de instancia

@@ -332,6 +332,50 @@ class HistorialService {
     }
   }
 
+  // Obtener casos organizados por carpeta
+  async obtenerCasosOrganizados() {
+    try {
+      const response = await fetch(`${this.baseURL}/api/historial-formularios/casos-organizados`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`Error HTTP: ${response.status}`);
+      }
+
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error('Error obteniendo casos organizados:', error);
+      throw error;
+    }
+  }
+
+  // Obtener formularios de un caso específico
+  async obtenerFormulariosPorCaso(casoId) {
+    try {
+      const response = await fetch(`${this.baseURL}/api/historial-formularios/caso/${casoId}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`Error HTTP: ${response.status}`);
+      }
+
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error('Error obteniendo formularios del caso:', error);
+      throw error;
+    }
+  }
+
   // Función helper para crear un objeto de formulario
   crearFormulario(tipo, titulo, datos, archivo, estado = ESTADOS_FORMULARIO.COMPLETADO) {
     return {

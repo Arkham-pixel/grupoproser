@@ -112,6 +112,44 @@ class HistorialController {
     }
   }
 
+  // Obtener formularios por carpeta (casoId)
+  async obtenerFormulariosPorCarpeta(req, res) {
+    try {
+      const { casoId } = req.params;
+      
+      const formularios = await HistorialFormulario.find({ 
+        casoId: casoId,
+        eliminado: { $ne: true }
+      })
+      .sort({ fechaCreacion: -1 })
+      .select('-__v -eliminado');
+      
+      if (!formularios || formularios.length === 0) {
+        return res.status(404).json({
+          success: false,
+          error: 'No se encontraron formularios para esta carpeta'
+        });
+      }
+
+      res.json({
+        success: true,
+        formularios,
+        carpeta: {
+          casoId: formularios[0].casoId,
+          numeroCaso: formularios[0].numeroCaso,
+          carpetaCaso: formularios[0].carpetaCaso,
+          totalFormularios: formularios.length
+        }
+      });
+    } catch (error) {
+      console.error('Error obteniendo formularios por carpeta:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Error interno del servidor'
+      });
+    }
+  }
+
   // Crear un nuevo formulario en el historial
   async crearFormulario(req, res) {
     try {
@@ -132,16 +170,34 @@ class HistorialController {
         });
       }
 
+      // Verificar si ya existe un casoId para este formulario
+      let casoId = datos.casoId;
+      let numeroCaso = datos.numeroCaso;
+      let carpetaCaso = datos.carpetaCaso;
+
+      // Si no existe casoId, crear uno nuevo (formulario inicial)
+      if (!casoId) {
+        casoId = `CASO_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        numeroCaso = datos.reporteNo || `RPT-${new Date().getFullYear()}-${String(Math.floor(Math.random() * 1000)).padStart(3, '0')}`;
+        carpetaCaso = `Caso_${numeroCaso}_${new Date().toISOString().split('T')[0]}`;
+      }
+
       // Crear el formulario
       const nuevoFormulario = new HistorialFormulario({
         tipo,
         titulo,
-        usuario: req.user?.nombre || 'Usuario',
+        // Sistema de carpetas por caso
+        casoId,
+        numeroCaso,
+        carpetaCaso,
+        // Información del usuario
+        usuario: req.user?.id || 'unknown',
+        nombreUsuario: req.user?.nombre || req.user?.email || 'Usuario',
         userId: req.user?.id || 'unknown',
         estado,
         archivo: {
           nombre: archivo?.nombre || `${tipo}_${Date.now()}.docx`,
-          ruta: archivo?.ruta || `/uploads/${tipo}/${Date.now()}.docx`,
+          ruta: archivo?.ruta || `/uploads/${carpetaCaso}/${tipo}_${Date.now()}.docx`,
           tamaño: archivo?.tamaño,
           tipoMime: archivo?.tipoMime || 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
         },
@@ -248,6 +304,44 @@ class HistorialController {
       });
     } catch (error) {
       console.error('Error eliminando formulario:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Error interno del servidor'
+      });
+    }
+  }
+
+  // Obtener casos organizados por carpeta
+  async obtenerCasosOrganizados(req, res) {
+    try {
+      const casos = await HistorialFormulario.obtenerCasosOrganizados();
+      
+      res.json({
+        success: true,
+        casos
+      });
+    } catch (error) {
+      console.error('Error obteniendo casos organizados:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Error interno del servidor'
+      });
+    }
+  }
+
+  // Obtener formularios de un caso específico
+  async obtenerFormulariosPorCaso(req, res) {
+    try {
+      const { casoId } = req.params;
+      
+      const formularios = await HistorialFormulario.obtenerFormulariosPorCaso(casoId);
+      
+      res.json({
+        success: true,
+        formularios
+      });
+    } catch (error) {
+      console.error('Error obteniendo formularios del caso:', error);
       res.status(500).json({
         success: false,
         error: 'Error interno del servidor'

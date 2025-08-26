@@ -1,164 +1,105 @@
-# Formulario de Ajuste - GRUPO PROSER
+# 📋 Componentes de Formulario de Ajuste
 
-## Descripción
-Este formulario permite crear informes de inspección de siniestros siguiendo la estructura estándar de GRUPO PROSER AJUSTES. El formulario incluye asistencia de IA para facilitar el llenado y generar contenido de calidad.
+## 📋 Descripción General
 
-## Estructura del Formulario
+Este directorio contiene todos los componentes necesarios para el sistema de formularios de ajuste, incluyendo el formulario principal, subcomponentes especializados, y funcionalidades de IA.
 
-### 1. **Datos Generales del Siniestro**
-- Información del destinatario
-- Información del siniestro
-- Información de la póliza
-- Información de las partes
-- Información de ubicación
-- Fechas importantes
+## 🚀 Componentes Principales
 
-### 2. **Antecedentes**
-- Descripción de los antecedentes del siniestro
-- Asistente IA con plantillas por tipo de evento
-- Plantillas rápidas para diferentes escenarios
+### 📝 Formulario Principal
+- **`FormularioAjuste`** - Componente principal del formulario con versionado
+- **Sistema de Versiones** - Manejo de estados: inicial, preeliminar, actualización, informe final
 
-### 3. **Descripción del Riesgo**
-- Descripción detallada del riesgo asegurado
-- Características constructivas
-- Sistemas de protección
-- Estado de conservación
+### 🔧 Subcomponentes Especializados
+- **`DatosGeneralesAjuste`** - Información básica del caso
+- **`AntecedentesAjuste`** - Historial y antecedentes
+- **`DescripcionRiesgoAjuste`** - Detalles del riesgo
+- **`CircunstanciaSiniestroAjuste`** - Circunstancias del siniestro
+- **`InspeccionFotograficaAjuste`** - Evidencia fotográfica
+- **`CausaAjuste`** - Análisis de causas
+- **`ReservaSugeridaAjuste`** - Cálculo de reservas
+- **`FirmaAjuste`** - Sistema de firmas
+- **`ObservacionesPreeliminar`** - Observaciones preliminares
 
-### 4. **Circunstancias del Siniestro**
-- Secuencia de eventos
-- Condiciones ambientales
-- Respuesta de sistemas de seguridad
-- Tiempo de respuesta de emergencias
+### 🤖 Funcionalidades de IA
+- **`ChatbotIA`** - Asistente inteligente para llenado de formularios
+- **Botones Avanzados** - Mejora con IA, generación de texto profesional, análisis avanzado
 
-### 5. **Inspección (Registro Fotográfico)**
-- Descripción de la inspección realizada
-- Carga de fotografías
-- Documentación de hallazgos
-- Conclusiones de la inspección
+## 🎯 Sistema de Versiones
 
-### 6. **Causa**
-- Determinación de la causa del siniestro
-- Evidencias físicas encontradas
-- Análisis técnico realizado
-- Factores contribuyentes
+### 📊 Estados del Formulario
+1. **Inicial** - Formulario base con datos principales
+2. **Preeliminar** - Agrega observaciones preliminares
+3. **Actualización** - Información actualizada del caso
+4. **Informe Final** - Versión completa y final
 
-### 7. **Reserva Sugerida u Observación**
-- Monto de la reserva sugerida
-- Calculadora automática de reserva
-- Justificación del monto
-- Elementos incluidos y excluidos
+### 🔄 Funcionalidades de Versión
+- **Guardar en Historial** - Almacena cada versión independientemente
+- **Exportar Individual** - Descarga de versiones específicas
+- **Exportar Unificado** - Documento completo con todas las versiones
+- **Generar Siguiente Reporte** - Transición automática entre estados
 
-### 8. **Firma del Ajustador**
-- Información del funcionario
-- Firma del gerente técnico
-- Información de contacto
-- Vista previa de firmas
+## 🎨 Características de Diseño
 
-## Características de IA
+### 📱 Responsive Design
+- **Mobile First** - Optimizado para dispositivos móviles
+- **Tailwind CSS** - Sistema de diseño consistente
+- **Componentes Modulares** - Fácil mantenimiento y reutilización
 
-### Asistente Inteligente
-- **Generación automática** de contenido basado en el tipo de evento
-- **Plantillas inteligentes** que se adaptan al contexto
-- **Sugerencias contextuales** para mejorar la calidad del informe
-- **Validación automática** de completitud y calidad
+### 🎯 UX/UI
+- **Validación en Tiempo Real** - Feedback inmediato al usuario
+- **Estados de Carga** - Indicadores visuales durante operaciones
+- **Manejo de Errores** - Mensajes claros y útiles
+- **Accesibilidad** - Navegación por teclado y lectores de pantalla
 
-### Funcionalidades IA por Sección
-- **Antecedentes**: Plantillas específicas por tipo de siniestro
-- **Descripción del Riesgo**: Sugerencias de estructura y contenido
-- **Circunstancias**: Generación de narrativas coherentes
-- **Inspección**: Asistencia para documentación fotográfica
-- **Causa**: Análisis estructurado de factores
-- **Reserva**: Cálculo automático con justificación
+## 🔌 Integración con Backend
 
-## Tipos de Evento Soportados
+### 📡 Servicios
+- **`historialService`** - Comunicación con API del backend
+- **Persistencia** - Guardado automático en base de datos
+- **Sincronización** - Estado consistente entre frontend y backend
 
-- **Incendio**: Plantillas específicas para eventos de fuego
-- **Inundación**: Análisis de daños por agua
-- **Robo**: Evaluación de pérdidas y medidas de seguridad
-- **Accidente**: Análisis de causas y consecuencias
-- **Daño por agua**: Evaluación de filtraciones y humedad
-- **Otros**: Plantillas genéricas adaptables
+### 🗄️ Base de Datos
+- **MongoDB** - Almacenamiento de formularios y versiones
+- **Esquemas Flexibles** - Adaptación a diferentes tipos de datos
+- **Índices Optimizados** - Búsquedas rápidas y eficientes
 
-## Uso del Formulario
+## 🧪 Testing y Calidad
 
-### 1. **Inicio**
-- Seleccionar tipo de evento
-- Completar información básica del siniestro
+### 🔍 Herramientas de Desarrollo
+- **Console Logs** - Debugging detallado
+- **Validación de Formularios** - Verificación de datos
+- **Manejo de Estados** - Control de flujo de la aplicación
 
-### 2. **Llenado Asistido**
-- Usar el asistente IA para generar contenido base
-- Personalizar según las circunstancias específicas
-- Aplicar plantillas rápidas según necesidad
+### 📊 Métricas
+- **Rendimiento** - Tiempo de respuesta y carga
+- **Usabilidad** - Facilidad de uso y navegación
+- **Estabilidad** - Manejo robusto de errores
 
-### 3. **Validación**
-- Revisar indicadores de calidad
-- Completar secciones faltantes
-- Verificar coherencia del informe
+## 🚀 Mejoras Futuras
 
-### 4. **Generación**
-- Crear documento Word profesional
-- Guardar en historial de formularios
-- Exportar para distribución
+### 🔮 Funcionalidades Planificadas
+- **Templates** - Formularios predefinidos por tipo de caso
+- **Colaboración** - Múltiples usuarios trabajando en el mismo caso
+- **Workflow** - Flujos de aprobación automatizados
+- **Integración** - Conexión con sistemas externos
 
-## Tecnologías Utilizadas
+### 🎨 Mejoras de UX
+- **Autoguardado** - Preservación automática de cambios
+- **Historial de Cambios** - Seguimiento de modificaciones
+- **Búsqueda Avanzada** - Filtros y búsquedas inteligentes
+- **Exportación Múltiple** - Descarga de varios formularios
 
-- **React**: Framework principal
-- **Tailwind CSS**: Estilos y diseño responsivo
-- **docx**: Generación de documentos Word
-- **React Icons**: Iconografía consistente
-- **Estado local**: Gestión de formulario
-- **Validación en tiempo real**: Control de calidad
+## 🤝 Contribución
 
-## Integración con el Sistema
+### 📝 Guías de Desarrollo
+- **Estilo de Código** - Convenciones de React y JavaScript
+- **Componentes** - Creación de componentes reutilizables
+- **Testing** - Implementación de tests unitarios
+- **Documentación** - Mantenimiento de documentación actualizada
 
-### Historial de Formularios
-- Se guarda automáticamente como tipo `ajuste`
-- Incluye metadatos completos del siniestro
-- Permite edición y actualización posterior
-
-### Exportación
-- Genera documentos Word profesionales
-- Mantiene formato corporativo de GRUPO PROSER
-- Incluye todas las secciones del informe
-
-## Mantenimiento y Actualización
-
-### Agregar Nuevos Tipos de Evento
-1. Actualizar `plantillasAntecedentes` en `AntecedentesAjuste.jsx`
-2. Actualizar `plantillasRiesgo` en `DescripcionRiesgoAjuste.jsx`
-3. Actualizar `plantillasCircunstancias` en `CircunstanciaSiniestroAjuste.jsx`
-4. Actualizar `plantillasInspeccion` en `InspeccionFotograficaAjuste.jsx`
-5. Actualizar `plantillasCausa` en `CausaAjuste.jsx`
-6. Actualizar `plantillasReserva` en `ReservaSugeridaAjuste.jsx`
-
-### Personalizar Plantillas
-- Modificar arrays de plantillas en cada componente
-- Ajustar lógica de reemplazo de variables
-- Actualizar validaciones de calidad
-
-## Estructura de Archivos
-
-```
-SubcomponenteFormularioAjuste/
-├── FormularioAjuste.jsx          # Componente principal
-├── DatosGeneralesAjuste.jsx      # Datos básicos del siniestro
-├── AntecedentesAjuste.jsx        # Sección de antecedentes
-├── DescripcionRiesgoAjuste.jsx   # Descripción del riesgo
-├── CircunstanciaSiniestroAjuste.jsx # Circunstancias del evento
-├── InspeccionFotograficaAjuste.jsx  # Inspección y fotos
-├── CausaAjuste.jsx               # Determinación de causa
-├── ReservaSugeridaAjuste.jsx     # Reserva y observaciones
-├── FirmaAjuste.jsx               # Firmas y contacto
-├── index.js                      # Exportaciones
-└── README.md                     # Esta documentación
-```
-
-## Contacto y Soporte
-
-Para dudas o sugerencias sobre el formulario de ajuste, contactar al equipo de desarrollo de GRUPO PROSER.
-
----
-
-**Versión**: 1.0.0  
-**Última actualización**: Diciembre 2024  
-**Desarrollado por**: Equipo de Desarrollo GRUPO PROSER
+### 🐛 Reporte de Problemas
+- **Descripción Clara** - Explicación detallada del problema
+- **Pasos de Reproducción** - Secuencia exacta para reproducir
+- **Información del Sistema** - Navegador, versión, entorno
+- **Capturas de Pantalla** - Evidencia visual cuando sea posible

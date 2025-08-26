@@ -1,8 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { FaUser, FaBuilding, FaMapMarkerAlt, FaCalendarAlt, FaFileAlt, FaShieldAlt, FaChevronDown } from 'react-icons/fa';
 
-export default function DatosGeneralesAjuste({ formData, onInputChange, datosMaestros }) {
-  const [sugerenciasIA, setSugerenciasIA] = useState({});
+export default function DatosGeneralesAjuste({ formData, onInputChange, datosMaestros = {} }) {
+  const [sugerenciasIA, setSugerenciasIA] = useState({
+    ciudad: [],
+    aseguradora: [],
+    intermediario: [],
+    tipoEvento: []
+  });
   const [dropdownsAbiertos, setDropdownsAbiertos] = useState({});
   const [filtros, setFiltros] = useState({
     ciudad: '',
@@ -12,21 +17,24 @@ export default function DatosGeneralesAjuste({ formData, onInputChange, datosMae
 
   // Función para generar sugerencias IA
   const generarSugerenciasIA = (campo, valor) => {
-    if (!valor || valor.length < 2) return;
+    if (!valor || valor.length < 2) {
+      setSugerenciasIA(prev => ({ ...prev, [campo]: [] }));
+      return;
+    }
 
     // Simular sugerencias basadas en patrones
     const sugerencias = {
-      tipoEvento: datosMaestros.tiposEvento.filter(tipo => 
+      tipoEvento: (datosMaestros.tiposEvento || []).filter(tipo => 
         tipo.toLowerCase().includes(valor.toLowerCase())
       ),
-      intermediario: datosMaestros.intermediarios.filter(inter => 
+      intermediario: (datosMaestros.intermediarios || []).filter(inter => 
         inter.toLowerCase().includes(valor.toLowerCase())
       ),
-      ciudad: datosMaestros.ciudades.filter(ciudad => 
-        ciudad.nombre.toLowerCase().includes(valor.toLowerCase())
+      ciudad: (datosMaestros.ciudades || []).filter(ciudad => 
+        ciudad.nombre && ciudad.nombre.toLowerCase().includes(valor.toLowerCase())
       ).slice(0, 8),
-      aseguradora: datosMaestros.aseguradoras.filter(aseg => 
-        aseg.nombre.toLowerCase().includes(valor.toLowerCase())
+      aseguradora: (datosMaestros.aseguradoras || []).filter(aseg => 
+        aseg.nombre && aseg.nombre.toLowerCase().includes(valor.toLowerCase())
       ).slice(0, 8)
     };
 
@@ -51,7 +59,12 @@ export default function DatosGeneralesAjuste({ formData, onInputChange, datosMae
 
   const cerrarDropdowns = () => {
     setDropdownsAbiertos({});
-    setSugerenciasIA({});
+    setSugerenciasIA({
+      ciudad: [],
+      aseguradora: [],
+      intermediario: [],
+      tipoEvento: []
+    });
   };
 
   // Cerrar dropdowns al hacer clic fuera
@@ -104,134 +117,155 @@ export default function DatosGeneralesAjuste({ formData, onInputChange, datosMae
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Compañía
+              Empresa
             </label>
             <input
               type="text"
-              value={formData.compania || ''}
-              onChange={(e) => onInputChange('compania', e.target.value)}
+              value={formData.empresa || ''}
+              onChange={(e) => onInputChange('empresa', e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Nombre de la compañía"
+              placeholder="Nombre de la empresa"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Dirección
+            </label>
+            <input
+              type="text"
+              value={formData.direccion || ''}
+              onChange={(e) => onInputChange('direccion', e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="Dirección de la empresa"
             />
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Ciudad
             </label>
-            <div className="relative">
-              <div className="flex">
-                <input
-                  type="text"
-                  value={formData.ciudad || ''}
-                  onChange={(e) => {
-                    onInputChange('ciudad', e.target.value);
-                    generarSugerenciasIA('ciudad', e.target.value);
-                    setFiltros(prev => ({ ...prev, ciudad: e.target.value }));
-                  }}
-                  className="flex-1 px-3 py-2 border border-gray-300 rounded-l-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Buscar ciudad..."
-                />
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    toggleDropdown('ciudad');
-                  }}
-                  className="px-3 py-2 border border-l-0 border-gray-300 rounded-r-md bg-gray-50 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <FaChevronDown className={`h-4 w-4 transition-transform ${dropdownsAbiertos.ciudad ? 'rotate-180' : ''}`} />
-                </button>
-              </div>
-              
-              {/* Dropdown de ciudades */}
-              {dropdownsAbiertos.ciudad && (
-                <div className="absolute z-20 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-64 overflow-y-auto">
-                  <div className="p-2 border-b border-gray-200">
-                    <input
-                      type="text"
-                      value={filtros.ciudad}
-                      onChange={(e) => setFiltros(prev => ({ ...prev, ciudad: e.target.value }))}
-                      placeholder="Filtrar ciudades..."
-                      className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-                    />
-                  </div>
-                  <div className="max-h-48 overflow-y-auto">
-                    {datosMaestros.ciudades
-                      .filter(ciudad => 
-                        ciudad.nombre.toLowerCase().includes(filtros.ciudad.toLowerCase()) ||
-                        ciudad.departamento.toLowerCase().includes(filtros.ciudad.toLowerCase())
-                      )
-                      .slice(0, 20)
-                      .map((ciudad, index) => (
-                        <button
-                          key={index}
-                          onClick={() => aplicarSugerencia('ciudad', ciudad.nombre)}
-                          className="w-full text-left px-3 py-2 hover:bg-blue-50 focus:bg-blue-50 focus:outline-none border-b border-gray-100 last:border-b-0"
-                        >
-                          <div className="font-medium">{ciudad.nombre}</div>
-                          <div className="text-sm text-gray-500">{ciudad.departamento}</div>
-                        </button>
-                      ))}
-                  </div>
-                </div>
-              )}
-            </div>
+            <input
+              type="text"
+              value={formData.ciudad || ''}
+              onChange={(e) => onInputChange('ciudad', e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="Ciudad de la empresa"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Teléfono
+            </label>
+            <input
+              type="tel"
+              value={formData.telefono || ''}
+              onChange={(e) => onInputChange('telefono', e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="Teléfono de contacto"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Email
+            </label>
+            <input
+              type="email"
+              value={formData.email || ''}
+              onChange={(e) => onInputChange('email', e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="Email de contacto"
+            />
           </div>
         </div>
       </div>
 
       {/* Información del siniestro */}
-      <div className="bg-green-50 p-4 rounded-lg">
-        <h3 className="text-lg font-semibold text-green-900 mb-4 flex items-center">
+      <div className="bg-red-50 p-4 rounded-lg">
+        <h3 className="text-lg font-semibold text-red-900 mb-4 flex items-center">
           <FaShieldAlt className="mr-2" />
           Información del Siniestro
         </h3>
+        
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              REPORTE No
+              Número de Siniestro *
             </label>
             <input
               type="text"
-              value={formData.reporteNo || ''}
-              onChange={(e) => onInputChange('reporteNo', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
-              placeholder="Número de reporte"
+              value={formData.numeroSiniestro || ''}
+              onChange={(e) => onInputChange('numeroSiniestro', e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+              placeholder="Número de siniestro asignado"
+              required
             />
           </div>
+          
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              REF. INTERNA
+              Fecha de Ocurrencia *
             </label>
             <input
-              type="text"
-              value={formData.refInterna || ''}
-              onChange={(e) => onInputChange('refInterna', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
-              placeholder="Referencia interna"
+              type="date"
+              value={formData.fechaOcurrencia || ''}
+              onChange={(e) => onInputChange('fechaOcurrencia', e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+              required
             />
           </div>
+          
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              SINIESTRO No
+              Hora de Ocurrencia
             </label>
             <input
-              type="text"
-              value={formData.siniestroNo || ''}
-              onChange={(e) => onInputChange('siniestroNo', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
-              placeholder="Número de siniestro"
+              type="time"
+              value={formData.horaOcurrencia || ''}
+              onChange={(e) => onInputChange('horaOcurrencia', e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
             />
           </div>
+          
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              FUNCIONARIO QUE ASIGNA
+              Tipo de Evento *
+            </label>
+            <div className="relative">
+              <input
+                type="text"
+                value={formData.tipoEvento || ''}
+                onChange={(e) => {
+                  onInputChange('tipoEvento', e.target.value);
+                  generarSugerenciasIA('tipoEvento', e.target.value);
+                }}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+                placeholder="Escribe para buscar tipo de evento..."
+                required
+              />
+              {sugerenciasIA.tipoEvento && sugerenciasIA.tipoEvento.length > 0 && (
+                <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto">
+                  {sugerenciasIA.tipoEvento.map((tipo, index) => (
+                    <button
+                      key={index}
+                      onClick={() => aplicarSugerencia('tipoEvento', tipo)}
+                      className="w-full text-left px-3 py-2 hover:bg-gray-100 focus:bg-gray-100 focus:outline-none"
+                    >
+                      {tipo}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Funcionario que Asigna
             </label>
             <input
               type="text"
               value={formData.funcionarioAsigna || ''}
               onChange={(e) => onInputChange('funcionarioAsigna', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
               placeholder="Nombre del funcionario"
             />
           </div>
@@ -239,284 +273,260 @@ export default function DatosGeneralesAjuste({ formData, onInputChange, datosMae
       </div>
 
       {/* Información de la póliza */}
-      <div className="bg-purple-50 p-4 rounded-lg">
-        <h3 className="text-lg font-semibold text-purple-900 mb-4 flex items-center">
-          <FaBuilding className="mr-2" />
+      <div className="bg-green-50 p-4 rounded-lg">
+        <h3 className="text-lg font-semibold text-green-900 mb-4 flex items-center">
+          <FaFileAlt className="mr-2" />
           Información de la Póliza
         </h3>
+        
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              INTERMEDIARIO
-            </label>
-            <div className="relative">
-              <div className="flex">
-                <input
-                  type="text"
-                  value={formData.intermediario || ''}
-                  onChange={(e) => {
-                    onInputChange('intermediario', e.target.value);
-                    generarSugerenciasIA('intermediario', e.target.value);
-                    setFiltros(prev => ({ ...prev, intermediario: e.target.value }));
-                  }}
-                  className="flex-1 px-3 py-2 border border-gray-300 rounded-l-md focus:outline-none focus:ring-2 focus:ring-purple-500"
-                  placeholder="Buscar intermediario..."
-                />
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    toggleDropdown('intermediario');
-                  }}
-                  className="px-3 py-2 border border-l-0 border-gray-300 rounded-r-md bg-gray-50 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-purple-500"
-                >
-                  <FaChevronDown className={`h-4 w-4 transition-transform ${dropdownsAbiertos.intermediario ? 'rotate-180' : ''}`} />
-                </button>
-              </div>
-              
-              {/* Dropdown de intermediarios */}
-              {dropdownsAbiertos.intermediario && (
-                <div className="absolute z-20 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-48 overflow-y-auto">
-                  <div className="p-2 border-b border-gray-200">
-                    <input
-                      type="text"
-                      value={filtros.intermediario}
-                      onChange={(e) => setFiltros(prev => ({ ...prev, intermediario: e.target.value }))}
-                      placeholder="Filtrar intermediarios..."
-                      className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-                    />
-                  </div>
-                  <div className="max-h-32 overflow-y-auto">
-                    {datosMaestros.intermediarios
-                      .filter(inter => 
-                        inter.toLowerCase().includes(filtros.intermediario.toLowerCase())
-                      )
-                      .map((inter, index) => (
-                        <button
-                          key={index}
-                          onClick={() => aplicarSugerencia('intermediario', inter)}
-                          className="w-full text-left px-3 py-2 hover:bg-purple-50 focus:bg-purple-50 focus:outline-none border-b border-gray-100 last:border-b-0"
-                        >
-                          {inter}
-                        </button>
-                      ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              POLIZA No
+              Número de Póliza *
             </label>
             <input
               type="text"
-              value={formData.polizaNo || ''}
-              onChange={(e) => onInputChange('polizaNo', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+              value={formData.numeroPoliza || ''}
+              onChange={(e) => onInputChange('numeroPoliza', e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
               placeholder="Número de póliza"
+              required
             />
           </div>
+          
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              VIGENCIA
-            </label>
-            <input
-              type="text"
-              value={formData.vigencia || ''}
-              onChange={(e) => onInputChange('vigencia', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
-              placeholder="Período de vigencia"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              TIPO DE EVENTO
+              Aseguradora *
             </label>
             <div className="relative">
-              <div className="flex">
-                <input
-                  type="text"
-                  value={formData.tipoEvento || ''}
-                  onChange={(e) => {
-                    onInputChange('tipoEvento', e.target.value);
-                    generarSugerenciasIA('tipoEvento', e.target.value);
-                  }}
-                  className="flex-1 px-3 py-2 border border-gray-300 rounded-l-md focus:outline-none focus:ring-2 focus:ring-purple-500"
-                  placeholder="Seleccionar tipo de evento..."
-                />
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    toggleDropdown('tipoEvento');
-                  }}
-                  className="px-3 py-2 border border-l-0 border-gray-300 rounded-r-md bg-gray-50 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-purple-500"
-                >
-                  <FaChevronDown className={`h-4 w-4 transition-transform ${dropdownsAbiertos.tipoEvento ? 'rotate-180' : ''}`} />
-                </button>
-              </div>
-              
-              {/* Dropdown de tipos de evento */}
-              {dropdownsAbiertos.tipoEvento && (
-                <div className="absolute z-20 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-48 overflow-y-auto">
-                  <div className="max-h-40 overflow-y-auto">
-                    {datosMaestros.tiposEvento.map((tipo, index) => (
-                      <button
-                        key={index}
-                        onClick={() => aplicarSugerencia('tipoEvento', tipo)}
-                        className="w-full text-left px-3 py-2 hover:bg-purple-50 focus:bg-purple-50 focus:outline-none border-b border-gray-100 last:border-b-0"
-                      >
-                        {tipo}
-                      </button>
-                    ))}
-                  </div>
+              <input
+                type="text"
+                value={formData.aseguradora || ''}
+                onChange={(e) => {
+                  onInputChange('aseguradora', e.target.value);
+                  generarSugerenciasIA('aseguradora', e.target.value);
+                }}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                placeholder="Escribe para buscar aseguradora..."
+                required
+              />
+              {sugerenciasIA.aseguradora && sugerenciasIA.aseguradora.length > 0 && (
+                <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto">
+                  {sugerenciasIA.aseguradora.map((aseg, index) => (
+                    <button
+                      key={index}
+                      onClick={() => aplicarSugerencia('aseguradora', aseg.nombre)}
+                      className="w-full text-left px-3 py-2 hover:bg-gray-100 focus:bg-gray-100 focus:outline-none"
+                    >
+                      <div className="font-medium">{aseg.nombre}</div>
+                      <div className="text-sm text-gray-500">{aseg.funcionarios ? aseg.funcionarios.length : 0} funcionarios</div>
+                    </button>
+                  ))}
                 </div>
               )}
             </div>
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Ramo
+            </label>
+            <input
+              type="text"
+              value={formData.ramo || ''}
+              onChange={(e) => onInputChange('ramo', e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+              placeholder="Ramo de la póliza"
+            />
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Vigencia Desde
+            </label>
+            <input
+              type="date"
+              value={formData.vigenciaDesde || ''}
+              onChange={(e) => onInputChange('vigenciaDesde', e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+            />
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Vigencia Hasta
+            </label>
+            <input
+              type="date"
+              value={formData.vigenciaHasta || ''}
+              onChange={(e) => onInputChange('vigenciaHasta', e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+            />
           </div>
         </div>
       </div>
 
       {/* Información de las partes */}
-      <div className="bg-orange-50 p-4 rounded-lg">
-        <h3 className="text-lg font-semibold text-orange-900 mb-4 flex items-center">
+      <div className="bg-purple-50 p-4 rounded-lg">
+        <h3 className="text-lg font-semibold text-purple-900 mb-4 flex items-center">
           <FaUser className="mr-2" />
           Información de las Partes
         </h3>
+        
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              TOMADOR
-            </label>
-            <input
-              type="text"
-              value={formData.tomador || ''}
-              onChange={(e) => onInputChange('tomador', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
-              placeholder="Nombre del tomador"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              ASEGURADO
+              Asegurado *
             </label>
             <input
               type="text"
               value={formData.asegurado || ''}
               onChange={(e) => onInputChange('asegurado', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
               placeholder="Nombre del asegurado"
+              required
             />
           </div>
+          
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              BENEFICIARIO
+              Tomador
+            </label>
+            <input
+              type="text"
+              value={formData.tomador || ''}
+              onChange={(e) => onInputChange('tomador', e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+              placeholder="Nombre del tomador"
+            />
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Beneficiario
             </label>
             <input
               type="text"
               value={formData.beneficiario || ''}
               onChange={(e) => onInputChange('beneficiario', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
               placeholder="Nombre del beneficiario"
             />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              ASEGURADORA
-            </label>
-            <div className="relative">
-              <div className="flex">
-                <input
-                  type="text"
-                  value={formData.aseguradora || ''}
-                  onChange={(e) => {
-                    onInputChange('aseguradora', e.target.value);
-                    generarSugerenciasIA('aseguradora', e.target.value);
-                    setFiltros(prev => ({ ...prev, aseguradora: e.target.value }));
-                  }}
-                  className="flex-1 px-3 py-2 border border-gray-300 rounded-l-md focus:outline-none focus:ring-2 focus:ring-orange-500"
-                  placeholder="Buscar aseguradora..."
-                />
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    toggleDropdown('aseguradora');
-                  }}
-                  className="px-3 py-2 border border-l-0 border-gray-300 rounded-r-md bg-gray-50 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-orange-500"
-                >
-                  <FaChevronDown className={`h-4 w-4 transition-transform ${dropdownsAbiertos.aseguradora ? 'rotate-180' : ''}`} />
-                </button>
-              </div>
-              
-              {/* Dropdown de aseguradoras */}
-              {dropdownsAbiertos.aseguradora && (
-                <div className="absolute z-20 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-64 overflow-y-auto">
-                  <div className="p-2 border-b border-gray-200">
-                    <input
-                      type="text"
-                      value={filtros.aseguradora}
-                      onChange={(e) => setFiltros(prev => ({ ...prev, aseguradora: e.target.value }))}
-                      placeholder="Filtrar aseguradoras..."
-                      className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-                    />
-                  </div>
-                  <div className="max-h-48 overflow-y-auto">
-                    {datosMaestros.aseguradoras
-                      .filter(aseg => 
-                        aseg.nombre.toLowerCase().includes(filtros.aseguradora.toLowerCase())
-                      )
-                      .slice(0, 20)
-                      .map((aseg, index) => (
-                        <button
-                          key={index}
-                          onClick={() => aplicarSugerencia('aseguradora', aseg.nombre)}
-                          className="w-full text-left px-3 py-2 hover:bg-orange-50 focus:bg-orange-50 focus:outline-none border-b border-gray-100 last:border-b-0"
-                        >
-                          <div className="font-medium">{aseg.nombre}</div>
-                          <div className="text-sm text-gray-500">
-                            {aseg.funcionarios.length} funcionario(s)
-                          </div>
-                        </button>
-                      ))}
-                  </div>
-                </div>
-              )}
-            </div>
           </div>
         </div>
       </div>
 
-      {/* Información de ubicación */}
-      <div className="bg-indigo-50 p-4 rounded-lg">
-        <h3 className="text-lg font-semibold text-indigo-900 mb-4 flex items-center">
-          <FaMapMarkerAlt className="mr-2" />
-          Información de Ubicación
+      {/* Ubicación del Riesgo */}
+      <div className="bg-white p-4 rounded-lg border border-gray-200">
+        <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+          <FaMapMarkerAlt className="mr-3 text-red-600" />
+          📍 Ubicación del Riesgo
         </h3>
+        
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="md:col-span-2">
+          <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              DIRECCIÓN RIESGO ASEGURADO
+              Dirección del Riesgo *
             </label>
             <input
               type="text"
               value={formData.direccionRiesgo || ''}
               onChange={(e) => onInputChange('direccionRiesgo', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              placeholder="Dirección completa del riesgo asegurado"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+              placeholder="Ej: Calle 123 # 45-67, Barrio Centro"
+              required
             />
           </div>
-          <div className="md:col-span-2">
+          
+          <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              UBICACIÓN RIESGO AFECTADO
+              Ciudad *
+            </label>
+            <div className="relative">
+              <input
+                type="text"
+                value={formData.ciudad || ''}
+                onChange={(e) => {
+                  onInputChange('ciudad', e.target.value);
+                  generarSugerenciasIA('ciudad', e.target.value);
+                }}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+                placeholder="Escribe para buscar ciudad..."
+                required
+              />
+              {sugerenciasIA.ciudad && sugerenciasIA.ciudad.length > 0 && (
+                <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto">
+                  {sugerenciasIA.ciudad.map((ciudad, index) => (
+                    <button
+                      key={index}
+                      onClick={() => {
+                        onInputChange('ciudad', ciudad.nombre);
+                        setSugerenciasIA(prev => ({ ...prev, ciudad: [] }));
+                      }}
+                      className="w-full text-left px-3 py-2 hover:bg-gray-100 focus:bg-gray-100 focus:outline-none"
+                    >
+                      {ciudad.nombre}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Departamento *
+            </label>
+            <select
+              value={formData.departamento || ''}
+              onChange={(e) => onInputChange('departamento', e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+              required
+            >
+              <option value="">Selecciona un departamento</option>
+              <option value="Antioquia">Antioquia</option>
+              <option value="Atlántico">Atlántico</option>
+              <option value="Bogotá D.C.">Bogotá D.C.</option>
+              <option value="Bolívar">Bolívar</option>
+              <option value="Boyacá">Boyacá</option>
+              <option value="Caldas">Caldas</option>
+              <option value="Caquetá">Caquetá</option>
+              <option value="Cauca">Cauca</option>
+              <option value="Cesar">Cesar</option>
+              <option value="Chocó">Chocó</option>
+              <option value="Córdoba">Córdoba</option>
+              <option value="Cundinamarca">Cundinamarca</option>
+              <option value="Guainía">Guainía</option>
+              <option value="Guaviare">Guaviare</option>
+              <option value="Huila">Huila</option>
+              <option value="La Guajira">La Guajira</option>
+              <option value="Magdalena">Magdalena</option>
+              <option value="Meta">Meta</option>
+              <option value="Nariño">Nariño</option>
+              <option value="Norte de Santander">Norte de Santander</option>
+              <option value="Putumayo">Putumayo</option>
+              <option value="Quindío">Quindío</option>
+              <option value="Risaralda">Risaralda</option>
+              <option value="San Andrés y Providencia">San Andrés y Providencia</option>
+              <option value="Santander">Santander</option>
+              <option value="Sucre">Sucre</option>
+              <option value="Tolima">Tolima</option>
+              <option value="Valle del Cauca">Valle del Cauca</option>
+              <option value="Vaupés">Vaupés</option>
+              <option value="Vichada">Vichada</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Código Postal
             </label>
             <input
               type="text"
-              value={formData.ubicacionRiesgo || ''}
-              onChange={(e) => onInputChange('ubicacionRiesgo', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              placeholder="Ubicación específica del riesgo afectado"
+              value={formData.codigoPostal || ''}
+              onChange={(e) => onInputChange('codigoPostal', e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+              placeholder="Ej: 110111"
             />
           </div>
         </div>
@@ -542,44 +552,26 @@ export default function DatosGeneralesAjuste({ formData, onInputChange, datosMae
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              FECHA DE ASIGNACION
+              FECHA DE REPORTE
             </label>
             <input
               type="date"
-              value={formData.fechaAsignacion || ''}
-              onChange={(e) => onInputChange('fechaAsignacion', e.target.value)}
+              value={formData.fechaReporte || ''}
+              onChange={(e) => onInputChange('fechaReporte', e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-500"
             />
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              FECHA DE VISITA
+              FECHA DE INSPECCIÓN
             </label>
             <input
               type="date"
-              value={formData.fechaVisita || ''}
-              onChange={(e) => onInputChange('fechaVisita', e.target.value)}
+              value={formData.fechaInspeccion || ''}
+              onChange={(e) => onInputChange('fechaInspeccion', e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-500"
             />
           </div>
-        </div>
-      </div>
-
-      {/* Asistente IA */}
-      <div className="bg-gradient-to-r from-blue-50 to-purple-50 p-4 rounded-lg border border-blue-200">
-        <h3 className="text-lg font-semibold text-blue-900 mb-4 flex items-center">
-          🤖 Asistente IA
-        </h3>
-        <div className="text-sm text-blue-800">
-          <p className="mb-2">
-            💡 <strong>Consejos:</strong> El sistema de IA te ayudará con:
-          </p>
-          <ul className="list-disc list-inside space-y-1 ml-4">
-            <li>Autocompletado inteligente de campos</li>
-            <li>Sugerencias basadas en patrones anteriores</li>
-            <li>Validación automática de datos</li>
-            <li>Generación de recomendaciones</li>
-          </ul>
         </div>
       </div>
     </div>

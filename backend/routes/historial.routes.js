@@ -13,6 +13,15 @@ router.get('/', historialController.obtenerHistorial);
 // GET /api/historial-formularios/estadisticas - Obtener estadísticas
 router.get('/estadisticas', historialController.obtenerEstadisticas);
 
+// GET /api/historial-formularios/casos-organizados - Obtener casos organizados por carpeta
+router.get('/casos-organizados', historialController.obtenerCasosOrganizados);
+
+// GET /api/historial-formularios/caso/:casoId - Obtener formularios de un caso específico
+router.get('/caso/:casoId', historialController.obtenerFormulariosPorCaso);
+
+// GET /api/historial-formularios/carpeta/:casoId - Obtener formularios por carpeta
+router.get('/carpeta/:casoId', historialController.obtenerFormulariosPorCarpeta);
+
 // GET /api/historial-formularios/buscar - Buscar formularios por texto
 router.get('/buscar', historialController.buscarFormularios);
 

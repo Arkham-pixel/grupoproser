@@ -9,6 +9,10 @@ export default function ChatbotIA({ formData, onInputChange }) {
   const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef(null);
 
+  // Debug: confirmar que el componente se está montando
+  console.log('🤖 ChatbotIA se está renderizando');
+  console.log('📊 formData recibido:', formData);
+
   // Respuestas inteligentes basadas en el contexto del formulario
   const generarRespuestaIA = (mensaje, contexto) => {
     const mensajeLower = mensaje.toLowerCase();
@@ -94,10 +98,163 @@ export default function ChatbotIA({ formData, onInputChange }) {
       };
     }
 
+    if (mensajeLower.includes('observaciones') || mensajeLower.includes('preeliminar') || mensajeLower.includes('preliminar') || mensajeLower.includes('observations')) {
+      return {
+        tipo: 'ayuda',
+        contenido: `🔍 **Observaciones Preeliminares:**\n\nPara esta sección:\n• Solo aparece en la versión PREELIMINAR\n• Describe hallazgos iniciales de la inspección\n• Incluye observaciones técnicas importantes\n• Menciona elementos que requieren atención\n• Usa el asistente IA para plantillas\n• Mínimo 100 palabras recomendado`,
+        accion: 'irSeccion',
+        seccion: 'observacionesPreeliminar',
+        icono: '🔍'
+      };
+    }
+
+    if (mensajeLower.includes('hallazgos') || mensajeLower.includes('encontré') || mensajeLower.includes('descubrí') || mensajeLower.includes('findings')) {
+      return {
+        tipo: 'ayuda',
+        contenido: `🔍 **Hallazgos en Observaciones Preeliminares:**\n\nPara documentar hallazgos:\n• **Estructura recomendada:**\n  1. Ubicación del hallazgo\n  2. Descripción detallada\n  3. Posible causa\n  4. Impacto estimado\n  5. Acción recomendada\n\n• **Ejemplo:** "En el área norte se observó humedad en las paredes, posiblemente por filtración del techo. Se requiere revisión del sistema de impermeabilización."`,
+        accion: 'llenarCampo',
+        campo: 'observacionesPreeliminar',
+        valor: 'Hallazgo identificado: ',
+        icono: '🔍'
+      };
+    }
+
+    if (mensajeLower.includes('daños') || mensajeLower.includes('destrucción') || mensajeLower.includes('pérdidas') || mensajeLower.includes('damage')) {
+      return {
+        tipo: 'ayuda',
+        contenido: `💥 **Documentar Daños en Observaciones:**\n\nPara describir daños:\n• **Elementos a incluir:**\n  1. Extensión del daño\n  2. Gravedad (leve, moderado, severo)\n  3. Áreas afectadas\n  4. Elementos estructurales comprometidos\n  5. Estimación de costos de reparación\n\n• **Ejemplo:** "El daño se extiende aproximadamente 15m² en la zona central, afectando principalmente el sistema eléctrico y acabados. Se estima un costo de reparación de $2,500,000 COP."`,
+        accion: 'llenarCampo',
+        campo: 'observacionesPreeliminar',
+        valor: 'Daños observados: ',
+        icono: '💥'
+      };
+    }
+
+    if (mensajeLower.includes('recomendaciones') || mensajeLower.includes('sugerencias') || mensajeLower.includes('acciones') || mensajeLower.includes('recommendations')) {
+      return {
+        tipo: 'ayuda',
+        contenido: `💡 **Recomendaciones en Observaciones:**\n\nPara incluir recomendaciones:\n• **Tipos de recomendaciones:**\n  1. **Inmediatas:** Acciones urgentes (24-48h)\n  2. **Corto plazo:** Reparaciones básicas (1-2 semanas)\n  3. **Mediano plazo:** Mejoras preventivas (1-3 meses)\n  4. **Largo plazo:** Renovaciones mayores (3-12 meses)\n\n• **Ejemplo:** "Se recomienda: 1) Aislar el área afectada inmediatamente, 2) Contratar especialista en impermeabilización, 3) Implementar mantenimiento preventivo trimestral."`,
+        accion: 'llenarCampo',
+        campo: 'observacionesPreeliminar',
+        valor: 'Recomendaciones: ',
+        icono: '💡'
+      };
+    }
+
+    if (mensajeLower.includes('incendio') || mensajeLower.includes('fuego') || mensajeLower.includes('fire')) {
+      return {
+        tipo: 'ayuda',
+        contenido: `🔥 **Observaciones para Siniestro por Incendio:**\n\n**Elementos clave a documentar:**\n• **Origen del fuego:** Punto de inicio identificado\n• **Propagación:** Cómo se extendió el incendio\n• **Materiales afectados:** Tipo de combustibles\n• **Daños estructurales:** Compromiso de elementos\n• **Sistemas de protección:** Estado de extintores, alarmas\n• **Acceso de bomberos:** Vías de entrada/salida\n\n**Ejemplo:** "El incendio se originó en el área de transformadores, propagándose por el sistema de cableado. Se afectaron principalmente equipos eléctricos y acabados. Los sistemas de alarma funcionaron correctamente."`,
+        accion: 'llenarCampo',
+        campo: 'observacionesPreeliminar',
+        valor: 'Observaciones incendio: ',
+        icono: '🔥'
+      };
+    }
+
+    if (mensajeLower.includes('inundación') || mensajeLower.includes('agua') || mensajeLower.includes('humedad') || mensajeLower.includes('flood')) {
+      return {
+        tipo: 'ayuda',
+        contenido: `💧 **Observaciones para Siniestro por Inundación:**\n\n**Elementos clave a documentar:**\n• **Fuente del agua:** Origen de la inundación\n• **Nivel alcanzado:** Altura máxima del agua\n• **Tiempo de exposición:** Duración del contacto\n• **Materiales afectados:** Elementos dañados\n• **Humedad residual:** Estado actual de humedad\n• **Riesgo de moho:** Condiciones para proliferación\n\n**Ejemplo:** "La inundación se originó por rotura de tubería principal, alcanzando 30cm de altura. El agua permaneció 4 horas, afectando muebles y equipos electrónicos. Se detecta humedad residual en paredes."`,
+        accion: 'llenarCampo',
+        campo: 'observacionesPreeliminar',
+        valor: 'Observaciones inundación: ',
+        icono: '💧'
+      };
+    }
+
+    if (mensajeLower.includes('robo') || mensajeLower.includes('hurto') || mensajeLower.includes('theft')) {
+      return {
+        tipo: 'ayuda',
+        contenido: `🦹 **Observaciones para Siniestro por Robo:**\n\n**Elementos clave a documentar:**\n• **Punto de entrada:** Cómo accedieron los ladrones\n• **Método de forzado:** Técnicas utilizadas\n• **Elementos robados:** Inventario detallado\n• **Daños colaterales:** Destrozos adicionales\n• **Sistemas de seguridad:** Estado de alarmas, cámaras\n• **Evidencia:** Huellas, herramientas abandonadas\n\n**Ejemplo:** "El robo se realizó forzando la puerta trasera con herramientas especializadas. Se sustrajeron equipos electrónicos valorados en $15,000,000 COP. Los sistemas de alarma no funcionaron por corte de energía."`,
+        accion: 'llenarCampo',
+        campo: 'observacionesPreeliminar',
+        valor: 'Observaciones robo: ',
+        icono: '🦹'
+      };
+    }
+
+    // Nuevas respuestas para campos del informe preeliminar
+    if (mensajeLower.includes('análisis') || mensajeLower.includes('cobertura') || mensajeLower.includes('póliza') || mensajeLower.includes('policy')) {
+      return {
+        tipo: 'ayuda',
+        contenido: `📋 **Análisis de Cobertura:**\n\n**Sección 8 del Informe Preeliminar:**\n• **Análisis de Póliza:** Condiciones especiales, cláusulas relevantes\n• **Coberturas Aplicables:** Qué cubre la póliza para este siniestro\n• **Exclusiones:** Qué NO cubre la póliza\n• **Garantías:** Requisitos específicos del asegurado\n• **Coaseguro:** Participación de otras aseguradoras\n\n**Ejemplo:** "La póliza cubre daños por incendio hasta $500,000,000 COP. Excluye daños por negligencia. Requiere sistema de alarma certificado."`,
+        accion: 'irSeccion',
+        seccion: 'analisisCobertura',
+        icono: '📋'
+      };
+    }
+
+    if (mensajeLower.includes('exclusiones') || mensajeLower.includes('exclusions') || mensajeLower.includes('no cubre')) {
+      return {
+        tipo: 'ayuda',
+        contenido: `❌ **Exclusiones de Cobertura:**\n\n**Elementos a identificar:**\n• **Exclusiones generales:** Daños por negligencia, mantenimiento\n• **Exclusiones específicas:** Actos de terrorismo, guerra\n• **Exclusiones por omisión:** Falta de medidas de seguridad\n• **Exclusiones temporales:** Períodos de carencia\n• **Exclusiones geográficas:** Zonas de alto riesgo\n\n**Ejemplo:** "La póliza excluye: daños por falta de mantenimiento, actos de terrorismo, y siniestros ocurridos fuera del horario de operación."`,
+        accion: 'llenarCampo',
+        campo: 'exclusiones',
+        valor: 'Exclusiones identificadas: ',
+        icono: '❌'
+      };
+    }
+
+    if (mensajeLower.includes('garantías') || mensajeLower.includes('warranties') || mensajeLower.includes('requisitos')) {
+      return {
+        tipo: 'ayuda',
+        contenido: `🛡️ **Garantías y Requisitos:**\n\n**Elementos a verificar:**\n• **Sistemas de seguridad:** Alarmas, cámaras, cercas\n• **Mantenimiento:** Programas de mantenimiento preventivo\n• **Certificaciones:** Normas técnicas, licencias\n• **Inspecciones:** Frecuencia de revisiones\n• **Personal:** Capacitación del personal\n\n**Ejemplo:** "El asegurado debe mantener: sistema de alarma operativo 24/7, mantenimiento trimestral de equipos, y personal capacitado en primeros auxilios."`,
+        accion: 'llenarCampo',
+        campo: 'garantias',
+        valor: 'Garantías requeridas: ',
+        icono: '🛡️'
+      };
+    }
+
+    if (mensajeLower.includes('coaseguro') || mensajeLower.includes('reaseguro') || mensajeLower.includes('co-insurance')) {
+      return {
+        tipo: 'ayuda',
+        contenido: `🤝 **Coaseguro y Reaseguro:**\n\n**Información a documentar:**\n• **Participación:** Porcentaje de cada aseguradora\n• **Límites:** Montos máximos por aseguradora\n• **Condiciones:** Términos específicos del coaseguro\n• **Responsabilidades:** Quién maneja qué\n• **Comunicación:** Protocolos de coordinación\n\n**Ejemplo:** "Coaseguro: Seguros del Estado (60%), Aseguradora ABC (25%), Reaseguradora XYZ (15%). Límite máximo por aseguradora: $300,000,000 COP."`,
+        accion: 'llenarCampo',
+        campo: 'coaseguro',
+        valor: 'Información de coaseguro: ',
+        icono: '🤝'
+      };
+    }
+
+    if (mensajeLower.includes('documentos') || mensajeLower.includes('solicitud') || mensajeLower.includes('requeridos')) {
+      return {
+        tipo: 'ayuda',
+        contenido: `📋 **Solicitud de Documentos:**\n\n**Documentos típicos requeridos:**\n• **Facturas y recibos:** Comprobantes de compra\n• **Reportes técnicos:** Evaluaciones de expertos\n• **Fotografías:** Antes y después del siniestro\n• **Testimonios:** Declaraciones de testigos\n• **Certificados:** Licencias, permisos\n• **Contratos:** Acuerdos de mantenimiento\n\n**Ejemplo:** "Se solicitan: facturas de equipos afectados, reporte técnico de ingeniero estructural, fotografías del estado anterior, y certificado de mantenimiento preventivo."`,
+        accion: 'llenarCampo',
+        campo: 'solicitudDocumentos',
+        valor: 'Documentos solicitados: ',
+        icono: '📋'
+      };
+    }
+
+    if (mensajeLower.includes('declinación') || mensajeLower.includes('decline') || mensajeLower.includes('no cubre')) {
+      return {
+        tipo: 'ayuda',
+        contenido: `❌ **Declinación de Cobertura:**\n\n**Razones comunes para declinar:**\n• **Exclusiones aplicables:** Daños no cubiertos por la póliza\n• **Falta de garantías:** No se cumplieron requisitos\n• **Ocultación de información:** Datos falsos o incompletos\n• **Actos intencionales:** Daños causados deliberadamente\n• **Falta de notificación:** Siniestro reportado tardíamente\n\n**Ejemplo:** "Se declina cobertura por: falta de mantenimiento preventivo (garantía incumplida), y daños causados por negligencia (exclusión aplicable)."`,
+        accion: 'llenarCampo',
+        campo: 'declinacion',
+        valor: 'Razones de declinación: ',
+        icono: '❌'
+      };
+    }
+
+    if (mensajeLower.includes('próximos pasos') || mensajeLower.includes('siguiente') || mensajeLower.includes('acciones')) {
+      return {
+        tipo: 'ayuda',
+        contenido: `🚀 **Próximos Pasos:**\n\n**Plan de acción recomendado:**\n• **Inmediato (24-48h):** Aislar área, contactar especialistas\n• **Corto plazo (1-2 semanas):** Evaluaciones técnicas, presupuestos\n• **Mediano plazo (1-3 meses):** Reparaciones, mejoras\n• **Largo plazo (3-12 meses):** Prevención, monitoreo\n• **Responsabilidades:** Quién hace qué y cuándo\n\n**Ejemplo:** "Próximos pasos: 1) Aislar área afectada (hoy), 2) Contratar ingeniero estructural (esta semana), 3) Obtener presupuestos (próximas 2 semanas), 4) Iniciar reparaciones (próximo mes)."`,
+        accion: 'llenarCampo',
+        campo: 'proximosPasos',
+        valor: 'Plan de acción: ',
+        icono: '🚀'
+      };
+    }
+
     if (mensajeLower.includes('ayuda') || mensajeLower.includes('cómo') || mensajeLower.includes('help')) {
       return {
         tipo: 'ayuda',
-        contenido: `🤖 **¡Hola! Soy tu asistente IA**\n\nTe puedo ayudar con:\n• 📋 Cómo llenar campos específicos\n• 📖 Explicaciones de secciones\n• 💰 Cálculos automáticos\n• 💡 Sugerencias de contenido\n• 🎯 Navegación por el formulario\n\n¡Pregúntame lo que necesites!`,
+        contenido: `🤖 **¡Hola! Soy tu asistente IA**\n\nTe puedo ayudar con:\n• 📋 Cómo llenar campos específicos\n• 📖 Explicaciones de secciones\n• 💰 Cálculos automáticos\n• 💡 Sugerencias de contenido\n• 🎯 Navegación por el formulario\n• 🔍 Observaciones preeliminares\n• 📋 Análisis de cobertura\n• 📝 Solicitud de documentos\n• ❌ Declinaciones\n• 🚀 Próximos pasos\n\n¡Pregúntame lo que necesites!`,
         accion: 'general',
         icono: '🤖'
       };
@@ -165,7 +322,7 @@ export default function ChatbotIA({ formData, onInputChange }) {
 
       // Ejecutar acción si es necesaria
       if (respuesta.accion === 'llenarCampo' && respuesta.campo) {
-        onInputChange(resposta.campo, respuesta.valor);
+        onInputChange(respuesta.campo, respuesta.valor);
       }
     }, 1000);
   };
@@ -194,8 +351,9 @@ export default function ChatbotIA({ formData, onInputChange }) {
       {/* Botón flotante del chatbot */}
       <button
         onClick={() => setIsOpen(true)}
-        className="fixed bottom-6 right-6 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white p-4 rounded-full shadow-lg transition-all duration-300 z-50 group animate-pulse"
+        className="fixed bottom-6 right-6 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white p-4 rounded-full shadow-lg transition-all duration-300 z-[9999] group animate-pulse border-2 border-white"
         title="Asistente IA - Haz clic para abrir"
+        style={{ zIndex: 9999 }}
       >
         <FaRobot className="h-6 w-6" />
         <div className="absolute right-full mr-3 top-1/2 transform -translate-y-1/2 bg-gray-800 text-white px-3 py-2 rounded-lg text-sm whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity shadow-lg">
