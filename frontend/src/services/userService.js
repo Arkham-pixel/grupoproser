@@ -35,9 +35,16 @@ export const obtenerPerfil = async (token, tipo = "normal") => {
 };
 
 // Nueva función para subir y actualizar la foto de perfil
-export const actualizarFoto = (formData, token) =>
-  axios.put(
-    `/api/usuarios/perfil`,
+export const actualizarFoto = (formData, token) => {
+  console.log('📸 actualizarFoto - configuración:', {
+    BASE_URL,
+    token: token ? 'SÍ' : 'NO',
+    formDataKeys: formData ? Array.from(formData.keys()) : 'NO DATA'
+  });
+  
+  // Usar la ruta secur-auth específica para fotos
+  return axios.put(
+    `${BASE_URL}/api/secur-auth/perfil/foto`,
     formData,
     {
       headers: {
@@ -46,6 +53,7 @@ export const actualizarFoto = (formData, token) =>
       }
     }
   );
+};
 
 export const actualizarPerfil = async (data, token, tipo = "normal") => {
   const url =

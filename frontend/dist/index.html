@@ -5,7 +5,7 @@
     <link rel="icon" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     
-    <!-- CSP actualizado -->
+    <!-- CSP actualizado para desarrollo y producción -->
 <meta http-equiv="Content-Security-Policy"
   content="
     default-src 'self';
@@ -24,6 +24,9 @@
                 https://nominatim.openstreetmap.org
                 ws: wss:;
     img-src 'self' data: blob:
+             http://localhost:3000
+             https://aplicacion.grupoproser.com.co
+             https://api.grupoproser.com.co
              https://a.tile.openstreetmap.org
              https://b.tile.openstreetmap.org
              https://c.tile.openstreetmap.org
@@ -44,8 +47,8 @@
 
     <title>Vite + React</title>
     <script src="https://apis.google.com/js/api.js"></script>
-    <script type="module" crossorigin src="/assets/index-C0Kc4yVU.js"></script>
-    <link rel="stylesheet" crossorigin href="/assets/index-C6-u3rDY.css">
+    <script type="module" crossorigin src="/assets/index-DVxYqDYs.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-46LMbD4r.css">
   </head>
   <body>
     <div id="root"></div>

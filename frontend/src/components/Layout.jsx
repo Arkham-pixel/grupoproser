@@ -371,6 +371,15 @@ export default function Layout() {
                 🧪 Prueba API Riesgos
               </Link>
             )}
+            {esSoloSoporte && (
+              <Link
+                to="/test-foto"
+                className="px-6 py-2 hover:bg-blue-50 text-blue-700"
+                onClick={() => setMenuOpen(false)}
+              >
+                📸 Prueba Sistema de Fotos
+              </Link>
+            )}
             {esAdminOSoporte && (
               <Link
                 to="/editar-perfil-usuario"

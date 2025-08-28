@@ -9,6 +9,7 @@ const SecurUserSchema = new mongoose.Schema({
   active: { type: String, default: "Y" },
   mfa: { type: String, default: null },
   picture: { type: mongoose.Schema.Types.Buffer },
+  foto: { type: String }, // Campo para almacenar la URL de la foto de perfil
   role: { type: String, required: true },
   phone: { type: String },
   activationCode: { type: String },

@@ -40,6 +40,55 @@ export default function Trazabilidad({
     }));
   };
 
+  // Función para calcular días transcurridos desde la última subida
+  const calcularDiasTranscurridos = (tipo) => {
+    const documentos = obtenerDocumentosPorTipo(tipo);
+    
+    if (documentos.length === 0) {
+      return null; // No hay documentos
+    }
+
+    // Obtener la fecha más reciente de los documentos
+    const fechas = documentos
+      .map(doc => doc.fechaSubida || doc.fechaCreacion || doc.fecha)
+      .filter(fecha => fecha) // Filtrar fechas válidas
+      .map(fecha => new Date(fecha));
+
+    if (fechas.length === 0) {
+      return null; // No hay fechas válidas
+    }
+
+    const fechaMasReciente = new Date(Math.max(...fechas));
+    const hoy = new Date();
+    
+    // Calcular diferencia en días
+    const diferenciaTiempo = hoy.getTime() - fechaMasReciente.getTime();
+    const diferenciaDias = Math.ceil(diferenciaTiempo / (1000 * 3600 * 24));
+    
+    return {
+      dias: diferenciaDias,
+      fecha: fechaMasReciente,
+      esReciente: diferenciaDias <= 7, // Verde si es menor a 7 días
+      esUrgente: diferenciaDias > 30 // Rojo si es mayor a 30 días
+    };
+  };
+
+  // Función para obtener el color del indicador de días
+  const obtenerColorIndicador = (diasInfo) => {
+    if (!diasInfo) return 'text-gray-400';
+    if (diasInfo.esReciente) return 'text-green-600';
+    if (diasInfo.esUrgente) return 'text-red-600';
+    return 'text-yellow-600';
+  };
+
+  // Función para obtener el icono del indicador de días
+  const obtenerIconoIndicador = (diasInfo) => {
+    if (!diasInfo) return '⏰';
+    if (diasInfo.esReciente) return '✅';
+    if (diasInfo.esUrgente) return '🚨';
+    return '⚠️';
+  };
+
   // Función para descargar documentos
   const descargarDocumento = (documento) => {
     if (documento.data) {
@@ -79,18 +128,54 @@ export default function Trazabilidad({
   // Componente para mostrar documentos subidos
   const DocumentosSubidos = ({ tipo, titulo }) => {
     const documentos = obtenerDocumentosPorTipo(tipo);
+    const diasInfo = calcularDiasTranscurridos(tipo);
     
     if (documentos.length === 0) {
       return (
         <div className="mt-4 p-4 bg-gray-50 rounded-lg text-center">
           <p className="text-gray-500 text-sm">No hay documentos subidos para {titulo}</p>
+          <div className="mt-2 flex items-center justify-center space-x-2">
+            <span className="text-gray-400">⏰</span>
+            <span className="text-gray-400 text-sm">Sin documentos</span>
+          </div>
         </div>
       );
     }
 
     return (
       <div className="mt-4">
-        <h4 className="text-sm font-medium text-gray-700 mb-3">📁 Documentos Subidos:</h4>
+        {/* Indicador de días transcurridos */}
+        {diasInfo && (
+          <div className="mb-4 p-3 bg-gray-50 rounded-lg border-l-4 border-blue-500">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <span className={`text-lg ${obtenerColorIndicador(diasInfo)}`}>
+                  {obtenerIconoIndicador(diasInfo)}
+                </span>
+                <span className="text-sm font-medium text-gray-700">
+                  Último documento subido:
+                </span>
+                <span className="text-sm text-gray-600">
+                  {diasInfo.fecha.toLocaleDateString()}
+                </span>
+              </div>
+              <div className={`text-right ${obtenerColorIndicador(diasInfo)}`}>
+                <div className="text-lg font-bold">
+                  {diasInfo.dias === 0 ? 'Hoy' : 
+                   diasInfo.dias === 1 ? 'Ayer' : 
+                   `${diasInfo.dias} días`}
+                </div>
+                <div className="text-xs">
+                  {diasInfo.dias === 0 ? 'Recién subido' : 
+                   diasInfo.dias === 1 ? 'Hace 1 día' : 
+                   `Hace ${diasInfo.dias} días`}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        <h4 className="text-sm font-medium text-gray-700 mb-3">📁 Documentos Subidos ({documentos.length}):</h4>
         <div className="space-y-2">
           {documentos.map((doc, index) => (
             <div key={index} className="flex items-center justify-between p-3 bg-blue-50 rounded-lg border border-blue-200">
@@ -118,35 +203,149 @@ export default function Trazabilidad({
     );
   };
 
-  const BandejaDesplegable = ({ titulo, bandeja, children, icono, tipoDocumento }) => (
-    <div className="bg-white rounded-lg shadow-md mb-4">
-      <button
-        onClick={() => toggleBandeja(bandeja)}
-        className="w-full px-6 py-4 text-left flex items-center justify-between hover:bg-gray-50 transition-colors rounded-lg"
-      >
-        <div className="flex items-center">
-          <span className="text-2xl mr-3">{icono}</span>
-          <h3 className="text-lg font-semibold text-gray-700">{titulo}</h3>
-        </div>
-        <span className={`text-gray-500 transition-transform ${bandejasAbiertas[bandeja] ? 'rotate-180' : ''}`}>
-          ▼
-        </span>
-      </button>
-      
-      {bandejasAbiertas[bandeja] && (
-        <div className="px-6 pb-6 border-t border-gray-100">
-          {children}
-          
-          {/* Mostrar documentos subidos */}
-          <DocumentosSubidos tipo={tipoDocumento} titulo={titulo} />
-        </div>
-      )}
-    </div>
-  );
+  const BandejaDesplegable = ({ titulo, bandeja, children, icono, tipoDocumento }) => {
+    const diasInfo = calcularDiasTranscurridos(tipoDocumento);
+    
+    return (
+      <div className="bg-white rounded-lg shadow-md mb-4">
+        <button
+          onClick={() => toggleBandeja(bandeja)}
+          className="w-full px-6 py-4 text-left flex items-center justify-between hover:bg-gray-50 transition-colors rounded-lg"
+        >
+          <div className="flex items-center">
+            <span className="text-2xl mr-3">{icono}</span>
+            <div>
+              <h3 className="text-lg font-semibold text-gray-700">{titulo}</h3>
+              {/* Indicador de días en el título de la bandeja */}
+              {diasInfo && (
+                <div className="flex items-center space-x-2 mt-1">
+                  <span className={`text-sm ${obtenerColorIndicador(diasInfo)}`}>
+                    {obtenerIconoIndicador(diasInfo)}
+                  </span>
+                  <span className={`text-xs ${obtenerColorIndicador(diasInfo)}`}>
+                    {diasInfo.dias === 0 ? 'Hoy' : 
+                     diasInfo.dias === 1 ? 'Ayer' : 
+                     `${diasInfo.dias} días`}
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
+          <span className={`text-gray-500 transition-transform ${bandejasAbiertas[bandeja] ? 'rotate-180' : ''}`}>
+            ▼
+          </span>
+        </button>
+        
+        {bandejasAbiertas[bandeja] && (
+          <div className="px-6 pb-6 border-t border-gray-100">
+            {children}
+            
+            {/* Mostrar documentos subidos */}
+            <DocumentosSubidos tipo={tipoDocumento} titulo={titulo} />
+          </div>
+        )}
+      </div>
+    );
+  };
 
   return (
     <div className="space-y-6">
       <h2 className="text-2xl font-bold text-gray-800 mb-6">📋 Trazabilidad del Caso</h2>
+      
+      {/* Resumen General de Trazabilidad */}
+      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-6 border border-blue-200">
+        <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+          📊 Resumen de Trazabilidad
+        </h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {[
+            { tipo: 'contactoInicial', titulo: 'Contacto Inicial', icono: '📞' },
+            { tipo: 'inspeccion', titulo: 'Inspección', icono: '🔍' },
+            { tipo: 'solicitudDocs', titulo: 'Solicitud Docs', icono: '📄' },
+            { tipo: 'informePreliminar', titulo: 'Informe Preliminar', icono: '📊' },
+            { tipo: 'informeFinal', titulo: 'Informe Final', icono: '📋' },
+            { tipo: 'ultimoDocumento', titulo: 'Último Documento', icono: '📎' }
+          ].map(({ tipo, titulo, icono }) => {
+            const diasInfo = calcularDiasTranscurridos(tipo);
+            const documentos = obtenerDocumentosPorTipo(tipo);
+            
+            return (
+              <div key={tipo} className="bg-white rounded-lg p-4 border border-gray-200 shadow-sm">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xl">{icono}</span>
+                  <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full">
+                    {documentos.length} docs
+                  </span>
+                </div>
+                <h4 className="text-sm font-medium text-gray-700 mb-2">{titulo}</h4>
+                
+                {diasInfo ? (
+                  <div className={`text-center ${obtenerColorIndicador(diasInfo)}`}>
+                    <div className="text-lg font-bold">
+                      {diasInfo.dias === 0 ? 'Hoy' : 
+                       diasInfo.dias === 1 ? 'Ayer' : 
+                       `${diasInfo.dias} días`}
+                    </div>
+                    <div className="text-xs">
+                      {diasInfo.dias === 0 ? 'Recién subido' : 
+                       diasInfo.dias === 1 ? 'Hace 1 día' : 
+                       `Hace ${diasInfo.dias} días`}
+                    </div>
+                    <div className="text-xs mt-1">
+                      {diasInfo.fecha.toLocaleDateString()}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-center text-gray-400">
+                    <div className="text-lg font-bold">Sin docs</div>
+                    <div className="text-xs">No hay documentos</div>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+        
+        {/* Indicador de estado general */}
+        <div className="mt-4 pt-4 border-t border-blue-200">
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-medium text-gray-700">Estado General:</span>
+            <div className="flex items-center space-x-2">
+              {(() => {
+                const todosLosTipos = ['contactoInicial', 'inspeccion', 'solicitudDocs', 'informePreliminar', 'informeFinal', 'ultimoDocumento'];
+                const documentosRecientes = todosLosTipos.filter(tipo => {
+                  const diasInfo = calcularDiasTranscurridos(tipo);
+                  return diasInfo && diasInfo.esReciente;
+                }).length;
+                const documentosUrgentes = todosLosTipos.filter(tipo => {
+                  const diasInfo = calcularDiasTranscurridos(tipo);
+                  return diasInfo && diasInfo.esUrgente;
+                }).length;
+                
+                if (documentosUrgentes > 0) {
+                  return (
+                    <span className="text-red-600 text-sm font-medium flex items-center">
+                      🚨 {documentosUrgentes} documentos urgentes
+                    </span>
+                  );
+                } else if (documentosRecientes >= 3) {
+                  return (
+                    <span className="text-green-600 text-sm font-medium flex items-center">
+                      ✅ Caso actualizado
+                    </span>
+                  );
+                } else {
+                  return (
+                    <span className="text-yellow-600 text-sm font-medium flex items-center">
+                      ⚠️ Necesita atención
+                    </span>
+                  );
+                }
+              })()}
+            </div>
+          </div>
+        </div>
+      </div>
       
       {/* Contacto Inicial */}
       <BandejaDesplegable titulo="Contacto Inicial" bandeja="contactoInicial" icono="📞" tipoDocumento="contactoInicial">

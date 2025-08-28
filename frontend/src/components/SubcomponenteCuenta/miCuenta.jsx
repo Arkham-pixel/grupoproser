@@ -4,7 +4,7 @@ import React, { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { obtenerPerfil, actualizarFoto } from "../../services/userService";
 import axios from "axios";
-import { BASE_URL } from "../../config/apiConfig.js";
+import { BASE_URL, isDevelopmentEnv } from '../../config/apiConfig';
 
 const estados = {
   Conectado: "bg-green-500 text-white",
@@ -19,8 +19,59 @@ export default function MiCuenta() {
   const [loading, setLoading] = useState(true);
   const [estado, setEstado] = useState("Conectado");
   const [fotoPreview, setFotoPreview] = useState("");
+  const [fotoError, setFotoError] = useState(false);
+  const [fotoLoaded, setFotoLoaded] = useState(false);
   const fileInputRef = useRef();
   const navigate = useNavigate();
+
+  // Función para obtener la URL de la foto
+  const obtenerUrlFoto = (fotoUrlRelativa) => {
+    console.log('🔍 Construyendo URL de foto:', {
+      fotoUrlRelativa,
+      BASE_URL,
+      isDevelopmentEnv,
+      tipo: typeof fotoUrlRelativa
+    });
+    
+    if (!fotoUrlRelativa) {
+      console.log('❌ No hay URL de foto, usando placeholder');
+      return "/img/placeholder.png";
+    }
+    
+    // Si es una URL completa, usarla tal como está
+    if (fotoUrlRelativa.startsWith('http://') || fotoUrlRelativa.startsWith('https://')) {
+      console.log('✅ Es una URL completa:', fotoUrlRelativa);
+      return fotoUrlRelativa;
+    }
+    
+    // Para URLs relativas, usar la URL base del archivo de configuración
+    if (fotoUrlRelativa.startsWith('/uploads/')) {
+      // En desarrollo: http://localhost:3000
+      // En producción: https://aplicacion.grupoproser.com.co
+      const urlCompleta = `${BASE_URL}${fotoUrlRelativa}`;
+      console.log('🔗 URL construida usando config:', urlCompleta);
+      return urlCompleta;
+    }
+    
+    // Fallback: usar BASE_URL
+    const urlCompleta = `${BASE_URL}${fotoUrlRelativa.startsWith('/') ? '' : '/'}${fotoUrlRelativa}`;
+    console.log('🔗 URL construida (fallback):', urlCompleta);
+    return urlCompleta;
+  };
+
+  // Función para manejar errores de carga de imagen
+  const handleImageError = () => {
+    console.log('❌ Error cargando imagen de perfil, usando placeholder');
+    setFotoError(true);
+    setFotoLoaded(false);
+  };
+
+  // Función para manejar carga exitosa de imagen
+  const handleImageLoad = () => {
+    console.log('✅ Imagen de perfil cargada exitosamente');
+    setFotoError(false);
+    setFotoLoaded(true);
+  };
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -49,6 +100,15 @@ export default function MiCuenta() {
         console.log('✅ Perfil obtenido exitosamente:', data);
         console.log('🎯 Tipo de datos recibidos:', typeof data);
         console.log('📋 Propiedades del objeto:', Object.keys(data));
+        
+        // Log específico para la foto
+        console.log('📸 Información de la foto:', {
+          foto: data.foto,
+          tipoFoto: typeof data.foto,
+          fotoExiste: !!data.foto,
+          fotoLength: data.foto ? data.foto.length : 0
+        });
+        
         setUsuario(data);
       })
       .catch((err) => {
@@ -98,11 +158,17 @@ export default function MiCuenta() {
 
     try {
       const { data } = await actualizarFoto(formData, token);
+      console.log('✅ Foto actualizada exitosamente:', data);
+      
       // data.fotoPerfil es la URL relativa guardada en Mongo
       setUsuario(u => ({ ...u, foto: data.fotoPerfil }));
       setFotoPreview("");
+      setFotoError(false); // Resetear error de foto
+      setFotoLoaded(true); // Marcar que la foto se cargó correctamente
     } catch (err) {
-      console.error("Error subiendo foto:", err);
+      console.error("❌ Error subiendo foto:", err);
+      setFotoError(true); // Marcar que hubo un error al subir la foto
+      setFotoLoaded(false); // No marcar como cargada si hubo error
     }
   };
 
@@ -122,24 +188,48 @@ export default function MiCuenta() {
     <div className="max-w-md mx-auto bg-white rounded-lg shadow p-6 mt-8">
       <div className="flex items-center space-x-4 mb-6">
         <div className="relative">
-          <img
-            src={
-              fotoPreview
-                ? fotoPreview
-                : usuario.foto
-                ? `${BASE_URL}${usuario.foto}`
-                : "/img/placeholder.png"
-            }
-            alt="Foto de perfil"
-            className="w-20 h-20 rounded-full object-cover border-4 border-blue-200"
-          />
+          {/* Mostrar foto de perfil o placeholder */}
+          {fotoPreview ? (
+            // Preview de la foto que se está subiendo
+            <img
+              src={fotoPreview}
+              alt="Vista previa de foto"
+              className="w-20 h-20 rounded-full object-cover border-4 border-blue-200"
+            />
+          ) : usuario.foto && !fotoError ? (
+            // Foto del usuario desde la base de datos
+            <img
+              src={obtenerUrlFoto(usuario.foto)}
+              alt="Foto de perfil"
+              className="w-20 h-20 rounded-full object-cover border-4 border-blue-200"
+              onError={handleImageError}
+              onLoad={handleImageLoad}
+            />
+          ) : (
+            // Placeholder cuando no hay foto o hay error
+            <div className="w-20 h-20 rounded-full border-4 border-blue-200 bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center">
+              <div className="text-center">
+                <div className="text-2xl text-blue-600 mb-1">👤</div>
+                <div className="text-xs text-blue-700 font-medium">Foto de perfil</div>
+              </div>
+            </div>
+          )}
+          
+          {/* Indicador de estado de conexión */}
+          <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white flex items-center justify-center">
+            <div className="w-2 h-2 bg-white rounded-full"></div>
+          </div>
+          
+          {/* Botón para cambiar foto */}
           <button
             onClick={() => fileInputRef.current.click()}
-            className="absolute bottom-0 right-0 bg-blue-600 text-white rounded-full p-1 hover:bg-blue-700"
+            className="absolute bottom-0 right-0 bg-blue-600 text-white rounded-full p-1 hover:bg-blue-700 transition-colors shadow-lg"
             title="Cambiar foto"
           >
             📷
           </button>
+          
+          {/* Input de archivo oculto */}
           <input
             type="file"
             accept="image/*"

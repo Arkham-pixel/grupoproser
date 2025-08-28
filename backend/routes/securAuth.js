@@ -3,8 +3,31 @@ import express from "express";
 import SecurUser from "../models/SecurUser.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import multer from "multer";
+import fs from "fs";
+import path from "path";
 
 const router = express.Router();
+
+// ─── Configuración de multer para subida de fotos ─────────────
+const uploadsDir = path.resolve("uploads");
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+}
+
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, uploadsDir);
+  },
+  filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname);
+    // Usar un timestamp único si no hay usuario.id disponible
+    const userId = req.usuario?.id || 'unknown';
+    cb(null, `${userId}-${Date.now()}${ext}`);
+  }
+});
+
+const upload = multer({ storage });
 
 // Ruta para listar usuarios secur (solo para desarrollo)
 router.get("/usuarios", async (req, res) => {
@@ -418,18 +441,24 @@ router.get("/perfil", async (req, res) => {
   const token = req.headers.authorization?.split(' ')[1];
   
   try {
+    console.log('👤 === OBTENIENDO PERFIL DE USUARIO ===');
+    console.log('🔐 Token recibido:', token ? 'SÍ' : 'NO');
+    
     if (!token) {
       return res.status(401).json({ message: "Token requerido" });
     }
     
     const decoded = jwt.verify(token, process.env.JWT_SECRET || "secreto_super_seguro");
+    console.log('🔓 Token decodificado:', { id: decoded.id, login: decoded.login });
+    
     const usuario = await SecurUser.findById(decoded.id);
     
     if (!usuario) {
+      console.log('❌ Usuario no encontrado en BD');
       return res.status(404).json({ message: "Usuario no encontrado" });
     }
     
-    console.log('📊 Datos completos del usuario desde BD:', {
+    console.log('✅ Usuario encontrado en BD:', {
       id: usuario._id,
       login: usuario.login,
       name: usuario.name,
@@ -440,10 +469,13 @@ router.get("/perfil", async (req, res) => {
       privAdmin: usuario.privAdmin,
       pswdLastUpdated: usuario.pswdLastUpdated,
       createdAt: usuario.createdAt,
-      updatedAt: usuario.updatedAt
+      updatedAt: usuario.updatedAt,
+      foto: usuario.foto,
+      fotoTipo: typeof usuario.foto,
+      fotoExiste: !!usuario.foto
     });
     
-    res.json({
+    const perfilResponse = {
       id: usuario._id,
       login: usuario.login,
       name: usuario.name,
@@ -454,16 +486,23 @@ router.get("/perfil", async (req, res) => {
       privAdmin: usuario.privAdmin,
       pswdLastUpdated: usuario.pswdLastUpdated,
       createdAt: usuario.createdAt,
-      updatedAt: usuario.updatedAt
-    });
+      updatedAt: usuario.updatedAt,
+      foto: usuario.foto
+    };
+    
+    console.log('📤 Enviando respuesta del perfil:', perfilResponse);
+    console.log('👤 === FIN OBTENCIÓN DE PERFIL ===');
+    
+    res.json(perfilResponse);
     
   } catch (error) {
-    console.error("Error obteniendo perfil:", error);
+    console.error("❌ Error obteniendo perfil:", error);
+    console.error("📋 Stack trace:", error.stack);
     res.status(500).json({ message: "Error en el servidor" });
   }
 });
 
-// Actualizar perfil
+// Actualizar perfil (datos básicos)
 router.put("/perfil", async (req, res) => {
   const { name, email, phone, role } = req.body;
   const token = req.headers.authorization?.split(' ')[1];
@@ -503,6 +542,77 @@ router.put("/perfil", async (req, res) => {
   } catch (error) {
     console.error("Error actualizando perfil:", error);
     res.status(500).json({ message: "Error en el servidor" });
+  }
+});
+
+// Actualizar foto de perfil
+router.put("/perfil/foto", upload.single("foto"), async (req, res) => {
+  const token = req.headers.authorization?.split(' ')[1];
+  
+  try {
+    console.log('📸 === INICIANDO ACTUALIZACIÓN DE FOTO ===');
+    console.log('🔐 Token recibido:', token ? 'SÍ' : 'NO');
+    
+    if (!token) {
+      return res.status(401).json({ message: "Token requerido" });
+    }
+    
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || "secreto_super_seguro");
+    console.log('🔓 Token decodificado:', { id: decoded.id, login: decoded.login });
+    
+    const usuario = await SecurUser.findById(decoded.id);
+    
+    if (!usuario) {
+      console.log('❌ Usuario no encontrado en BD');
+      return res.status(404).json({ message: "Usuario no encontrado" });
+    }
+    
+    console.log('✅ Usuario encontrado:', { 
+      id: usuario._id, 
+      name: usuario.name, 
+      fotoActual: usuario.foto 
+    });
+    
+    // Verificar si se recibió un archivo
+    if (!req.file) {
+      console.log('❌ No se recibió ningún archivo');
+      return res.status(400).json({ message: "No se recibió ningún archivo" });
+    }
+    
+    console.log('📁 Archivo recibido:', {
+      filename: req.file.filename,
+      originalname: req.file.originalname,
+      size: req.file.size,
+      mimetype: req.file.mimetype
+    });
+    
+    // Actualizar el campo foto con la URL relativa
+    const nuevaFotoUrl = `/uploads/${req.file.filename}`;
+    console.log('🔄 Cambiando foto de:', usuario.foto, 'a:', nuevaFotoUrl);
+    
+    usuario.foto = nuevaFotoUrl;
+    
+    console.log('💾 Guardando usuario en BD...');
+    await usuario.save();
+    
+    // Verificar que se guardó correctamente
+    const usuarioVerificado = await SecurUser.findById(decoded.id);
+    console.log('✅ Usuario después de guardar:', { 
+      id: usuarioVerificado._id, 
+      name: usuarioVerificado.name, 
+      foto: usuarioVerificado.foto 
+    });
+    
+    console.log('✅ Foto guardada exitosamente en BD');
+    console.log('📸 === FIN ACTUALIZACIÓN DE FOTO ===');
+    
+    // Devolver la URL actualizada
+    res.json({ fotoPerfil: usuario.foto });
+    
+  } catch (error) {
+    console.error('❌ Error actualizando foto:', error);
+    console.error('📋 Stack trace:', error.stack);
+    res.status(500).json({ message: "Error interno al actualizar foto" });
   }
 });
 
@@ -829,6 +939,50 @@ router.put("/actualizar-usuario/:login", async (req, res) => {
   } catch (error) {
     console.error("Error al actualizar usuario:", error);
     res.status(500).json({ message: "Error en el servidor" });
+  }
+});
+
+// Ruta de prueba para verificar el estado de la base de datos
+router.get("/test-foto/:userId", async (req, res) => {
+  try {
+    console.log('🧪 === PRUEBA DE FOTO ===');
+    const { userId } = req.params;
+    console.log('🔍 Buscando usuario con ID:', userId);
+    
+    const usuario = await SecurUser.findById(userId);
+    if (!usuario) {
+      console.log('❌ Usuario no encontrado');
+      return res.status(404).json({ message: "Usuario no encontrado" });
+    }
+    
+    console.log('✅ Usuario encontrado:', {
+      id: usuario._id,
+      name: usuario.name,
+      foto: usuario.foto,
+      fotoTipo: typeof usuario.foto,
+      fotoExiste: !!usuario.foto,
+      coleccion: usuario.collection.name,
+      esquema: Object.keys(usuario._doc)
+    });
+    
+    // Verificar si el campo foto existe en el esquema
+    const schemaFields = Object.keys(SecurUser.schema.paths);
+    console.log('📋 Campos del esquema:', schemaFields);
+    console.log('🔍 Campo foto en esquema:', schemaFields.includes('foto'));
+    
+    res.json({
+      usuario: {
+        id: usuario._id,
+        name: usuario.name,
+        foto: usuario.foto
+      },
+      esquema: schemaFields,
+      fotoEnEsquema: schemaFields.includes('foto')
+    });
+    
+  } catch (error) {
+    console.error('❌ Error en prueba de foto:', error);
+    res.status(500).json({ message: "Error en el servidor", error: error.message });
   }
 });
 

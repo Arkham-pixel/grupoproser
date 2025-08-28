@@ -22,7 +22,9 @@ const storage = multer.diskStorage({
   },
   filename: (req, file, cb) => {
     const ext = path.extname(file.originalname);
-    cb(null, `${req.usuario.id}-${Date.now()}${ext}`);
+    // Usar un timestamp único si no hay usuario.id disponible
+    const userId = req.usuario?.id || 'unknown';
+    cb(null, `${userId}-${Date.now()}${ext}`);
   }
 });
 const upload = multer({ storage });
@@ -98,22 +100,33 @@ router.put(
   verificarToken,
   upload.single("foto"),         
   async (req, res) => {
+    console.log('📸 Iniciando actualización de foto...');
+    console.log('👤 Usuario autenticado:', req.usuario);
+    console.log('📁 Archivo recibido:', req.file);
+    
     try {
       const usuario = await Usuario.findById(req.usuario.id);
       if (!usuario) {
+        console.log('❌ Usuario no encontrado en BD');
         return res.status(404).json({ message: "Usuario no encontrado" });
       }
 
+      console.log('✅ Usuario encontrado:', usuario.name);
+
       if (req.file) {
+        console.log('📸 Procesando archivo:', req.file.filename);
         // Sobrescribimos el campo foto con la URL relativa
         usuario.foto = `/uploads/${req.file.filename}`;
+        console.log('🔗 Nueva URL de foto:', usuario.foto);
       }
 
       await usuario.save();
+      console.log('✅ Foto guardada exitosamente en BD');
+      
       // devolvemos la URL actualizada
       return res.json({ fotoPerfil: usuario.foto });
     } catch (error) {
-      console.error("Error actualizando foto:", error);
+      console.error('❌ Error actualizando foto:', error);
       return res.status(500).json({ message: "Error interno al actualizar foto" });
     }
   }

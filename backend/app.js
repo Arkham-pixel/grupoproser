@@ -49,7 +49,18 @@ if (!fs.existsSync(uploadsDir)) {
 }
 
 // 3️ Sirve los archivos subidos de forma estática
+// En desarrollo: /uploads desde localhost:3000
+// En producción: /uploads desde el mismo dominio del frontend
 app.use("/uploads", express.static(uploadsDir));
+
+// Para producción: también servir archivos estáticos del frontend
+if (process.env.NODE_ENV === 'production') {
+  const frontendPath = path.join(__dirname, '../frontend/dist');
+  if (fs.existsSync(frontendPath)) {
+    app.use(express.static(frontendPath));
+    console.log('📁 Frontend estático configurado para producción');
+  }
+}
 
 // 4️ Monta aquí tus rutas
 app.use("/api/auth", authRoutes);
