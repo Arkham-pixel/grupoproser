@@ -27,8 +27,8 @@ export default function DatosGenerales({
           <div>
             <label className="block font-medium">Responsable *</label>
             <select
-              name="responsable"
-              value={formData.responsable || ""}
+              name="codiRespnsble"
+              value={formData.codiRespnsble || ""}
               onChange={handleChange}
               className="border px-2 py-2 w-full rounded"
               required
@@ -44,11 +44,13 @@ export default function DatosGenerales({
             )}
           </div>
 
+
+
           <div>
             <label className="block text-sm font-medium"> Cliente *</label>
             <select
-              name="aseguradora"
-              value={formData.aseguradora || ""}
+              name="codiAsgrdra"
+              value={formData.codiAsgrdra || ""}
               onChange={handleAseguradoraChange}
               className="w-full border rounded px-3 py-2"
               required
@@ -60,12 +62,12 @@ export default function DatosGenerales({
             </select>
           </div>
 
-          {formData.aseguradora && funcionarios.length > 0 && (
+          {formData.codiAsgrdra && funcionarios.length > 0 && (
             <div>
               <label className="block text-sm font-medium">Funcionario Aseguradora</label>
               <select
-                name="funcionario_aseguradora"
-                value={formData.funcionario_aseguradora || ""}
+                name="funcAsgrdra"
+                value={formData.funcAsgrdra || ""}
                 onChange={handleChange}
                 className="w-full border rounded px-3 py-2"
               >
@@ -77,12 +79,14 @@ export default function DatosGenerales({
             </div>
           )}
 
+
+
           <div>
             <label className="block text-sm font-medium">Número de Siniestro *</label>
             <input
               type="text"
-              name="numero_siniestro"
-              value={formData.numero_siniestro || ""}
+              name="nmroSinstro"
+              value={formData.nmroSinstro || ""}
               onChange={handleChange}
               className="w-full border rounded px-3 py-2"
               required
@@ -93,8 +97,8 @@ export default function DatosGenerales({
             <label className="block text-sm font-medium">Código Workflow</label>
             <input
               type="text"
-              name="codigo_workflow"
-              value={formData.codigo_workflow || ""}
+              name="codWorkflow"
+              value={formData.codWorkflow || ""}
               onChange={handleChange}
               className="w-full border rounded px-3 py-2"
             />
@@ -137,8 +141,8 @@ export default function DatosGenerales({
             <label className="block text-sm font-medium">Número de Póliza</label>
             <input
               type="text"
-              name="numero_poliza"
-              value={formData.numero_poliza || ""}
+              name="nmroPolza"
+              value={formData.nmroPolza || ""}
               onChange={handleChange}
               className="w-full border rounded px-2 py-2"
             />
@@ -148,8 +152,8 @@ export default function DatosGenerales({
             <label className="block text-sm font-medium">Asegurado o Beneficiario *</label>
             <input
               type="text"
-              name="asegurado"
-              value={formData.asegurado || ""}
+              name="asgrBenfcro"
+              value={formData.asgrBenfcro || ""}
               onChange={handleChange}
               className="w-full border rounded px-3 py-2"
               required
@@ -159,8 +163,8 @@ export default function DatosGenerales({
           <div>
             <label className="block text-sm font-medium">Tipo de Documento</label>
             <select
-              name="tipo_documento"
-              value={formData.tipo_documento || ""}
+              name="tipoDucumento"
+              value={formData.tipoDucumento || ""}
               onChange={handleChange}
               className="w-full border rounded px-3 py-2"
               required
@@ -181,8 +185,8 @@ export default function DatosGenerales({
             <label className="block text-sm font-medium">Número de Documento</label>
             <input
               type="text"
-              name="numero_documento"
-              value={formData.numero_documento || ""}
+              name="numDocumento"
+              value={formData.numDocumento || ""}
               onChange={handleChange}
               className="w-full border rounded px-3 py-2"
               required
@@ -193,8 +197,8 @@ export default function DatosGenerales({
             <label className="block text-sm font-medium">Fecha de Asignación</label>
             <input
               type="date"
-              name="fecha_asignacion"
-              value={formData.fecha_asignacion || ""}
+              name="fchaAsgncion"
+              value={formData.fchaAsgncion || ""}
               onChange={handleChange}
               className="w-full border rounded px-3 py-2"
             />
@@ -204,8 +208,8 @@ export default function DatosGenerales({
             <label className="block text-sm font-medium">Fecha del Siniestro</label>
             <input
               type="date"
-              name="fecha_siniestro"
-              value={formData.fecha_siniestro || ""}
+              name="fchaSinstro"
+              value={formData.fchaSinstro || ""}
               onChange={handleChange}
               className="w-full border rounded px-3 py-2"
             />
@@ -215,7 +219,7 @@ export default function DatosGenerales({
             <label className="block text-sm font-medium">Ciudad del Siniestro</label>
             <Select
               options={municipios}
-              value={municipios.find(opt => opt.value === formData.ciudad_siniestro)}
+              value={municipios.find(opt => opt.value === formData.ciudadSiniestro)}
               onChange={handleCiudadChange}
               placeholder="Selecciona una ciudad..."
               isSearchable
@@ -227,8 +231,8 @@ export default function DatosGenerales({
             <label className="block text-sm font-medium">Tipo de Póliza</label>
             <input
               type="text"
-              name="tipo_poliza"
-              value={formData.tipo_poliza || ""}
+              name="tipoPoliza"
+              value={formData.tipoPoliza || ""}
               onChange={handleChange}
               className="w-full border rounded px-3 py-2"
             />

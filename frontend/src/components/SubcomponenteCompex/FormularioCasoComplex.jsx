@@ -2,11 +2,13 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useDropzone } from 'react-dropzone';
 import DatosGenerales from './DatosGenerales';
+import Trazabilidad from './Trazabilidad';
+import ValoresPrestaciones from './ValoresPrestaciones';
+import Seguimiento from './Seguimiento';
 import Facturacion from './Facturacion';
 import Honorarios from './Honorarios';
 import ObservacionesCliente from './ObservacionesCliente';
 import { BASE_URL } from '../../config/apiConfig.js';
-// Importa aquí los demás subcomponentes cuando los crees
 
 export default function FormularioCasoComplex({ initialData, onSave, onCancel }) {
   const [tabActiva, setTabActiva] = useState('datosGenerales');
@@ -17,10 +19,8 @@ export default function FormularioCasoComplex({ initialData, onSave, onCancel })
     codWorkflow: '',
     nmroPolza: '',
     codiRespnsble: '',
-    nombreResponsable: '',
     codiAsgrdra: '',
     funcAsgrdra: '',
-    nombreFuncionario: '',
     asgrBenfcro: '',
     tipoDucumento: '',
     numDocumento: '',
@@ -34,6 +34,7 @@ export default function FormularioCasoComplex({ initialData, onSave, onCancel })
     fchaSinstro: '',
     fchaInspccion: '',
     fchaContIni: '',
+
     // ...otros campos existentes...
     historialDocs: [],
   });
@@ -68,8 +69,8 @@ export default function FormularioCasoComplex({ initialData, onSave, onCancel })
   const handleAseguradoraChange = (e) => {
     setFormData(prev => ({
       ...prev,
-      aseguradora: e.target.value,
-      funcionario_aseguradora: ''
+      codiAsgrdra: e.target.value,
+      funcAsgrdra: ''
     }));
   };
 
@@ -160,9 +161,9 @@ export default function FormularioCasoComplex({ initialData, onSave, onCancel })
 
   // Fetch funcionarios cuando cambia la aseguradora
   useEffect(() => {
-    if (formData.aseguradora) {
+    if (formData.codiAsgrdra) {
       // Buscar el cliente seleccionado para obtener su código
-      const cliente = aseguradoraOptionsRaw.find(c => c.rzonSocial === formData.aseguradora);
+      const cliente = aseguradoraOptionsRaw.find(c => c.rzonSocial === formData.codiAsgrdra);
       if (cliente && cliente.codiAsgrdra) {
         fetch(`${BASE_URL}/api/funcionarios-aseguradora?codiAsgrdra=${cliente.codiAsgrdra}`)
           .then(res => res.json())
@@ -175,7 +176,7 @@ export default function FormularioCasoComplex({ initialData, onSave, onCancel })
     } else {
       setFuncionarios([]);
     }
-  }, [formData.aseguradora, aseguradoraOptionsRaw]);
+  }, [formData.codiAsgrdra, aseguradoraOptionsRaw]);
 
   // Guardar los datos crudos de clientes para obtener el código
   useEffect(() => {
@@ -251,12 +252,13 @@ export default function FormularioCasoComplex({ initialData, onSave, onCancel })
   // Función para mapear los campos del frontend a los del backend
   function mapFormDataToBackend(formData) {
     return {
-      // Campos principales con nombres correctos del modelo
+      // Campos principales mapeados correctamente a la base de datos real
       nmroAjste: formData.nmroAjste,
       nmroSinstro: formData.nmroSinstro,
       nombIntermediario: formData.nombIntermediario,
       codWorkflow: formData.codWorkflow,
       nmroPolza: formData.nmroPolza,
+      // Mapear códigos directamente
       codiRespnsble: formData.codiRespnsble,
       codiAsgrdra: formData.codiAsgrdra,
       funcAsgrdra: formData.funcAsgrdra,

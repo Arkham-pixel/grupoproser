@@ -6,6 +6,10 @@ import path from 'path';
 import express from 'express';
 import { fileURLToPath } from 'url';
 
+// Importar modelos para que estén disponibles globalmente
+import './models/Responsable.js';
+import './models/FuncionarioAseguradora.js';
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 // app.use(express.static(path.join(__dirname, "frontend", "build")));

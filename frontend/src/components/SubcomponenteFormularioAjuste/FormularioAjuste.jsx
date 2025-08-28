@@ -116,7 +116,19 @@ export default function FormularioAjuste() {
     fechaInformeFinal: '',
     conclusionesFinales: '',
     recomendacionesFinales: '',
-    observacionesInformeFinal: ''
+    observacionesInformeFinal: '',
+    // Campos para la parte final del formulario
+    liquidacionPerdida: {
+      infraseguro: '',
+      demerito: '',
+      avanceTecnologico: ''
+    },
+    indemnizacion: {
+      deducible: '',
+      subrogacion: ''
+    },
+    salvamentos: '',
+    panoramaRiesgos: ''
   });
 
   // Nuevo estado para la información del mapa
@@ -239,6 +251,13 @@ export default function FormularioAjuste() {
         setFormData(formulario.datos || {});
         setArchivoGenerado(formulario.archivo);
         
+        // Log especial para verificar firmas al cargar
+        console.log('🔍 Verificando firmas al cargar formulario:');
+        console.log('🔍 firmaFuncionario en datos:', !!formulario.datos?.firmaFuncionario);
+        console.log('🔍 firmaIskharly en datos:', !!formulario.datos?.firmaIskharly);
+        console.log('🔍 funcionarioFirma en datos:', formulario.datos?.funcionarioFirma);
+        console.log('🔍 cargoFuncionario en datos:', formulario.datos?.cargoFuncionario);
+        
         // Cargar información de la carpeta
         if (formulario.casoId) {
           setFormData(prev => ({
@@ -271,10 +290,22 @@ export default function FormularioAjuste() {
 
   // Función para manejar cambios en los campos del formulario
   const handleInputChange = (field, value) => {
+    // Log especial para firmas
+    if (field === 'firmaFuncionario' || field === 'firmaIskharly') {
+      console.log(`🔍 handleInputChange - Campo: ${field}`);
+      console.log(`🔍 Valor recibido:`, value ? 'Firma presente' : 'Sin firma');
+      console.log(`🔍 Longitud del valor:`, value ? value.length : 0);
+    }
+    
     setFormData(prev => ({
       ...prev,
       [field]: value
     }));
+    
+    // Log después de actualizar el estado
+    if (field === 'firmaFuncionario' || field === 'firmaIskharly') {
+      console.log(`✅ Estado actualizado para ${field}:`, value ? 'Firma guardada' : 'Sin firma');
+    }
   };
 
   // Función para manejar cambios en el mapa
@@ -1119,6 +1150,73 @@ export default function FormularioAjuste() {
                 crearTextoNormal(formData.observacionesInformeFinal, { spacingAfter: 200 })
               ] : [
                 crearMensajeSinInformacion("Observaciones del Informe Final")
+              ]),
+
+              // 11. LIQUIDACIÓN DE LA PÉRDIDA
+              crearTextoNormal("11. LIQUIDACIÓN DE LA PÉRDIDA", { heading: HeadingLevel.HEADING_2, spacing: { before: 200, after: 200 } }),
+
+              // Infraseguro
+              crearTextoNormal("Infraseguro:", { bold: true, spacingAfter: 100 }),
+              ...(formData.liquidacionPerdida?.infraseguro ? [
+                crearTextoNormal(formData.liquidacionPerdida.infraseguro, { spacingAfter: 200 })
+              ] : [
+                crearMensajeSinInformacion("Infraseguro")
+              ]),
+
+              // Demérito
+              crearTextoNormal("Demérito:", { bold: true, spacingAfter: 100 }),
+              ...(formData.liquidacionPerdida?.demerito ? [
+                crearTextoNormal(formData.liquidacionPerdida.demerito, { spacingAfter: 200 })
+              ] : [
+                crearMensajeSinInformacion("Demérito")
+              ]),
+
+              // Avance Tecnológico
+              crearTextoNormal("Avance Tecnológico:", { bold: true, spacingAfter: 100 }),
+              ...(formData.liquidacionPerdida?.avanceTecnologico ? [
+                crearTextoNormal(formData.liquidacionPerdida.avanceTecnologico, { spacingAfter: 200 })
+              ] : [
+                crearMensajeSinInformacion("Avance Tecnológico")
+              ]),
+
+              // 12. INDEMNIZACIÓN
+              crearTextoNormal("12. INDEMNIZACIÓN", { heading: HeadingLevel.HEADING_2, spacing: { before: 200, after: 200 } }),
+
+              // Deducible
+              crearTextoNormal("Deducible:", { bold: true, spacingAfter: 100 }),
+              ...(formData.indemnizacion?.deducible ? [
+                crearTextoNormal(formData.indemnizacion.deducible, { spacingAfter: 200 })
+              ] : [
+                crearMensajeSinInformacion("Deducible")
+              ]),
+
+              // Subrogación
+              crearTextoNormal("Subrogación:", { bold: true, spacingAfter: 100 }),
+              ...(formData.indemnizacion?.subrogacion ? [
+                crearTextoNormal(formData.indemnizacion.subrogacion, { spacingAfter: 200 })
+              ] : [
+                crearMensajeSinInformacion("Subrogación")
+              ]),
+
+              // 13. SALVAMENTOS
+              crearTextoNormal("13. SALVAMENTOS", { heading: HeadingLevel.HEADING_2, spacing: { before: 200, after: 200 } }),
+
+              // SOLO generar texto si hay información real
+              ...(formData.salvamentos ? [
+                crearTextoNormal(formData.salvamentos, { spacingAfter: 200 })
+              ] : [
+                crearMensajeSinInformacion("Salvamentos")
+              ]),
+
+              // 14. RECOMENDACIONES (PANORAMA DE RIESGOS)
+              crearTextoNormal("14. RECOMENDACIONES", { heading: HeadingLevel.HEADING_2, spacing: { before: 200, after: 200 } }),
+
+              // Panorama de Riesgos
+              crearTextoNormal("Panorama de Riesgos:", { bold: true, spacingAfter: 100 }),
+              ...(formData.panoramaRiesgos ? [
+                crearTextoNormal(formData.panoramaRiesgos, { spacingAfter: 200 })
+              ] : [
+                crearMensajeSinInformacion("Panorama de Riesgos")
               ])
             ] : []),
 
@@ -1376,6 +1474,13 @@ export default function FormularioAjuste() {
 
       console.log('💾 Datos del formulario a guardar:', datosFormulario);
       console.log('✅ Validación de campos requeridos exitosa');
+      
+      // Log especial para verificar firmas
+      console.log('🔍 Verificando firmas en formData:');
+      console.log('🔍 firmaFuncionario presente:', !!formData.firmaFuncionario);
+      console.log('🔍 firmaIskharly presente:', !!formData.firmaIskharly);
+      console.log('🔍 funcionarioFirma:', formData.funcionarioFirma);
+      console.log('🔍 cargoFuncionario:', formData.cargoFuncionario);
 
       if (id && id !== 'nuevo') {
         // Actualizar formulario existente
@@ -1408,6 +1513,31 @@ export default function FormularioAjuste() {
           alert('⚠️ Formulario guardado pero ID inválido. Redirigiendo a lista...');
           navigate('/ajuste');
         }
+      }
+
+      // Si es una versión de actualización o informe final, guardar también en versiones
+      if (estadoActual === 'actualizacion' || estadoActual === 'informeFinal') {
+        console.log(`💾 Guardando versión ${estadoActual} en el historial de versiones`);
+        setVersiones(prev => ({
+          ...prev,
+          [estadoActual]: {
+            ...datosFormulario,
+            fechaVersion: new Date().toISOString(),
+            versionId: `${estadoActual}_${Date.now()}`
+          }
+        }));
+        
+        // Guardar en localStorage para persistencia
+        localStorage.setItem(`versiones_${id || 'nuevo'}`, JSON.stringify({
+          ...versiones,
+          [estadoActual]: {
+            ...datosFormulario,
+            fechaVersion: new Date().toISOString(),
+            versionId: `${estadoActual}_${Date.now()}`
+          }
+        }));
+        
+        console.log(`✅ Versión ${estadoActual} guardada independientemente`);
       }
 
       setCargando(false);
@@ -1478,7 +1608,7 @@ export default function FormularioAjuste() {
           observacionesGenerales: ''
         }));
       } else if (siguienteEstado === 'actualizacion') {
-        // Para actualización, mantener todo pero agregar campos de actualización
+        // Para actualización, mantener TODO (incluyendo campos preeliminares) y agregar campos de actualización
         setFormData(prev => ({
           ...prev,
           fechaActualizacion: new Date().toISOString().split('T')[0],
@@ -1487,13 +1617,25 @@ export default function FormularioAjuste() {
           observacionesActualizacion: ''
         }));
       } else if (siguienteEstado === 'informeFinal') {
-        // Para informe final, mantener todo pero agregar campos finales
+        // Para informe final, mantener TODO (incluyendo campos preeliminares y actualización) y agregar campos finales
         setFormData(prev => ({
           ...prev,
           fechaInformeFinal: new Date().toISOString().split('T')[0],
           conclusionesFinales: '',
           recomendacionesFinales: '',
-          observacionesInformeFinal: ''
+          observacionesInformeFinal: '',
+          // Agregar campos de la parte final
+          liquidacionPerdida: {
+            infraseguro: '',
+            demerito: '',
+            avanceTecnologico: ''
+          },
+          indemnizacion: {
+            deducible: '',
+            subrogacion: ''
+          },
+          salvamentos: '',
+          panoramaRiesgos: ''
         }));
       } else if (siguienteEstado === 'inicial') {
         // Para nuevo formulario, limpiar todo
@@ -1536,9 +1678,22 @@ export default function FormularioAjuste() {
           fechaActualizacion: '',
           cambiosDesdePreeliminar: '',
           nuevaInformacion: '',
+          observacionesActualizacion: '',
           fechaInformeFinal: '',
           conclusionesFinales: '',
-          recomendacionesFinales: ''
+          recomendacionesFinales: '',
+          observacionesInformeFinal: '',
+          liquidacionPerdida: {
+            infraseguro: '',
+            demerito: '',
+            avanceTecnologico: ''
+          },
+          indemnizacion: {
+            deducible: '',
+            subrogacion: ''
+          },
+          salvamentos: '',
+          panoramaRiesgos: ''
         });
       }
 
@@ -1754,6 +1909,18 @@ export default function FormularioAjuste() {
                   <div className="text-sm text-blue-600">Crear un nuevo formulario inicial</div>
                 </button>
               )}
+
+              {/* Botón para generar versión final completa (disponible desde cualquier estado) */}
+              <button
+                onClick={() => {
+                  cambiarVersion('informeFinal');
+                  cerrarMenuSiguienteFormulario();
+                }}
+                className="w-full text-left p-3 rounded-lg border border-purple-300 bg-purple-50 hover:bg-purple-100 transition-colors"
+              >
+                <div className="font-medium text-purple-800">🎯 Generar Versión Final Completa</div>
+                <div className="text-sm text-purple-600">Crear informe final con liquidación, indemnización, salvamentos y recomendaciones</div>
+              </button>
               
               {/* Opción para ver historial de versiones */}
               <button
@@ -1916,6 +2083,19 @@ export default function FormularioAjuste() {
                   rows={4}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
+                
+                {/* Chatbot IA para Cambios desde Preeliminar */}
+                <div className="mt-3">
+                  <ChatbotIA 
+                    formData={formData} 
+                    onInputChange={handleInputChange}
+                    seccion="cambiosDesdePreeliminar"
+                    tituloSeccion="Cambios desde la Versión Preeliminar"
+                    textoActual={formData.cambiosDesdePreeliminar || ''}
+                    onTextoCambiado={(texto) => handleInputChange('cambiosDesdePreeliminar', texto)}
+                    tipoSeccion="cambiosDesdePreeliminar"
+                  />
+                </div>
               </div>
 
               <div className="mt-6">
@@ -1929,6 +2109,19 @@ export default function FormularioAjuste() {
                   rows={4}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
+                
+                {/* Chatbot IA para Nueva Información */}
+                <div className="mt-3">
+                  <ChatbotIA 
+                    formData={formData} 
+                    onInputChange={handleInputChange}
+                    seccion="nuevaInformacion"
+                    tituloSeccion="Nueva Información Recopilada"
+                    textoActual={formData.nuevaInformacion || ''}
+                    onTextoCambiado={(texto) => handleInputChange('nuevaInformacion', texto)}
+                    tipoSeccion="nuevaInformacion"
+                  />
+                </div>
               </div>
 
               <div className="mt-6">
@@ -1942,6 +2135,19 @@ export default function FormularioAjuste() {
                   rows={4}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
+                
+                {/* Chatbot IA para Observaciones de Actualización */}
+                <div className="mt-3">
+                  <ChatbotIA 
+                    formData={formData} 
+                    onInputChange={handleInputChange}
+                    seccion="observacionesActualizacion"
+                    tituloSeccion="Observaciones de Actualización"
+                    textoActual={formData.observacionesActualizacion || ''}
+                    onTextoCambiado={(texto) => handleInputChange('observacionesActualizacion', texto)}
+                    tipoSeccion="observacionesActualizacion"
+                  />
+                </div>
               </div>
             </div>
           )}
@@ -1995,6 +2201,19 @@ export default function FormularioAjuste() {
                   rows={4}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
+                
+                {/* Chatbot IA para Conclusiones Finales */}
+                <div className="mt-3">
+                  <ChatbotIA 
+                    formData={formData} 
+                    onInputChange={handleInputChange}
+                    seccion="conclusionesFinales"
+                    tituloSeccion="Conclusiones Finales"
+                    textoActual={formData.conclusionesFinales || ''}
+                    onTextoCambiado={(texto) => handleInputChange('conclusionesFinales', texto)}
+                    tipoSeccion="conclusionesFinales"
+                  />
+                </div>
               </div>
 
               <div className="mt-6">
@@ -2008,6 +2227,19 @@ export default function FormularioAjuste() {
                   rows={4}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
+                
+                {/* Chatbot IA para Recomendaciones Finales */}
+                <div className="mt-3">
+                  <ChatbotIA 
+                    formData={formData} 
+                    onInputChange={handleInputChange}
+                    seccion="recomendacionesFinales"
+                    tituloSeccion="Recomendaciones Finales"
+                    textoActual={formData.recomendacionesFinales || ''}
+                    onTextoCambiado={(texto) => handleInputChange('recomendacionesFinales', texto)}
+                    tipoSeccion="recomendacionesFinales"
+                  />
+                </div>
               </div>
 
               <div className="mt-6">
@@ -2021,16 +2253,285 @@ export default function FormularioAjuste() {
                   rows={4}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
+                
+                {/* Chatbot IA para Observaciones del Informe Final */}
+                <div className="mt-3">
+                  <ChatbotIA 
+                    formData={formData} 
+                    onInputChange={handleInputChange}
+                    seccion="observacionesInformeFinal"
+                    tituloSeccion="Observaciones del Informe Final"
+                    textoActual={formData.observacionesInformeFinal || ''}
+                    onTextoCambiado={(texto) => handleInputChange('observacionesInformeFinal', texto)}
+                    tipoSeccion="observacionesInformeFinal"
+                  />
+                </div>
               </div>
             </div>
           )}
 
-          <div className="bg-white rounded-lg shadow-lg p-6">
-            <FirmaAjuste 
-              formData={formData} 
-              onInputChange={handleInputChange}
-            />
-          </div>
+          {/* Campos de la Parte Final - solo visible en versión informe final */}
+          {estadoActual === 'informeFinal' && (
+            <div className="bg-white rounded-lg shadow-lg p-6">
+              <div className="border-b border-gray-200 pb-4 mb-6">
+                <h3 className="text-2xl font-bold text-gray-900 flex items-center">
+                  <span className="mr-3">🎯</span>
+                  Parte Final del Formulario
+                </h3>
+                <p className="text-gray-600 mt-2">Liquidación de pérdida, indemnización, salvamentos y recomendaciones finales</p>
+              </div>
+
+              {/* LIQUIDACIÓN DE LA PÉRDIDA */}
+              <div className="mb-8">
+                <h4 className="text-lg font-semibold text-gray-800 mb-4">11. LIQUIDACIÓN DE LA PÉRDIDA</h4>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Infraseguro
+                    </label>
+                    <textarea
+                      value={formData.liquidacionPerdida?.infraseguro || ''}
+                      onChange={(e) => handleInputChange('liquidacionPerdida', {
+                        ...formData.liquidacionPerdida,
+                        infraseguro: e.target.value
+                      })}
+                      placeholder="Describe el infraseguro..."
+                      rows={3}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                    
+                    {/* Chatbot IA para Infraseguro */}
+                    <div className="mt-3">
+                      <ChatbotIA 
+                        formData={formData} 
+                        onInputChange={handleInputChange}
+                        seccion="infraseguro"
+                        tituloSeccion="Infraseguro"
+                        textoActual={formData.liquidacionPerdida?.infraseguro || ''}
+                        onTextoCambiado={(texto) => handleInputChange('liquidacionPerdida', {
+                          ...formData.liquidacionPerdida,
+                          infraseguro: texto
+                        })}
+                        tipoSeccion="infraseguro"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Demérito
+                    </label>
+                    <textarea
+                      value={formData.liquidacionPerdida?.demerito || ''}
+                      onChange={(e) => handleInputChange('liquidacionPerdida', {
+                        ...formData.liquidacionPerdida,
+                        demerito: e.target.value
+                      })}
+                      placeholder="Describe el demérito..."
+                      rows={3}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                    
+                    {/* Chatbot IA para Demérito */}
+                    <div className="mt-3">
+                      <ChatbotIA 
+                        formData={formData} 
+                        onInputChange={handleInputChange}
+                        seccion="demerito"
+                        tituloSeccion="Demérito"
+                        textoActual={formData.liquidacionPerdida?.demerito || ''}
+                        onTextoCambiado={(texto) => handleInputChange('liquidacionPerdida', {
+                          ...formData.liquidacionPerdida,
+                          demerito: texto
+                        })}
+                        tipoSeccion="demerito"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-6">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Avance Tecnológico
+                  </label>
+                  <textarea
+                    value={formData.liquidacionPerdida?.avanceTecnologico || ''}
+                    onChange={(e) => handleInputChange('liquidacionPerdida', {
+                      ...formData.liquidacionPerdida,
+                      avanceTecnologico: e.target.value
+                    })}
+                    placeholder="Describe el avance tecnológico..."
+                    rows={3}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                  
+                  {/* Chatbot IA para Avance Tecnológico */}
+                  <div className="mt-3">
+                    <ChatbotIA 
+                      formData={formData} 
+                      onInputChange={handleInputChange}
+                      seccion="avanceTecnologico"
+                      tituloSeccion="Avance Tecnológico"
+                      textoActual={formData.liquidacionPerdida?.avanceTecnologico || ''}
+                      onTextoCambiado={(texto) => handleInputChange('liquidacionPerdida', {
+                        ...formData.liquidacionPerdida,
+                        avanceTecnologico: texto
+                      })}
+                      tipoSeccion="avanceTecnologico"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* INDEMNIZACIÓN */}
+              <div className="mb-8">
+                <h4 className="text-lg font-semibold text-gray-800 mb-4">12. INDEMNIZACIÓN</h4>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Deducible
+                    </label>
+                    <textarea
+                      value={formData.indemnizacion?.deducible || ''}
+                      onChange={(e) => handleInputChange('indemnizacion', {
+                        ...formData.indemnizacion,
+                        deducible: e.target.value
+                      })}
+                      placeholder="Describe el deducible..."
+                      rows={3}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                    
+                    {/* Chatbot IA para Deducible */}
+                    <div className="mt-3">
+                      <ChatbotIA 
+                        formData={formData} 
+                        onInputChange={handleInputChange}
+                        seccion="deducible"
+                        tituloSeccion="Deducible"
+                        textoActual={formData.indemnizacion?.deducible || ''}
+                        onTextoCambiado={(texto) => handleInputChange('indemnizacion', {
+                          ...formData.indemnizacion,
+                          deducible: texto
+                        })}
+                        tipoSeccion="deducible"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Subrogación
+                    </label>
+                    <textarea
+                      value={formData.indemnizacion?.subrogacion || ''}
+                      onChange={(e) => handleInputChange('indemnizacion', {
+                        ...formData.indemnizacion,
+                        subrogacion: e.target.value
+                      })}
+                      placeholder="Describe la subrogación..."
+                      rows={3}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                    
+                    {/* Chatbot IA para Subrogación */}
+                    <div className="mt-3">
+                      <ChatbotIA 
+                        formData={formData} 
+                        onInputChange={handleInputChange}
+                        seccion="subrogacion"
+                        tituloSeccion="Subrogación"
+                        textoActual={formData.indemnizacion?.subrogacion || ''}
+                        onTextoCambiado={(texto) => handleInputChange('indemnizacion', {
+                          ...formData.indemnizacion,
+                          subrogacion: texto
+                        })}
+                        tipoSeccion="subrogacion"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* SALVAMENTOS */}
+              <div className="mb-8">
+                <h4 className="text-lg font-semibold text-gray-800 mb-4">13. SALVAMENTOS</h4>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Salvamentos
+                  </label>
+                  <textarea
+                    value={formData.salvamentos || ''}
+                    onChange={(e) => handleInputChange('salvamentos', e.target.value)}
+                    placeholder="Describe los salvamentos..."
+                    rows={4}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                  
+                  {/* Chatbot IA para Salvamentos */}
+                  <div className="mt-3">
+                    <ChatbotIA 
+                      formData={formData} 
+                      onInputChange={handleInputChange}
+                      seccion="salvamentos"
+                      tituloSeccion="Salvamentos"
+                      textoActual={formData.salvamentos || ''}
+                      onTextoCambiado={(texto) => handleInputChange('salvamentos', texto)}
+                      tipoSeccion="salvamentos"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* RECOMENDACIONES - PANORAMA DE RIESGOS */}
+              <div className="mb-8">
+                <h4 className="text-lg font-semibold text-gray-800 mb-4">14. RECOMENDACIONES - PANORAMA DE RIESGOS</h4>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Panorama de Riesgos
+                  </label>
+                  <textarea
+                    value={formData.panoramaRiesgos || ''}
+                    onChange={(e) => handleInputChange('panoramaRiesgos', e.target.value)}
+                    placeholder="Describe el panorama de riesgos y recomendaciones..."
+                    rows={4}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                  
+                  {/* Chatbot IA para Panorama de Riesgos */}
+                  <div className="mt-3">
+                    <ChatbotIA 
+                      formData={formData} 
+                      onInputChange={handleInputChange}
+                      seccion="panoramaRiesgos"
+                      tituloSeccion="Panorama de Riesgos"
+                      textoActual={formData.panoramaRiesgos || ''}
+                      onTextoCambiado={(texto) => handleInputChange('panoramaRiesgos', texto)}
+                      tipoSeccion="panoramaRiesgos"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Componente de Firma */}
+          <FirmaAjuste 
+            formData={formData} 
+            onInputChange={handleInputChange} 
+          />
+          
+          {/* Log para verificar firmas antes de renderizar */}
+          {console.log('🔍 Renderizando FirmaAjuste con firmas:', {
+            firmaFuncionario: !!formData.firmaFuncionario,
+            firmaIskharly: !!formData.firmaIskharly,
+            funcionarioFirma: formData.funcionarioFirma,
+            cargoFuncionario: formData.cargoFuncionario
+          })}
         </div>
 
         {/* Botones de acción simplificados - 4 botones principales */}
@@ -2080,7 +2581,7 @@ export default function FormularioAjuste() {
                 {estadoActual === 'inicial' && '📄 Word incluirá: Secciones 1-6 (datos básicos, antecedentes, descripción del riesgo, circunstancias, inspección, causa, reserva)'}
                 {estadoActual === 'preeliminar' && '📄 Word incluirá: Secciones 1-9 (todas las anteriores + observaciones preeliminares, análisis de cobertura, observaciones generales)'}
                 {estadoActual === 'actualizacion' && '📄 Word incluirá: Secciones 1-8 (datos básicos + actualización del caso con cambios, nueva información y observaciones de actualización)'}
-                {estadoActual === 'informeFinal' && '📄 Word incluirá: Secciones 1-10 (datos básicos + conclusiones finales, recomendaciones definitivas y observaciones del informe final)'}
+                {estadoActual === 'informeFinal' && '📄 Word incluirá: Secciones 1-14 (datos básicos + conclusiones finales, recomendaciones definitivas, observaciones del informe final, liquidación de pérdida, indemnización, salvamentos y panorama de riesgos)'}
               </p>
             </div>
           </div>

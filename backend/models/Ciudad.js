@@ -1,14 +1,14 @@
 import mongoose from 'mongoose';
 
 const CiudadSchema = new mongoose.Schema({
-  cod1Mun1c1p1o: String,  // Corregido: era codiMunicipio
-  descMun1c1p1o: String,   // Corregido: era descMunicipio
-  cod1Depto: String,        // Corregido: era codiDepto
+  codiMunicipio: String,    // Campo correcto según la base de datos
+  descMunicipio: String,    // Campo correcto según la base de datos
+  codiDepto: String,        // Campo correcto según la base de datos
   descDepto: String,
-  cod1Pais: String,         // Corregido: era codiPais
+  codiPais: String,         // Campo correcto según la base de datos
   descPais: String,
-  cod1Cpoblado: String,     // Corregido: era codiCpolado
-  descCpoblado: String      // Corregido: era descCpolado
+  codiPoblado: String,      // Campo correcto según la base de datos
+  descPoblado: String       // Campo correcto según la base de datos
 }, { collection: 'gsk3cAppciudades' });
 
 export default mongoose.model('Ciudad', CiudadSchema);

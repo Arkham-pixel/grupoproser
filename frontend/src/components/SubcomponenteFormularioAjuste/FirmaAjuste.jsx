@@ -59,6 +59,14 @@ export default function FirmaAjuste({ formData, onInputChange }) {
   // Guardar funcionarios en localStorage
   useEffect(() => {
     localStorage.setItem('proser_funcionarios', JSON.stringify(funcionarios));
+    console.log('💾 Funcionarios guardados en localStorage:', funcionarios.length);
+    
+    // Log especial para verificar firmas guardadas
+    const funcionariosConFirma = funcionarios.filter(f => f.firma);
+    console.log('🔍 Funcionarios con firma guardada:', funcionariosConFirma.length);
+    funcionariosConFirma.forEach(f => {
+      console.log(`🔍 Funcionario ${f.nombre}: firma presente (${f.firma ? f.firma.length : 0} caracteres)`);
+    });
   }, [funcionarios]);
 
   // Guardar cargos en localStorage
@@ -73,6 +81,19 @@ export default function FirmaAjuste({ formData, onInputChange }) {
       onInputChange('firmaIskharly', firmaIskharlyGuardada);
     }
   }, [onInputChange]);
+
+  // Cargar firma del funcionario seleccionado cuando cambie
+  useEffect(() => {
+    if (funcionarioSeleccionado && canvasReady) {
+      const funcionario = funcionarios.find(f => f.id === parseInt(funcionarioSeleccionado));
+      if (funcionario && funcionario.firma) {
+        console.log('🔄 Cargando firma automáticamente del funcionario seleccionado');
+        onInputChange('firmaFuncionario', funcionario.firma);
+        setFirmaCanvas(funcionario.firma);
+        loadSignature(funcionario.firma);
+      }
+    }
+  }, [funcionarioSeleccionado, canvasReady, funcionarios, onInputChange]);
 
   // Inicializar canvas de firma de manera robusta
   useEffect(() => {
@@ -216,30 +237,52 @@ export default function FirmaAjuste({ formData, onInputChange }) {
   };
 
   const saveSignature = () => {
+    console.log('🔍 saveSignature llamado');
+    console.log('🔍 Canvas disponible:', !!canvasRef.current);
+    console.log('🔍 Funcionario seleccionado:', funcionarioSeleccionado);
+    
     if (canvasRef.current) {
       const dataURL = canvasRef.current.toDataURL('image/png');
+      console.log('🔍 DataURL generado, longitud:', dataURL.length);
+      
       setFirmaCanvas(dataURL);
       
       // Guardar la firma del funcionario automáticamente
       if (funcionarioSeleccionado) {
+        console.log('🔍 Guardando firma del funcionario...');
         guardarFirmaFuncionario(dataURL);
+      } else {
+        console.warn('⚠️ No hay funcionario seleccionado para guardar la firma');
       }
       
       alert('Firma guardada correctamente!');
     } else {
+      console.error('❌ Canvas no disponible para guardar firma');
       alert('Error: Canvas de firma no disponible');
     }
   };
 
   const loadSignature = (firma) => {
+    console.log('🔍 loadSignature llamado con firma:', firma ? 'Firma presente' : 'Sin firma');
+    
     if (firma && canvasRef.current && contextRef.current) {
       const img = new Image();
       img.onload = () => {
+        console.log('🔍 Imagen cargada, dibujando en canvas...');
         contextRef.current.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
         contextRef.current.drawImage(img, 0, 0, canvasRef.current.width, canvasRef.current.height);
-        setFirmaCanvas(firma);
+        console.log('✅ Firma cargada en canvas exitosamente');
+      };
+      img.onerror = (error) => {
+        console.error('❌ Error cargando imagen de firma:', error);
       };
       img.src = firma;
+    } else {
+      console.warn('⚠️ No se puede cargar firma:', {
+        firma: !!firma,
+        canvas: !!canvasRef.current,
+        context: !!contextRef.current
+      });
     }
   };
 
@@ -326,7 +369,11 @@ export default function FirmaAjuste({ formData, onInputChange }) {
 
   // Manejar cambio de funcionario seleccionado
   const handleFuncionarioChange = (funcionarioId) => {
+    console.log('🔍 handleFuncionarioChange llamado con ID:', funcionarioId);
+    
     const funcionario = funcionarios.find(f => f.id === parseInt(funcionarioId));
+    console.log('🔍 Funcionario encontrado:', funcionario);
+    
     if (funcionario) {
       setFuncionarioSeleccionado(funcionarioId);
       setCargoSeleccionado(funcionario.cargo);
@@ -335,21 +382,37 @@ export default function FirmaAjuste({ formData, onInputChange }) {
       onInputChange('telefonoFuncionario', funcionario.telefono);
       onInputChange('emailFuncionario', funcionario.email);
       
+      console.log('✅ Datos del funcionario cargados en formData');
+      
       // Cargar firma del funcionario si existe
       if (funcionario.firma) {
+        console.log('🔍 Cargando firma existente del funcionario');
         onInputChange('firmaFuncionario', funcionario.firma);
         // Cargar la firma en el canvas
         loadSignature(funcionario.firma);
+        setFirmaCanvas(funcionario.firma); // Importante: actualizar también el estado local
+        console.log('✅ Firma del funcionario cargada en formData y canvas');
       } else {
+        console.log('🔍 Funcionario no tiene firma, limpiando campos');
         onInputChange('firmaFuncionario', '');
+        setFirmaCanvas(null); // Limpiar también el estado local
         // Limpiar el canvas
         clearCanvas();
+        console.log('✅ Campos de firma limpiados');
       }
+    } else {
+      console.warn('⚠️ Funcionario no encontrado con ID:', funcionarioId);
     }
   };
 
   // Guardar firma del funcionario en localStorage y en el array de funcionarios
   const guardarFirmaFuncionario = (firmaBase64) => {
+    console.log('🔍 guardarFirmaFuncionario llamado con:', {
+      funcionarioSeleccionado,
+      firmaBase64: firmaBase64 ? 'Firma presente' : 'Sin firma',
+      longitudFirma: firmaBase64 ? firmaBase64.length : 0
+    });
+    
     if (funcionarioSeleccionado) {
       // Actualizar el funcionario con su firma
       const funcionarioActualizado = funcionarios.map(f => 
@@ -362,7 +425,14 @@ export default function FirmaAjuste({ formData, onInputChange }) {
       // Guardar en formData para el Word
       onInputChange('firmaFuncionario', firmaBase64);
       
-      console.log('Firma del funcionario guardada automáticamente en localStorage');
+      // Guardar inmediatamente en localStorage
+      localStorage.setItem('proser_funcionarios', JSON.stringify(funcionarioActualizado));
+      
+      console.log('✅ Firma del funcionario guardada automáticamente en localStorage');
+      console.log('✅ Firma del funcionario guardada en formData');
+      console.log('✅ Funcionarios actualizados en estado local');
+    } else {
+      console.warn('⚠️ No hay funcionario seleccionado para guardar la firma');
     }
   };
 
@@ -381,6 +451,19 @@ export default function FirmaAjuste({ formData, onInputChange }) {
           Sistema de Firmas
         </h2>
         <p className="text-gray-600 mt-2">Gestión de funcionarios y firmas personalizables</p>
+        
+        {/* Mensaje informativo sobre el sistema de firmas */}
+        <div className="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
+          <h3 className="font-semibold text-blue-900 mb-2">📋 ¿Cómo funciona el sistema de firmas?</h3>
+          <ul className="text-sm text-blue-800 space-y-1">
+            <li>• <strong>Selecciona un funcionario</strong> del dropdown para poder dibujar su firma</li>
+            <li>• <strong>Dibuja la firma</strong> en el canvas usando el mouse o el dedo</li>
+            <li>• <strong>Haz clic en "Guardar Firma"</strong> para guardarla permanentemente</li>
+            <li>• <strong>La firma se recordará</strong> cada vez que selecciones ese funcionario</li>
+            <li>• <strong>Para cambiar la firma:</strong> usa el botón "🔄 Cambiar Firma"</li>
+            <li>• <strong>Para eliminar la firma:</strong> usa el botón "Remover"</li>
+          </ul>
+        </div>
       </div>
 
       {/* Gestión de Funcionarios */}
@@ -586,7 +669,14 @@ export default function FirmaAjuste({ formData, onInputChange }) {
             <h4 className="font-medium text-blue-900 mb-3">Firma Digital del Funcionario</h4>
             <p className="text-sm text-blue-800 mb-3">
               <strong>Dibuja tu firma directamente aquí:</strong> Usa el mouse o el dedo para firmar.
-              La firma se guardará automáticamente y se recordará para futuros usos.
+              <br />
+              <span className="font-semibold text-green-700">
+                ✅ La firma se guardará PERMANENTEMENTE para este funcionario
+              </span>
+              <br />
+              <span className="text-xs text-gray-600">
+                (Se recordará cada vez que selecciones este funcionario, a menos que la cambies)
+              </span>
             </p>
             
             {/* Debug info */}
@@ -654,24 +744,51 @@ export default function FirmaAjuste({ formData, onInputChange }) {
               <div className="mt-4 p-3 bg-green-50 rounded-lg border border-green-200">
                 <div className="flex items-center justify-between">
                   <span className="text-green-800 text-sm">✅ Firma del funcionario guardada y lista para usar</span>
-                  <button
-                    onClick={() => {
-                      onInputChange('firmaFuncionario', '');
-                      clearCanvas();
-                      // También remover la firma del funcionario en el array
-                      if (funcionarioSeleccionado) {
-                        const funcionarioActualizado = funcionarios.map(f => 
-                          f.id === parseInt(funcionarioSeleccionado) 
-                            ? { ...f, firma: null }
-                            : f
-                        );
-                        setFuncionarios(funcionarioActualizado);
-                      }
-                    }}
-                    className="text-red-600 hover:text-red-800 text-sm"
-                  >
-                    Remover
-                  </button>
+                  <div className="flex space-x-2">
+                    <button
+                      onClick={() => {
+                        console.log('🔄 Usuario quiere cambiar la firma del funcionario');
+                        clearCanvas();
+                        setFirmaCanvas(null);
+                        // También remover la firma del funcionario en el array
+                        if (funcionarioSeleccionado) {
+                          const funcionarioActualizado = funcionarios.map(f => 
+                            f.id === parseInt(funcionarioSeleccionado) 
+                              ? { ...f, firma: null }
+                              : f
+                          );
+                          setFuncionarios(funcionarioActualizado);
+                          onInputChange('firmaFuncionario', '');
+                          // Guardar inmediatamente en localStorage
+                          localStorage.setItem('proser_funcionarios', JSON.stringify(funcionarioActualizado));
+                          console.log('✅ Firma del funcionario removida, lista para nueva firma');
+                        }
+                      }}
+                      className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                    >
+                      🔄 Cambiar Firma
+                    </button>
+                    <button
+                      onClick={() => {
+                        onInputChange('firmaFuncionario', '');
+                        clearCanvas();
+                        // También remover la firma del funcionario en el array
+                        if (funcionarioSeleccionado) {
+                          const funcionarioActualizado = funcionarios.map(f => 
+                            f.id === parseInt(funcionarioSeleccionado) 
+                              ? { ...f, firma: null }
+                              : f
+                          );
+                          setFuncionarios(funcionarioActualizado);
+                          // Guardar inmediatamente en localStorage
+                          localStorage.setItem('proser_funcionarios', JSON.stringify(funcionarioActualizado));
+                        }
+                      }}
+                      className="text-red-600 hover:text-red-800 text-sm"
+                    >
+                      Remover
+                    </button>
+                  </div>
                 </div>
                 <img 
                   src={firmaCanvas} 

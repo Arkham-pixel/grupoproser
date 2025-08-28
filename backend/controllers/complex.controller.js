@@ -2,22 +2,38 @@
 import Complex from '../models/Complex.js';
 import Siniestro from '../models/CasoComplex.js';
 import mongoose from 'mongoose'; // Added missing import
+import { enviarNotificacionAsignacion, enviarNotificacionAseguradora } from '../services/emailService.js';
 
 // Crear un nuevo caso
 export const crearComplex = async (req, res) => {
   try {
-    console.log('🎯 ===== INICIANDO CREACIÓN DE COMPLEX =====');
-    console.log('📝 DATOS RECIBIDOS EN crearComplex:', JSON.stringify(req.body, null, 2));
+         console.log('🎯 ===== INICIANDO CREACIÓN DE COMPLEX =====');
+     console.log('📝 DATOS RECIBIDOS EN crearComplex:', JSON.stringify(req.body, null, 2));
+           console.log('🔍 CAMPOS CLAVE:');
+      console.log('   - responsable:', req.body.codiRespnsble);
+      console.log('   - aseguradora:', req.body.codiAsgrdra);
+      console.log('   - funcionario_aseguradora:', req.body.funcAsgrdra);
+      console.log('   - intermediario:', req.body.nombIntermediario);
+      console.log('🔍 VERIFICACIÓN DE CAMPOS:');
+      console.log('   - req.body.codiRespnsble existe:', !!req.body.codiRespnsble);
+      console.log('   - req.body.codiAsgrdra existe:', !!req.body.codiAsgrdra);
+      console.log('   - req.body.funcAsgrdra existe:', !!req.body.funcAsgrdra);
+      console.log('   - req.body.nombIntermediario existe:', !!req.body.nombIntermediario);
+      console.log('🔍 VALORES COMPLETOS:');
+      console.log('   - responsable valor:', req.body.codiRespnsble);
+      console.log('   - aseguradora valor:', req.body.codiAsgrdra);
+      console.log('   - funcionario_aseguradora valor:', req.body.funcAsgrdra);
+      console.log('   - intermediario valor:', req.body.nombIntermediario);
     
-    // Generar numero_ajuste único si está vacío
-    let datosParaGuardar = { ...req.body };
-    if (!datosParaGuardar.numero_ajuste || datosParaGuardar.numero_ajuste === '') {
-      const ultimo = await Complex.findOne().sort({ numero_ajuste: -1 });
-      const nuevoNumero = ultimo && ultimo.numero_ajuste ? 
-        parseInt(ultimo.numero_ajuste) + 1 : 1;
-      datosParaGuardar.numero_ajuste = String(nuevoNumero);
-      console.log('🔢 NUEVO NUMERO_AJUSTE GENERADO:', datosParaGuardar.numero_ajuste);
-    }
+         // Generar nmroAjste único si está vacío
+     let datosParaGuardar = { ...req.body };
+     if (!datosParaGuardar.nmroAjste || datosParaGuardar.nmroAjste === '') {
+       const ultimo = await Complex.findOne().sort({ nmroAjste: -1 });
+       const nuevoNumero = ultimo && ultimo.nmroAjste ? 
+         parseInt(ultimo.nmroAjste) + 1 : 1;
+       datosParaGuardar.nmroAjste = String(nuevoNumero);
+       console.log('🔢 NUEVO NMRO_AJUSTE GENERADO:', datosParaGuardar.nmroAjste);
+     }
     
     const nuevo = new Complex(datosParaGuardar);
     
@@ -26,19 +42,150 @@ export const crearComplex = async (req, res) => {
     await nuevo.save();
     
     console.log('✅ COMPLEX GUARDADO EXITOSAMENTE:', JSON.stringify(nuevo, null, 2));
-    console.log('🎯 ===== COMPLEX CREADO CON ÉXITO =====');
-    console.log('📊 RESUMEN DEL CASO CREADO:');
-    console.log(`   📋 Número de Ajuste: ${nuevo.numero_ajuste}`);
-    console.log(`   👤 Intermediario: ${nuevo.intermediario || 'No especificado'}`);
-    console.log(`   🏢 Aseguradora: ${nuevo.aseguradora || 'No especificada'}`);
-    console.log(`   👨‍💼 Responsable: ${nuevo.responsable || 'No especificado'}`);
-    console.log(`   📅 Fecha de Creación: ${nuevo.creado_en}`);
-    console.log(`   🆔 ID del Caso: ${nuevo._id}`);
-    console.log('🎯 ===== COMPLEX CREADO CON ÉXITO =====');
+         console.log('🎯 ===== COMPLEX CREADO CON ÉXITO =====');
+     console.log('📊 RESUMEN DEL CASO CREADO:');
+     console.log(`   📋 Número de Ajuste: ${nuevo.nmroAjste}`);
+     console.log(`   👤 Intermediario: ${nuevo.nombIntermediario || 'No especificado'}`);
+     console.log(`   🏢 Aseguradora: ${nuevo.codiAsgrdra || 'No especificada'}`);
+     console.log(`   👨‍💼 Responsable: ${nuevo.codiRespnsble || 'No especificado'}`);
+     console.log(`   📅 Fecha de Creación: ${nuevo.fchaAsgncion}`);
+     console.log(`   🆔 ID del Caso: ${nuevo._id}`);
+     console.log('🎯 ===== COMPLEX CREADO CON ÉXITO =====');
+    
+                 // 📧 ENVIAR NOTIFICACIONES POR EMAIL
+        try {
+          console.log('📧 Iniciando envío de notificaciones por email...');
+          
+          // Verificar que los modelos estén disponibles
+          console.log('🔍 ===== VERIFICACIÓN DE MODELOS =====');
+          console.log('🔍 Modelo Responsable disponible:', !!mongoose.model('Responsable'));
+          console.log('🔍 Modelo FuncionarioAseguradora disponible:', !!mongoose.model('FuncionarioAseguradora'));
+          console.log('🔍 Conexión MongoDB estado:', mongoose.connection.readyState);
+          console.log('🔍 Base de datos:', mongoose.connection.name);
+       
+                        // Obtener email del responsable desde la base de datos
+         let emailResponsable = '';
+         if (nuevo.codiRespnsble) {
+           try {
+             console.log('🔍 ===== BÚSQUEDA RESPONSABLE =====');
+             console.log('🔍 Código del responsable a buscar:', nuevo.codiRespnsble);
+             console.log('🔍 Modelo usado:', 'Responsable');
+             console.log('🔍 Campo de búsqueda:', 'codiRespnsble');
+             console.log('🔍 Colección:', 'gsk3cAppresponsable');
+             
+                           const responsableDB = await mongoose.model('Responsable').findOne({ 
+                nmbrRespnsble: nuevo.codiRespnsble 
+              });
+            
+            console.log('🔍 Resultado búsqueda responsable:', responsableDB);
+            if (responsableDB && responsableDB.email) {
+              emailResponsable = responsableDB.email;
+              console.log('✅ Email del responsable encontrado:', emailResponsable);
+            } else if (responsableDB) {
+              console.log('⚠️ Responsable encontrado pero sin email:', responsableDB);
+              console.log('⚠️ Campos disponibles:', Object.keys(responsableDB.toObject()));
+            } else {
+              console.log('❌ No se encontró el responsable en la BD');
+            }
+          } catch (error) {
+            console.log('❌ Error buscando responsable:', error.message);
+            console.log('❌ Stack trace:', error.stack);
+          }
+        } else {
+          console.log('⚠️ No hay responsable asignado para buscar email');
+        }
+       
+                        // Obtener email del funcionario de aseguradora desde la base de datos
+         let emailFuncionarioAseguradora = '';
+         if (nuevo.funcAsgrdra) {
+           try {
+             console.log('🔍 ===== BÚSQUEDA FUNCIONARIO =====');
+             console.log('🔍 Código del funcionario a buscar:', nuevo.funcAsgrdra);
+             console.log('🔍 Modelo usado:', 'FuncionarioAseguradora');
+             console.log('🔍 Campo de búsqueda:', 'codiContcto');
+             console.log('🔍 Colección:', 'gsk3cAppcontactoscli');
+             
+                           const funcionarioDB = await mongoose.model('FuncionarioAseguradora').findOne({ 
+                nmbrContcto: nuevo.funcAsgrdra 
+              });
+            
+            console.log('🔍 Resultado búsqueda funcionario:', funcionarioDB);
+            if (funcionarioDB && funcionarioDB.email) {
+              emailFuncionarioAseguradora = funcionarioDB.email;
+              console.log('✅ Email del funcionario aseguradora encontrado:', emailFuncionarioAseguradora);
+            } else if (funcionarioDB) {
+              console.log('⚠️ Funcionario encontrado pero sin email:', funcionarioDB);
+              console.log('⚠️ Campos disponibles:', Object.keys(funcionarioDB.toObject()));
+            } else {
+              console.log('❌ No se encontró el funcionario en la BD');
+            }
+          } catch (error) {
+            console.log('❌ Error buscando funcionario:', error.message);
+            console.log('❌ Stack trace:', error.stack);
+          }
+        } else {
+          console.log('⚠️ No hay funcionario asignado para buscar email');
+        }
+       
+                        // Preparar datos para notificación de asignación
+         const datosNotificacion = {
+           numeroCaso: nuevo.nmroAjste,
+           numeroSiniestro: nuevo.nmroSinstro || 'No especificado',
+           codigoWorkflow: nuevo.codWorkflow || 'No especificado',
+           nombreResponsable: nuevo.codiRespnsble || 'Sin asignar',
+           aseguradora: nuevo.codiAsgrdra || 'No especificada',
+           asegurado: nuevo.nombIntermediario || 'No especificado',
+           fechaAsignacion: nuevo.fchaAsgncion || new Date(),
+           quienAsigna: req.user?.nombre || 'Sistema',
+           emailResponsable: emailResponsable,
+           emailQuienAsigna: req.user?.email || 'danalyst@proserpuertos.com.co',
+           observaciones: nuevo.obseContIni || nuevo.descSinstro || '',
+           numeroPoliza: nuevo.nmroPolza || 'No especificado',
+           ciudadSiniestro: nuevo.ciudadSiniestro || 'No especificada',
+           descripcionSiniestro: nuevo.descSinstro || 'No especificada'
+         };
+       
+       console.log('📧 Datos para notificación:', JSON.stringify(datosNotificacion, null, 2));
+       
+       // Enviar notificación de asignación
+       const resultadoEmail = await enviarNotificacionAsignacion(datosNotificacion);
+       console.log('✅ Notificación de asignación enviada:', resultadoEmail);
+       
+       // Enviar notificación a aseguradora si hay funcionario asignado
+       if (nuevo.funcAsgrdra && emailFuncionarioAseguradora) {
+         try {
+                       const datosNotificacionAseguradora = {
+              numeroCaso: nuevo.nmroAjste,
+              numeroSiniestro: nuevo.nmroSinstro || 'No especificado',
+              codigoWorkflow: nuevo.codWorkflow || 'No especificado',
+              nombreResponsable: nuevo.codiRespnsble || 'Sin asignar',
+              aseguradora: nuevo.codiAsgrdra || 'No especificada',
+              asegurado: nuevo.nombIntermediario || 'No especificado',
+              fechaAsignacion: nuevo.fchaAsgncion || new Date(),
+              emailFuncionarioAseguradora: emailFuncionarioAseguradora,
+              numeroPoliza: nuevo.nmroPolza || 'No especificado',
+              ciudadSiniestro: nuevo.ciudadSiniestro || 'No especificada',
+              descripcionSiniestro: nuevo.descSinstro || 'No especificada'
+            };
+           
+           const resultadoEmailAseguradora = await enviarNotificacionAseguradora(datosNotificacionAseguradora);
+           console.log('✅ Notificación a aseguradora enviada:', resultadoEmailAseguradora);
+           
+         } catch (emailAseguradoraError) {
+           console.error('⚠️ Error enviando notificación a aseguradora:', emailAseguradoraError);
+           // No fallar por error de email a aseguradora
+         }
+       }
+       
+     } catch (emailError) {
+       console.error('⚠️ Error enviando notificaciones por email:', emailError);
+       console.error('⚠️ El caso se creó correctamente, pero falló el envío de notificaciones');
+       // NO fallar la creación del caso por error de email
+     }
     
     res.status(201).json({
       success: true,
-      message: `Caso complex #${datosParaGuardar.numero_ajuste} creado exitosamente`,
+      message: `Caso complex #${datosParaGuardar.nmroAjste} creado exitosamente`,
       complex: nuevo
     });
   } catch (error) {
@@ -292,15 +439,127 @@ export const obtenerPorId = async (req, res) => {
 // Actualizar un caso
 export const actualizarComplex = async (req, res) => {
   try {
+    console.log('🔄 ===== INICIANDO ACTUALIZACIÓN DE COMPLEX =====');
+    console.log('📝 DATOS RECIBIDOS EN actualizarComplex:', JSON.stringify(req.body, null, 2));
+    
     const casoActualizado = await Complex.findByIdAndUpdate(
       req.params.id,
       req.body,
       { new: true }
     );
+    
     if (!casoActualizado) return res.status(404).json({ error: 'Caso no encontrado' });
+    
+    console.log('✅ COMPLEX ACTUALIZADO EXITOSAMENTE:', JSON.stringify(casoActualizado, null, 2));
+    
+         // 📧 ENVIAR NOTIFICACIONES POR EMAIL SI HAY CAMBIOS RELEVANTES
+     try {
+       console.log('📧 Verificando si se deben enviar notificaciones...');
+       
+               // Solo enviar notificaciones si hay cambios en campos relevantes
+                 const camposRelevantes = ['codiRespnsble', 'codiAsgrdra', 'codiEstdo', 'funcAsgrdra'];
+         const hayCambiosRelevantes = camposRelevantes.some(campo => 
+           req.body[campo] !== undefined && req.body[campo] !== casoActualizado[campo]
+         );
+       
+       if (hayCambiosRelevantes) {
+         console.log('📧 Cambios relevantes detectados, enviando notificaciones...');
+         
+         // Obtener email del responsable desde la base de datos
+         let emailResponsable = '';
+                    if (casoActualizado.codiRespnsble) {
+             try {
+               const responsableDB = await mongoose.model('Responsable').findOne({ 
+                 nmbrRespnsble: casoActualizado.codiRespnsble 
+               });
+             if (responsableDB && responsableDB.email) {
+               emailResponsable = responsableDB.email;
+               console.log('📧 Email del responsable encontrado:', emailResponsable);
+             }
+           } catch (error) {
+             console.log('⚠️ No se pudo obtener email del responsable:', error.message);
+           }
+         }
+         
+                   // Obtener email del funcionario de aseguradora desde la base de datos
+          let emailFuncionarioAseguradora = '';
+                     if (casoActualizado.funcAsgrdra) {
+                         try {
+               const funcionarioDB = await mongoose.model('FuncionarioAseguradora').findOne({ 
+                 nmbrContcto: casoActualizado.funcAsgrdra 
+               });
+              if (funcionarioDB && funcionarioDB.email) {
+                emailFuncionarioAseguradora = funcionarioDB.email;
+                console.log('📧 Email del funcionario aseguradora encontrado:', emailFuncionarioAseguradora);
+              }
+            } catch (error) {
+              console.log('⚠️ No se pudo obtener email del funcionario aseguradora:', error.message);
+            }
+          }
+         
+                              // Preparar datos para notificación de asignación
+           const datosNotificacion = {
+             numeroCaso: casoActualizado.nmroAjste,
+             numeroSiniestro: casoActualizado.nmroSinstro || 'No especificado',
+             codigoWorkflow: casoActualizado.codWorkflow || 'No especificado',
+             nombreResponsable: casoActualizado.codiRespnsble || 'Sin asignar',
+             aseguradora: casoActualizado.codiAsgrdra || 'No especificada',
+             asegurado: casoActualizado.nombIntermediario || 'No especificado',
+             fechaAsignacion: casoActualizado.fchaAsgncion || new Date(),
+             quienAsigna: req.user?.nombre || 'Sistema',
+             emailResponsable: emailResponsable,
+             emailQuienAsigna: req.user?.email || 'danalyst@proserpuertos.com.co',
+             observaciones: casoActualizado.obseContIni || casoActualizado.descSinstro || '',
+             numeroPoliza: casoActualizado.nmroPolza || 'No especificado',
+             ciudadSiniestro: casoActualizado.ciudadSiniestro || 'No especificada',
+             descripcionSiniestro: casoActualizado.descSinstro || 'No especificada'
+           };
+         
+         console.log('📧 Datos para notificación de actualización:', JSON.stringify(datosNotificacion, null, 2));
+         
+         // Enviar notificación de asignación
+         const resultadoEmail = await enviarNotificacionAsignacion(datosNotificacion);
+         console.log('✅ Notificación de actualización enviada:', resultadoEmail);
+         
+                   // Enviar notificación a aseguradora si hay funcionario asignado
+          if (casoActualizado.funcAsgrdra && emailFuncionarioAseguradora) {
+            try {
+              const datosNotificacionAseguradora = {
+                numeroCaso: casoActualizado.nmroAjste,
+                numeroSiniestro: casoActualizado.nmroSinstro || 'No especificado',
+                codigoWorkflow: casoActualizado.codWorkflow || 'No especificado',
+                nombreResponsable: casoActualizado.codiRespnsble || 'Sin asignar',
+                aseguradora: casoActualizado.codiAsgrdra || 'No especificada',
+                asegurado: casoActualizado.nombIntermediario || 'No especificado',
+                fechaAsignacion: casoActualizado.fchaAsgncion || new Date(),
+                emailFuncionarioAseguradora: emailFuncionarioAseguradora,
+                numeroPoliza: casoActualizado.nmroPolza || 'No especificado',
+                ciudadSiniestro: casoActualizado.ciudadSiniestro || 'No especificada',
+                descripcionSiniestro: casoActualizado.descSinstro || 'No especificada'
+              };
+             
+             const resultadoEmailAseguradora = await enviarNotificacionAseguradora(datosNotificacionAseguradora);
+             console.log('✅ Notificación de actualización a aseguradora enviada:', resultadoEmailAseguradora);
+             
+           } catch (emailAseguradoraError) {
+             console.error('⚠️ Error enviando notificación de actualización a aseguradora:', emailAseguradoraError);
+             // No fallar por error de email a aseguradora
+           }
+         }
+       } else {
+         console.log('📧 No hay cambios relevantes, no se envían notificaciones');
+       }
+       
+     } catch (emailError) {
+       console.error('⚠️ Error enviando notificaciones por email:', emailError);
+       console.error('⚠️ El caso se actualizó correctamente, pero falló el envío de notificaciones');
+       // NO fallar la actualización del caso por error de email
+     }
+    
+    console.log('🔄 ===== COMPLEX ACTUALIZADO CON ÉXITO =====');
     res.json(casoActualizado);
   } catch (error) {
-    console.error('Error al actualizar el caso:', error);
+    console.error('❌ Error al actualizar el caso:', error);
     res.status(500).json({ error: 'Error al actualizar el caso' });
   }
 };

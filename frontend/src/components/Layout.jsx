@@ -19,6 +19,9 @@ export default function Layout() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [dropdown, setDropdown] = useState(null);
 
+  // Cambiar el título del documento
+  document.title = "Grupo Proser Aplicativo";
+
   // Obtener información del usuario actual
   const usuarioActual = {
     login: localStorage.getItem('login'),
@@ -348,6 +351,24 @@ export default function Layout() {
                 onClick={() => setMenuOpen(false)}
               >
                 📧 Prueba Email
+              </Link>
+            )}
+            {esSoloSoporte && (
+              <Link
+                to="/test-email-complex"
+                className="px-6 py-2 hover:bg-blue-50 text-orange-700"
+                onClick={() => setMenuOpen(false)}
+              >
+                📧 Prueba Email Complex
+              </Link>
+            )}
+            {esSoloSoporte && (
+              <Link
+                to="/test-api-riesgos"
+                className="px-6 py-2 hover:bg-blue-50 text-green-700"
+                onClick={() => setMenuOpen(false)}
+              >
+                🧪 Prueba API Riesgos
               </Link>
             )}
             {esAdminOSoporte && (

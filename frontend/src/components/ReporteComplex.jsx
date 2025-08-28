@@ -8,6 +8,7 @@ import config from '../config.js';
 // Elimina la importación de antd
 
 const todosLosCampos = [
+  // Campos principales del caso
   { clave: 'nmroAjste', label: 'No. Ajuste' },
   { clave: 'nmroSinstro', label: 'No. de Siniestro' },
   { clave: 'nombIntermediario', label: 'Intermediario' },
@@ -30,49 +31,78 @@ const todosLosCampos = [
   { clave: 'amprAfctdo', label: 'Amparo Afectado' },
   { clave: 'causa_siniestro', label: 'Causa Siniestro' },
   { clave: 'dias_transcrrdo', label: 'Días Transcurridos' },
+  
+  // Campos de valores y prestaciones
   { clave: 'vlor_resrva', label: 'Valor Reserva' },
-  { clave: 'vlor_reclmo', label: 'Valor Reclamo' },
+  { clave: 'vlor_reclmo', label: 'Valor del Reclamo' },
   { clave: 'monto_indmzar', label: 'Monto a Indemnizar' },
-  { clave: 'vlor_servcios', label: 'Valor Servicios' },
-  { clave: 'vlor_gastos', label: 'Valor Gastos' },
-  { clave: 'total', label: 'Total' },
-  { clave: 'total_general', label: 'Total General' },
-  { clave: 'total_pagado', label: 'Total Pagado' },
+  { clave: 'observacionesValores', label: 'Observaciones Valores' },
+  
+  // Campos de facturación
+  { clave: 'nmroFactra', label: 'Número Factura' },
+  { clave: 'fchaFactra', label: 'Fecha Factura' },
+  { clave: 'vlorServcios', label: 'Valor Servicios' },
+  { clave: 'vlorGastos', label: 'Valor Gastos' },
+  { clave: 'total', label: 'Total Base' },
+  { clave: 'totalGeneral', label: 'Total General' },
+  { clave: 'totalPagado', label: 'Total Pagado' },
   { clave: 'iva', label: 'IVA' },
   { clave: 'reteiva', label: 'ReteIVA' },
   { clave: 'retefuente', label: 'ReteFuente' },
   { clave: 'reteica', label: 'ReteICA' },
-  { clave: 'porc_iva', label: '% IVA' },
-  { clave: 'porc_reteiva', label: '% ReteIVA' },
-  { clave: 'porc_retefuente', label: '% ReteFuente' },
-  { clave: 'porc_reteica', label: '% ReteICA' },
-  { clave: 'obse_cont_ini', label: 'Observaciones Contacto Inicial' },
-  { clave: 'anex_cont_ini', label: 'Anexos Contacto Inicial' },
-  { clave: 'obse_inspccion', label: 'Observaciones Inspección' },
-  { clave: 'anex_acta_inspccion', label: 'Anexos Acta Inspección' },
-  { clave: 'anex_sol_doc', label: 'Anexos Solicitud Documentos' },
-  { clave: 'obse_soli_docu', label: 'Observaciones Solicitud Documentos' },
-  { clave: 'anxo_inf_prelim', label: 'Anexos Informe Preliminar' },
-  { clave: 'obse_info_prelm', label: 'Observaciones Informe Preliminar' },
-  { clave: 'anxo_info_fnal', label: 'Anexos Informe Final' },
-  { clave: 'obse_info_fnal', label: 'Observaciones Informe Final' },
-  { clave: 'anxo_repo_acti', label: 'Anexos Reporte Actividades' },
-  { clave: 'obse_repo_acti', label: 'Observaciones Reporte Actividades' },
-  { clave: 'anxo_factra', label: 'Anexos Factura' },
-  { clave: 'anxo_honorarios', label: 'Anexos Honorarios' },
-  { clave: 'anxo_honorariosdefinit', label: 'Anexos Honorarios Definitivos' },
-  { clave: 'anxo_autorizacion', label: 'Anexos Autorización' },
-  { clave: 'obse_comprmsi', label: 'Observaciones Compromisos' },
-  { clave: 'obse_segmnto', label: 'Observaciones Seguimiento' },
-  { clave: 'fcha_soli_docu', label: 'Fecha Solicitud Documentos' },
-  { clave: 'fcha_info_prelm', label: 'Fecha Informe Preliminar' },
-  { clave: 'fcha_info_fnal', label: 'Fecha Informe Final' },
-  { clave: 'fcha_repo_acti', label: 'Fecha Reporte Actividades' },
-  { clave: 'fcha_ult_segui', label: 'Fecha Último Seguimiento' },
-  { clave: 'fcha_act_segui', label: 'Fecha Actualización Seguimiento' },
-  { clave: 'fcha_finqto_indem', label: 'Fecha Finiquito Indemnización' },
-  { clave: 'fcha_factra', label: 'Fecha Factura' },
-  { clave: 'fcha_ult_revi', label: 'Fecha Última Revisión' }
+  { clave: 'porcIva', label: '% IVA' },
+  { clave: 'porcReteiva', label: '% ReteIVA' },
+  { clave: 'porcRetefuente', label: '% ReteFuente' },
+  { clave: 'porcReteica', label: '% ReteICA' },
+  
+  // Campos de seguimiento
+  { clave: 'fchaUltSegui', label: 'Fecha Último Seguimiento' },
+  { clave: 'fchaActSegui', label: 'Fecha Actual Seguimiento' },
+  { clave: 'fchaFinqtoIndem', label: 'Fecha Fin Quito Indemnización' },
+  { clave: 'fchaUltRevi', label: 'Fecha Última Revisión' },
+  
+  // Campos de observaciones y contactos
+  { clave: 'obseContIni', label: 'Observaciones Contacto Inicial' },
+  { clave: 'obseInspccion', label: 'Observaciones Inspección' },
+  { clave: 'obseSoliDocu', label: 'Observaciones Solicitud Docs' },
+  { clave: 'obseInfoPrelm', label: 'Observaciones Informe Preliminar' },
+  { clave: 'obseInfoFnal', label: 'Observaciones Informe Final' },
+  { clave: 'obseRepoActi', label: 'Observaciones Último Documento' },
+  { clave: 'obseComprmsi', label: 'Observaciones Compromisos' },
+  { clave: 'obseSegmnto', label: 'Observaciones Seguimiento' },
+  
+  // Campos de anexos y documentos
+  { clave: 'anexContIni', label: 'Anexos Contacto Inicial' },
+  { clave: 'anexActaInspccion', label: 'Anexos Acta Inspección' },
+  { clave: 'anexSolDoc', label: 'Anexos Solicitud Docs' },
+  { clave: 'anxoInfPrelim', label: 'Anexos Informe Preliminar' },
+  { clave: 'anxoInfoFnal', label: 'Anexos Informe Final' },
+  { clave: 'anxoRepoActi', label: 'Anexos Último Documento' },
+  { clave: 'anxoFactra', label: 'Anexos Facturación' },
+  { clave: 'anxoHonorarios', label: 'Anexos Honorarios' },
+  { clave: 'anxoHonorariosdefinit', label: 'Anexos Honorarios Definitivos' },
+  { clave: 'anxoAutorizacion', label: 'Anexos Autorización' },
+  
+  // Campos de honorarios
+  { clave: 'honorarios', label: 'Honorarios' },
+  { clave: 'honorariosDefinitivos', label: 'Honorarios Definitivos' },
+  { clave: 'autorizacionHonorarios', label: 'Autorización Honorarios' },
+  
+  // Campos de liquidación y pérdida
+  { clave: 'liquidacionPerdida', label: 'Liquidación de la Pérdida' },
+  { clave: 'indemnizacion', label: 'Indemnización' },
+  { clave: 'salvamentos', label: 'Salvamentos' },
+  { clave: 'panoramaRiesgos', label: 'Panorama de Riesgos' },
+  
+  // Campos de trazabilidad
+  { clave: 'fchaSoliDocu', label: 'Fecha Solicitud Documentos' },
+  { clave: 'fchaInfoPrelm', label: 'Fecha Informe Preliminar' },
+  { clave: 'fchaInfoFnal', label: 'Fecha Informe Final' },
+  { clave: 'fchaRepoActi', label: 'Fecha Reporte Actualizado' },
+  
+  // Campos adicionales del modelo
+  { clave: 'createdAt', label: 'Fecha Creación' },
+  { clave: 'updatedAt', label: 'Fecha Actualización' }
 ];
 
 const columnasIniciales = [
@@ -136,50 +166,59 @@ const mapSiniestroToForm = (siniestro) => ({
   estado: siniestro.codiEstdo || '',
   descripcion_siniestro: siniestro.descSinstro || '',
   fcha_inspccion: toDateInputValue(siniestro.fchaInspccion),
-  fcha_soli_docu: toDateInputValue(siniestro.fcha_soli_docu),
-  fcha_info_prelm: toDateInputValue(siniestro.fcha_info_prelm),
-  fcha_info_fnal: toDateInputValue(siniestro.fcha_info_fnal),
-  fcha_repo_acti: toDateInputValue(siniestro.fcha_repo_acti),
-  fcha_ult_segui: toDateInputValue(siniestro.fcha_ult_segui),
-  fcha_act_segui: toDateInputValue(siniestro.fcha_act_segui),
-  fcha_finqto_indem: toDateInputValue(siniestro.fcha_finqto_indem),
-  fcha_factra: toDateInputValue(siniestro.fcha_factra),
-  fcha_ult_revi: toDateInputValue(siniestro.fcha_ult_revi),
+  fcha_soli_docu: toDateInputValue(siniestro.fchaSoliDocu),
+  fcha_info_prelm: toDateInputValue(siniestro.fchaInfoPrelm),
+  fcha_info_fnal: toDateInputValue(siniestro.fchaInfoFnal),
+  fcha_repo_acti: toDateInputValue(siniestro.fchaRepoActi),
+  fcha_ult_segui: toDateInputValue(siniestro.fchaUltSegui),
+  fcha_act_segui: toDateInputValue(siniestro.fchaActSegui),
+  fcha_finqto_indem: toDateInputValue(siniestro.fchaFinqtoIndem),
+  fcha_factra: toDateInputValue(siniestro.fchaFactra),
+  fcha_ult_revi: toDateInputValue(siniestro.fchaUltRevi),
   dias_transcrrdo: siniestro.dias_transcrrdo || '',
   vlor_resrva: siniestro.vlor_resrva || '',
   vlor_reclmo: siniestro.vlor_reclmo || '',
   monto_indmzar: siniestro.monto_indmzar || '',
-  vlor_servcios: siniestro.vlor_servcios || '',
-  vlor_gastos: siniestro.vlor_gastos || '',
+  vlor_servcios: siniestro.vlorServcios || '',
+  vlor_gastos: siniestro.vlorGastos || '',
   total: siniestro.total || '',
-  total_general: siniestro.total_general || '',
-  total_pagado: siniestro.total_pagado || '',
+  total_general: siniestro.totalGeneral || '',
+  total_pagado: siniestro.totalPagado || '',
   iva: siniestro.iva || '',
   reteiva: siniestro.reteiva || '',
   retefuente: siniestro.retefuente || '',
   reteica: siniestro.reteica || '',
-  porc_iva: siniestro.porc_iva || '',
-  porc_reteiva: siniestro.porc_reteiva || '',
-  porc_retefuente: siniestro.porc_retefuente || '',
-  porc_reteica: siniestro.porc_reteica || '',
-  obse_cont_ini: siniestro.obse_cont_ini || '',
-  anex_cont_ini: siniestro.anex_cont_ini || '',
-  obse_inspccion: siniestro.obse_inspccion || '',
-  anex_acta_inspccion: siniestro.anex_acta_inspccion || '',
-  anex_sol_doc: siniestro.anex_sol_doc || '',
-  obse_soli_docu: siniestro.obse_soli_docu || '',
-  anxo_inf_prelim: siniestro.anxo_inf_prelim || '',
-  obse_info_prelm: siniestro.obse_info_prelm || '',
-  anxo_info_fnal: siniestro.anxo_info_fnal || '',
-  obse_info_fnal: siniestro.obse_info_fnal || '',
-  anxo_repo_acti: siniestro.anxo_repo_acti || '',
-  obse_repo_acti: siniestro.obse_repo_acti || '',
-  anxo_factra: siniestro.anxo_factra || '',
-  anxo_honorarios: siniestro.anxo_honorarios || '',
-  anxo_honorariosdefinit: siniestro.anxo_honorariosdefinit || '',
-  anxo_autorizacion: siniestro.anxo_autorizacion || '',
-  obse_comprmsi: siniestro.obse_comprmsi || '',
-  obse_segmnto: siniestro.obse_segmnto || ''
+  porc_iva: siniestro.porcIva || '',
+  porc_reteiva: siniestro.porcReteiva || '',
+  porc_retefuente: siniestro.porcRetefuente || '',
+  porc_reteica: siniestro.porcReteica || '',
+  obse_cont_ini: siniestro.obseContIni || '',
+  obse_inspccion: siniestro.obseInspccion || '',
+  obse_soli_docu: siniestro.obseSoliDocu || '',
+  obse_info_prelm: siniestro.obseInfoPrelm || '',
+  obse_info_fnal: siniestro.obseInfoFnal || '',
+  obse_repo_acti: siniestro.obseRepoActi || '',
+  obse_comprmsi: siniestro.obseComprmsi || '',
+  obse_segmnto: siniestro.obseSegmnto || '',
+  anex_cont_ini: siniestro.anexContIni || '',
+  anex_acta_inspccion: siniestro.anexActaInspccion || '',
+  anex_sol_doc: siniestro.anexSolDoc || '',
+  anxo_inf_prelim: siniestro.anxoInfPrelim || '',
+  anxo_info_fnal: siniestro.anxoInfoFnal || '',
+  anxo_repo_acti: siniestro.anxoRepoActi || '',
+  anxo_factra: siniestro.anxoFactra || '',
+  anxo_honorarios: siniestro.anxoHonorarios || '',
+  anxo_honorariosdefinit: siniestro.anxoHonorariosdefinit || '',
+  anxo_autorizacion: siniestro.anxoAutorizacion || '',
+  honorarios: siniestro.honorarios || '',
+  honorariosDefinitivos: siniestro.honorariosDefinitivos || '',
+  autorizacionHonorarios: siniestro.autorizacionHonorarios || '',
+  liquidacionPerdida: siniestro.liquidacionPerdida || '',
+  indemnizacion: siniestro.indemnizacion || '',
+  salvamentos: siniestro.salvamentos || '',
+  panoramaRiesgos: siniestro.panoramaRiesgos || '',
+  createdAt: siniestro.createdAt || '',
+  updatedAt: siniestro.updatedAt || ''
 });
 
 const ReporteComplex = () => {
@@ -223,7 +262,7 @@ const ReporteComplex = () => {
   };
 
   const [siniestros, setSiniestros] = useState([]);
-  const [campoBusqueda, setCampoBusqueda] = useState('nmroSinstro');
+  const [siniestrosFiltrados, setSiniestrosFiltrados] = useState([]);
   const [terminoBusqueda, setTerminoBusqueda] = useState('');
   const [orden, setOrden] = useState({ campo: '', asc: true });
 
@@ -291,6 +330,11 @@ const ReporteComplex = () => {
       );
     }
   }, [siniestros]);
+
+  // Efecto para aplicar filtros automáticamente
+  useEffect(() => {
+    aplicarFiltrosAvanzados();
+  }, [terminoBusqueda, fechaDesde, fechaHasta, estadoFiltro, responsableFiltro, aseguradoraFiltro, siniestros, camposVisibles]);
   useEffect(() => {
     if (estados.length > 0) {
       console.log('Estados:', estados);
@@ -309,9 +353,11 @@ const ReporteComplex = () => {
         return fechaB - fechaA; // Orden descendente (más nuevo primero)
       });
       setSiniestros(siniestrosOrdenados);
+      setSiniestrosFiltrados(siniestrosOrdenados); // Inicializar filtrados
     } catch (error) {
       console.error('Error al cargar siniestros:', error);
       setSiniestros([]);
+      setSiniestrosFiltrados([]);
     }
     setLoading(false);
   };
@@ -415,43 +461,53 @@ const ReporteComplex = () => {
     return String(intermediario);
   };
 
-  // Filtrado avanzado mejorado
-  const siniestrosFiltrados = siniestros.filter(siniestro => {
-    let ok = true;
+  // Función para aplicar filtros avanzados
+  const aplicarFiltrosAvanzados = () => {
+    const resultados = siniestros.filter(siniestro => {
+      let ok = true;
+      
+      // Filtro por búsqueda de texto en todos los campos visibles
+      if (terminoBusqueda && terminoBusqueda.trim()) {
+        const encontrado = camposVisibles.some(campo => {
+          const valor = siniestro[campo.clave];
+          if (valor && typeof valor === 'string') {
+            return valor.toLowerCase().includes(terminoBusqueda.toLowerCase());
+          }
+          return false;
+        });
+        if (!encontrado) ok = false;
+      }
+      
+      // Filtro por fechas (usando el campo correcto del modelo)
+      if (fechaDesde) {
+        const f = siniestro.fchaAsgncion ? new Date(siniestro.fchaAsgncion) : null;
+        if (!f || f < new Date(fechaDesde)) ok = false;
+      }
+      if (fechaHasta) {
+        const f = siniestro.fchaAsgncion ? new Date(siniestro.fchaAsgncion) : null;
+        if (!f || f > new Date(fechaHasta)) ok = false;
+      }
+      
+      // Filtro por estado
+      if (estadoFiltro) {
+        ok = ok && (String(siniestro.codiEstdo) === String(estadoFiltro));
+      }
+      
+      // Filtro por responsable
+      if (responsableFiltro) {
+        ok = ok && (String(siniestro.codiRespnsble) === String(responsableFiltro));
+      }
+      
+      // Filtro por aseguradora
+      if (aseguradoraFiltro) {
+        ok = ok && (String(siniestro.codiAsgrdra) === String(aseguradoraFiltro));
+      }
+      
+      return ok;
+    });
     
-    // Filtro por búsqueda de texto
-    if (terminoBusqueda) {
-      const valor = siniestro[campoBusqueda]?.toString().toLowerCase() || '';
-      ok = ok && valor.includes(terminoBusqueda.toLowerCase());
-    }
-    
-    // Filtro por fechas (usando el campo correcto del modelo)
-    if (fechaDesde) {
-      const f = siniestro.fchaAsgncion ? new Date(siniestro.fchaAsgncion) : null;
-      if (!f || f < new Date(fechaDesde)) ok = false;
-    }
-    if (fechaHasta) {
-      const f = siniestro.fchaAsgncion ? new Date(siniestro.fchaAsgncion) : null;
-      if (!f || f > new Date(fechaHasta)) ok = false;
-    }
-    
-    // Filtro por estado
-    if (estadoFiltro) {
-      ok = ok && (String(siniestro.codiEstdo) === String(estadoFiltro));
-    }
-    
-    // Filtro por responsable
-    if (responsableFiltro) {
-      ok = ok && (String(siniestro.codiRespnsble) === String(responsableFiltro));
-    }
-    
-    // Filtro por aseguradora
-    if (aseguradoraFiltro) {
-      ok = ok && (String(siniestro.codiAsgrdra) === String(aseguradoraFiltro));
-    }
-    
-    return ok;
-  });
+    setSiniestrosFiltrados(resultados);
+  };
   console.log('siniestrosFiltrados:', siniestrosFiltrados.length, 'de', siniestros.length);
   const siniestrosOrdenados = [...siniestrosFiltrados].sort((a, b) => {
     const campo = orden.campo;
@@ -543,6 +599,20 @@ const ReporteComplex = () => {
           valor = getNombreResponsable(s);
         } else if (clave === 'nombIntermediario') {
           valor = getNombreIntermediario(s);
+        } else if (clave === 'funcAsgrdra') {
+          // Mostrar el nombre del funcionario si está disponible
+          valor = s.funcAsgrdra || '';
+        } else if (clave.includes('fcha') || clave === 'createdAt' || clave === 'updatedAt') {
+          // Formatear fechas
+          valor = s[clave] ? new Date(s[clave]).toLocaleDateString() : '';
+        } else if (clave === 'liquidacionPerdida' || clave === 'indemnizacion' || clave === 'salvamentos' || clave === 'panoramaRiesgos') {
+          // Para campos complejos, mostrar un resumen
+          const campoValor = s[clave];
+          if (typeof campoValor === 'object' && campoValor !== null) {
+            valor = Object.values(campoValor).filter(v => v).join(', ') || '';
+          } else {
+            valor = campoValor || '';
+          }
         } else {
           // Para el resto de campos, usar directamente el valor del modelo
           valor = s[clave] || '';
@@ -552,9 +622,14 @@ const ReporteComplex = () => {
       });
       return fila;
     }));
+    
+    // Ajustar el ancho de las columnas para mejor legibilidad
+    const columnWidths = camposVisibles.map(() => ({ width: 20 }));
+    worksheet['!cols'] = columnWidths;
+    
     const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Siniestros');
-    XLSX.writeFile(workbook, 'reporte_siniestros.xlsx');
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'CasosComplex');
+    XLSX.writeFile(workbook, 'reporte_complex.xlsx');
   };
 
 
@@ -576,6 +651,9 @@ const ReporteComplex = () => {
         <p className="text-sm text-blue-500 mt-1">
           👤 Usuario: <strong>{usuarioActual.nombre || usuarioActual.login}</strong> | 
           🏷️ Rol: <strong>{usuarioActual.rol}</strong>
+        </p>
+        <p className="text-sm text-green-600 mt-1">
+          📊 <strong>{camposVisibles.length}</strong> campos visibles de <strong>{todosLosCampos.length}</strong> disponibles
         </p>
         {!esAdmin && (
           <p className="text-sm text-orange-600 mt-1">
@@ -611,7 +689,7 @@ const ReporteComplex = () => {
         </div>
         
         {/* Segunda fila - Selectores */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
           <div>
             <label className="block text-xs font-semibold mb-1 text-gray-700">📊 Estado</label>
             <select 
@@ -639,7 +717,10 @@ const ReporteComplex = () => {
               ))}
             </select>
           </div>
-          
+        </div>
+        
+        {/* Tercera fila - Responsable y Buscador */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
           <div>
             <label className="block text-xs font-semibold mb-1 text-gray-700">👨‍💼 Responsable</label>
             <select 
@@ -653,6 +734,25 @@ const ReporteComplex = () => {
               ))}
             </select>
           </div>
+          
+          <div>
+            <label className="block text-xs font-semibold mb-1 text-gray-700">🔍 Buscar en todos los campos</label>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={terminoBusqueda}
+                onChange={e => setTerminoBusqueda(e.target.value)}
+                placeholder="Buscar en cualquier campo..."
+                className="flex-1 border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+              <button
+                className="bg-blue-600 text-white px-3 py-2 rounded-md hover:bg-blue-700 transition-colors text-sm"
+                onClick={aplicarFiltrosAvanzados}
+              >
+                🔍
+              </button>
+            </div>
+          </div>
         </div>
         
         {/* Botón para limpiar filtros */}
@@ -664,6 +764,8 @@ const ReporteComplex = () => {
               setEstadoFiltro("");
               setResponsableFiltro("");
               setAseguradoraFiltro("");
+              setTerminoBusqueda("");
+              // Los filtros se aplicarán automáticamente por el useEffect
             }}
             className="px-4 py-2 bg-gray-500 text-white rounded-md text-sm hover:bg-gray-600 transition-colors"
           >
@@ -672,7 +774,7 @@ const ReporteComplex = () => {
         </div>
         
         {/* Información de filtros activos */}
-        {(fechaDesde || fechaHasta || estadoFiltro || responsableFiltro || aseguradoraFiltro) && (
+        {(fechaDesde || fechaHasta || estadoFiltro || responsableFiltro || aseguradoraFiltro || terminoBusqueda) && (
           <div className="mt-3 p-2 bg-blue-50 rounded-md border border-blue-200">
             <p className="text-xs text-blue-800 font-medium mb-1">🔍 Filtros activos:</p>
             <div className="flex flex-wrap gap-1">
@@ -681,6 +783,7 @@ const ReporteComplex = () => {
               {estadoFiltro && <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs">Estado: {getNombreEstado(estadoFiltro)}</span>}
               {aseguradoraFiltro && <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs">Aseguradora: {getNombreAseguradora(aseguradoraFiltro)}</span>}
               {responsableFiltro && <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs">Responsable: {responsableFiltro}</span>}
+              {terminoBusqueda && <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs">Búsqueda: "{terminoBusqueda}"</span>}
             </div>
             <p className="text-xs text-blue-600 mt-1">Mostrando {siniestrosFiltrados.length} de {siniestros.length} siniestros</p>
             {hayFiltroResponsable && (
@@ -693,33 +796,6 @@ const ReporteComplex = () => {
       </div>
 
       <div className="flex flex-wrap gap-2 items-end mb-4">
-        <div>
-          <label className="text-sm font-medium block">Buscar por</label>
-          <select
-            className="border px-2 py-1 rounded"
-            value={campoBusqueda}
-            onChange={e => setCampoBusqueda(e.target.value)}
-          >
-            {camposVisibles.map(c => (
-              <option key={c.clave} value={c.clave}>{c.label}</option>
-            ))}
-          </select>
-        </div>
-        <div>
-          <label className="text-sm font-medium block">Término</label>
-          <input
-            type="text"
-            className="border px-2 py-1 rounded"
-            value={terminoBusqueda}
-            onChange={e => setTerminoBusqueda(e.target.value)}
-          />
-        </div>
-        <button
-          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-          onClick={obtenerSiniestros}
-        >
-          🔍 Buscar
-        </button>
         <button
           className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
           onClick={exportarExcel}
@@ -730,7 +806,17 @@ const ReporteComplex = () => {
           className="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700"
           onClick={abrirPersonalizarColumnas}
         >
-          Personalizar columnas
+          🎛️ Personalizar columnas
+        </button>
+        <button
+          className="bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700"
+          onClick={() => {
+            // Mostrar todos los campos disponibles
+            setCamposVisibles(todosLosCampos);
+            setModalColumnasOpen(false);
+          }}
+        >
+          📋 Mostrar todos los campos
         </button>
       </div>
 
@@ -817,6 +903,21 @@ const ReporteComplex = () => {
                         }
                         if (clave === 'nombIntermediario') {
                           return getNombreIntermediario(siniestro);
+                        }
+                        if (clave === 'funcAsgrdra') {
+                          return siniestro.funcAsgrdra || '';
+                        }
+                        if (clave.includes('fcha') || clave === 'createdAt' || clave === 'updatedAt') {
+                          // Formatear fechas
+                          return siniestro[clave] ? new Date(siniestro[clave]).toLocaleDateString() : '';
+                        }
+                        if (clave === 'liquidacionPerdida' || clave === 'indemnizacion' || clave === 'salvamentos' || clave === 'panoramaRiesgos') {
+                          // Para campos complejos, mostrar un resumen
+                          const valor = siniestro[clave];
+                          if (typeof valor === 'object' && valor !== null) {
+                            return Object.values(valor).filter(v => v).join(', ') || '';
+                          }
+                          return valor || '';
                         }
                         
                         // Para el resto de campos, mostrar el valor directo del modelo

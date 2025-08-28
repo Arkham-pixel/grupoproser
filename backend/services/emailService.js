@@ -2,14 +2,19 @@ import nodemailer from 'nodemailer';
 
 // Configurar el transporter de nodemailer
 const createTransporter = () => {
-  return nodemailer.createTransporter({
+  return nodemailer.createTransport({
     service: process.env.EMAIL_SERVICE || 'gmail',
     auth: {
       user: process.env.EMAIL_USER,
       pass: process.env.EMAIL_PASS
     },
     debug: true,
-    logger: true
+    logger: true,
+    // Opciones para evitar errores SSL en desarrollo
+    tls: {
+      rejectUnauthorized: false
+    },
+    secure: false
   });
 };
 
@@ -26,10 +31,11 @@ export const enviarNotificacionAsignacion = async (datosCaso) => {
     console.log('✅ Conexión SMTP verificada');
     
     // Emails fijos que siempre deben recibir notificación
+    // COMENTADOS PARA PRUEBAS - SOLO RESPONSABLE Y FUNCIONARIO
     const emailsFijos = [
-      'etapia@proserpuertos.com.co',
-      'aatapia@proserpuertos.com.co', 
-      'itapia9@proserpuertos.com.co'
+      // 'etapia@proserpuertos.com.co',
+      // 'aatapia@proserpuertos.com.co', 
+      // 'itapia9@proserpuertos.com.co'
     ];
     
     // Emails adicionales (responsable y quien asigna)
@@ -41,10 +47,20 @@ export const enviarNotificacionAsignacion = async (datosCaso) => {
       emailsAdicionales.push(datosCaso.emailQuienAsigna);
     }
     
-    // Combinar todos los emails únicos
-    const todosLosEmails = [...new Set([...emailsFijos, ...emailsAdicionales])];
-    
-    console.log('📧 Emails a notificar:', todosLosEmails);
+         // Combinar todos los emails únicos
+     const todosLosEmails = [...new Set([...emailsFijos, ...emailsAdicionales])];
+     
+     // Validar que haya al menos un email válido
+     if (todosLosEmails.length === 0) {
+       console.log('⚠️ No hay emails válidos para notificar, saltando envío');
+       return {
+         success: true,
+         message: 'No hay emails válidos para notificar',
+         emailsEnviados: []
+       };
+     }
+     
+     console.log('📧 Emails a notificar:', todosLosEmails);
     
     const mailOptions = {
       from: `"Grupo Proser - Sistema de Casos" <${process.env.EMAIL_USER}>`,
@@ -62,28 +78,48 @@ export const enviarNotificacionAsignacion = async (datosCaso) => {
               <h2 style="color: #1e40af; margin: 0 0 15px 0; font-size: 18px;">📊 Información del Caso</h2>
               <table style="width: 100%; border-collapse: collapse;">
                 <tr>
-                  <td style="padding: 8px 0; font-weight: bold; color: #374151;">Número de Caso:</td>
+                  <td style="padding: 8px 0; font-weight: bold; color: #374151;">🔢 Número de Ajuste:</td>
                   <td style="padding: 8px 0; color: #1f2937;">${datosCaso.numeroCaso}</td>
                 </tr>
                 <tr>
-                  <td style="padding: 8px 0; font-weight: bold; color: #374151;">Responsable:</td>
+                  <td style="padding: 8px 0; font-weight: bold; color: #374151;">📊 Número de Siniestro:</td>
+                  <td style="padding: 8px 0; color: #1f2937;">${datosCaso.numeroSiniestro || 'No especificado'}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 0; font-weight: bold; color: #374151;">🔧 Código Workflow:</td>
+                  <td style="padding: 8px 0; color: #1f2937;">${datosCaso.codigoWorkflow || 'No especificado'}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 0; font-weight: bold; color: #374151;">👤 Responsable:</td>
                   <td style="padding: 8px 0; color: #1f2937;">${datosCaso.nombreResponsable || 'Sin asignar'}</td>
                 </tr>
                 <tr>
-                  <td style="padding: 8px 0; font-weight: bold; color: #374151;">Aseguradora:</td>
+                  <td style="padding: 8px 0; font-weight: bold; color: #374151;">🏢 Aseguradora:</td>
                   <td style="padding: 8px 0; color: #1f2937;">${datosCaso.aseguradora || 'No especificada'}</td>
                 </tr>
                 <tr>
-                  <td style="padding: 8px 0; font-weight: bold; color: #374151;">Asegurado:</td>
+                  <td style="padding: 8px 0; font-weight: bold; color: #374151;">👥 Asegurado:</td>
                   <td style="padding: 8px 0; color: #1f2937;">${datosCaso.asegurado || 'No especificado'}</td>
                 </tr>
                 <tr>
-                  <td style="padding: 8px 0; font-weight: bold; color: #374151;">Fecha de Asignación:</td>
+                  <td style="padding: 8px 0; font-weight: bold; color: #374151;">📅 Fecha de Asignación:</td>
                   <td style="padding: 8px 0; color: #1f2937;">${datosCaso.fechaAsignacion || 'No especificada'}</td>
                 </tr>
                 <tr>
-                  <td style="padding: 8px 0; font-weight: bold; color: #374151;">Quien Asigna:</td>
+                  <td style="padding: 8px 0; font-weight: bold; color: #374151;">👨‍💼 Asignado por:</td>
                   <td style="padding: 8px 0; color: #1f2937;">${datosCaso.quienAsigna || 'Sistema'}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 0; font-weight: bold; color: #374151;">📋 Número de Póliza:</td>
+                  <td style="padding: 8px 0; color: #1f2937;">${datosCaso.numeroPoliza || 'No especificado'}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 0; font-weight: bold; color: #374151;">🏙️ Ciudad del Siniestro:</td>
+                  <td style="padding: 8px 0; color: #1f2937;">${datosCaso.ciudadSiniestro || 'No especificada'}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 0; font-weight: bold; color: #374151;">📝 Descripción:</td>
+                  <td style="padding: 8px 0; color: #1f2937;">${datosCaso.descripcionSiniestro || 'No especificada'}</td>
                 </tr>
               </table>
             </div>
@@ -161,20 +197,40 @@ export const enviarNotificacionAseguradora = async (datosCaso) => {
               <h2 style="color: #1e40af; margin: 0 0 15px 0; font-size: 18px;">📊 Información del Caso</h2>
               <table style="width: 100%; border-collapse: collapse;">
                 <tr>
-                  <td style="padding: 8px 0; font-weight: bold; color: #374151;">Número de Caso:</td>
+                  <td style="padding: 8px 0; font-weight: bold; color: #374151;">🔢 Número de Ajuste:</td>
                   <td style="padding: 8px 0; color: #1f2937;">${datosCaso.numeroCaso}</td>
                 </tr>
                 <tr>
-                  <td style="padding: 8px 0; font-weight: bold; color: #374151;">Aseguradora:</td>
+                  <td style="padding: 8px 0; font-weight: bold; color: #374151;">📊 Número de Siniestro:</td>
+                  <td style="padding: 8px 0; color: #1f2937;">${datosCaso.numeroSiniestro || 'No especificado'}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 0; font-weight: bold; color: #374151;">🔧 Código Workflow:</td>
+                  <td style="padding: 8px 0; color: #1f2937;">${datosCaso.codigoWorkflow || 'No especificado'}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 0; font-weight: bold; color: #374151;">🏢 Aseguradora:</td>
                   <td style="padding: 8px 0; color: #1f2937;">${datosCaso.aseguradora || 'No especificada'}</td>
                 </tr>
                 <tr>
-                  <td style="padding: 8px 0; font-weight: bold; color: #374151;">Asegurado:</td>
+                  <td style="padding: 8px 0; font-weight: bold; color: #374151;">👥 Asegurado:</td>
                   <td style="padding: 8px 0; color: #1f2937;">${datosCaso.asegurado || 'No especificado'}</td>
                 </tr>
                 <tr>
-                  <td style="padding: 8px 0; font-weight: bold; color: #374151;">Fecha de Asignación:</td>
+                  <td style="padding: 8px 0; font-weight: bold; color: #374151;">📅 Fecha de Asignación:</td>
                   <td style="padding: 8px 0; color: #1f2937;">${datosCaso.fechaAsignacion || 'No especificada'}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 0; font-weight: bold; color: #374151;">📋 Número de Póliza:</td>
+                  <td style="padding: 8px 0; color: #1f2937;">${datosCaso.numeroPoliza || 'No especificado'}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 0; font-weight: bold; color: #374151;">🏙️ Ciudad del Siniestro:</td>
+                  <td style="padding: 8px 0; color: #1f2937;">${datosCaso.ciudadSiniestro || 'No especificada'}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 0; font-weight: bold; color: #374151;">📝 Descripción:</td>
+                  <td style="padding: 8px 0; color: #1f2937;">${datosCaso.descripcionSiniestro || 'No especificada'}</td>
                 </tr>
               </table>
             </div>

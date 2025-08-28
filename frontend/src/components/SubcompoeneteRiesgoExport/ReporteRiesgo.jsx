@@ -65,7 +65,25 @@ const todasLasColumnas = [
   { clave: 'funcSolicita', label: 'Quien Solicita' },
   { clave: 'codDireccion', label: 'Dirección' },
   { clave: 'codigoPoblado', label: 'Código Poblado' },
-  // ...agrega más si tu base tiene más campos
+  { clave: 'codiClasificacion', label: 'Clasificación' },
+  { clave: 'observInforme', label: 'Observaciones Informe' },
+  { clave: 'vlorTarifaAseguradora', label: 'Valor Tarifa Aseguradora' },
+  { clave: 'vlorHonorarios', label: 'Valor Honorarios' },
+  { clave: 'vlorGastos', label: 'Valor Gastos' },
+  { clave: 'nmroFactra', label: 'Número Factura' },
+  { clave: 'fchaFactra', label: 'Fecha Factura' },
+  { clave: 'totalPagado', label: 'Total Pagado' },
+  { clave: 'anxoFactra', label: 'Adjunto Factura' },
+  { clave: 'codiRespnsble', label: 'Código Responsable' },
+  { clave: 'codiPais', label: 'Código País' },
+  { clave: 'codiDepto', label: 'Código Departamento' },
+  { clave: 'codiMpio', label: 'Código Municipio' },
+  { clave: 'codiCpoblado', label: 'Código Poblado' },
+  { clave: 'codiEstdo', label: 'Código Estado' },
+  { clave: 'descIva', label: 'Descripción IVA' },
+  { clave: 'reteIva', label: 'Retención IVA' },
+  { clave: 'reteFuente', label: 'Retención Fuente' },
+  { clave: 'reteIca', label: 'Retención ICA' }
 ];
 
 const ReporteRiesgo = ({ ciudades: ciudadesProp, estados: estadosProp }) => {
@@ -106,50 +124,70 @@ const ReporteRiesgo = ({ ciudades: ciudadesProp, estados: estadosProp }) => {
 
   const obtenerCasos = async () => {
     try {
+      console.log('🔍 Iniciando carga de casos de riesgo...');
+      
       // Cargar datos principales primero
       const data = await obtenerCasosRiesgo();
+      console.log('📊 Datos recibidos de obtenerCasosRiesgo:', data);
+      console.log('📊 Tipo de datos:', typeof data);
+      console.log('📊 Es array:', Array.isArray(data));
+      console.log('📊 Longitud:', Array.isArray(data) ? data.length : 'N/A');
+      
+      if (Array.isArray(data) && data.length > 0) {
+        console.log('📋 Primer caso:', data[0]);
+        console.log('📋 Campos del primer caso:', Object.keys(data[0]));
+      }
+      
       // Ordenar del más nuevo al más viejo por fecha de asignación
       const casosOrdenados = Array.isArray(data) ? data.sort((a, b) => {
         const fechaA = new Date(a.fchaAsgncion || a.fecha_asignacion_form || 0);
         const fechaB = new Date(b.fchaAsgncion || b.fecha_asignacion_form || 0);
         return fechaB - fechaA; // Orden descendente (más nuevo primero)
       }) : [];
+      
+      console.log('📊 Casos ordenados:', casosOrdenados.length);
       setCasos(casosOrdenados);
       
       // Cargar datos adicionales en paralelo, con manejo de errores individual
       try {
         const responsablesData = await obtenerResponsables();
+        console.log('👥 Responsables cargados:', responsablesData?.length || 0);
         setResponsables(Array.isArray(responsablesData) ? responsablesData : []);
       } catch (error) {
-        console.error('Error al cargar responsables:', error);
+        console.error('❌ Error al cargar responsables:', error);
         setResponsables([]);
       }
       
       try {
         const estadosData = await obtenerEstados();
+        console.log('📊 Estados cargados:', estadosData?.length || 0);
         setEstadosLocales(Array.isArray(estadosData) ? estadosData : []);
       } catch (error) {
-        console.error('Error al cargar estados:', error);
+        console.error('❌ Error al cargar estados:', error);
         setEstadosLocales([]);
       }
       
       try {
         const aseguradorasData = await obtenerAseguradoras();
+        console.log('🏢 Aseguradoras cargadas:', aseguradorasData?.length || 0);
         setAseguradoras(Array.isArray(aseguradorasData) ? aseguradorasData : []);
       } catch (error) {
-        console.error('Error al cargar aseguradoras:', error);
+        console.error('❌ Error al cargar aseguradoras:', error);
         setAseguradoras([]);
       }
       
       try {
         const ciudadesData = await obtenerCiudades();
+        console.log('🏙️ Ciudades cargadas:', ciudadesData?.length || 0);
         setCiudades(Array.isArray(ciudadesData) ? ciudadesData : []);
       } catch (error) {
-        console.error('Error al cargar ciudades:', error);
+        console.error('❌ Error al cargar ciudades:', error);
         setCiudades([]);
       }
+      
+      console.log('✅ Carga de datos completada');
     } catch (error) {
-      console.error('Error al cargar casos:', error);
+      console.error('❌ Error al cargar casos:', error);
       setCasos([]);
     }
   };
@@ -293,6 +331,25 @@ const ReporteRiesgo = ({ ciudades: ciudadesProp, estados: estadosProp }) => {
       });
       return fila;
     }));
+    
+    // Configurar ancho de columnas
+    const columnWidths = camposVisibles.map(col => {
+      // Ajustar ancho según el tipo de contenido
+      if (col.clave.includes('fecha') || col.clave.includes('fcha')) {
+        return { wch: 12 }; // Fechas
+      } else if (col.clave.includes('observ') || col.clave.includes('observ')) {
+        return { wch: 30 }; // Observaciones
+      } else if (col.clave.includes('direccion') || col.clave.includes('codDireccion')) {
+        return { wch: 25 }; // Direcciones
+      } else if (col.clave.includes('valor') || col.clave.includes('vlor')) {
+        return { wch: 15 }; // Valores monetarios
+      } else {
+        return { wch: 18 }; // Ancho por defecto
+      }
+    });
+    
+    worksheet['!cols'] = columnWidths;
+    
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, 'CasosRiesgo');
     XLSX.writeFile(workbook, 'reporte_riesgo.xlsx');
@@ -466,6 +523,9 @@ const ReporteRiesgo = ({ ciudades: ciudadesProp, estados: estadosProp }) => {
         >
           ⬇ Exportar Excel
         </button>
+        <div className="text-xs text-gray-600 bg-gray-100 px-3 py-2 rounded">
+          📊 {camposVisibles.length} de {todasLasColumnas.length} campos visibles
+        </div>
       </div>
 
       {/* Paginación - Movida arriba de la tabla */}

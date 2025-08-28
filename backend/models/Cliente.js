@@ -3,16 +3,16 @@ import mongoose from 'mongoose';
 
 const ClienteSchema = new mongoose.Schema({
   correo: String,
-  cod1Asgrdra: String,  // Corregido: era codiAsgrdra
+  codiAsgrdra: String,  // Campo correcto según la base de datos
   rzonSocial: String,
-  teleF1jo: String,     // Corregido: era teleFijo
-  telecellar: String,   // Corregido: era teleCellar
+  teleFijo: String,     // Campo correcto según la base de datos
+  teleCellar: String,   // Campo correcto según la base de datos
   direCliente: String,
-  cod1Pais: String,     // Corregido: era codiPais
-  cod1Depto: String,    // Corregido: era codiDepto
-  cod1Mp10: String,     // Corregido: era codiMpio
-  cod1Cpoblado: String, // Corregido: era codiPoblado
-  cod1Estdo: Number,    // Corregido: era codiEstdo
+  codiPais: String,     // Campo correcto según la base de datos
+  codiDepto: String,    // Campo correcto según la base de datos
+  codiMpio: String,     // Campo correcto según la base de datos
+  codiPoblado: String,  // Campo correcto según la base de datos
+  codiEstdo: Number,    // Campo correcto según la base de datos
   descIva: Number,
   reteIva: Number,
   reteFuente: Number,

@@ -43,7 +43,7 @@ export const obtenerAseguradoras = async () => {
 };
 
 export const obtenerCiudades = async () => {
-  const res = await api.get(`${BASE_URL}/api/ciudades`);
+  const res = await api.get(`${BASE_URL}/api/ciudades/ciudades`);
   return res.data;
 };
 

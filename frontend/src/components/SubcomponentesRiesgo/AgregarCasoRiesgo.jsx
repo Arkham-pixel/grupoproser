@@ -6,6 +6,10 @@ import FacturacionRiesgo from "./FacturacionRiesgo.jsx";
 import ListaCasosRiesgo from "./ListaCasosRiesgo";
 import { useCasosRiesgo } from "../../context/CasosRiesgoContext";
 import axios from 'axios';
+import { BASE_URL } from '../../config/apiConfig';
+
+// Configurar axios para usar la URL base correcta
+axios.defaults.baseURL = BASE_URL;
 
 const initialFormData = {
   aseguradora: '',
@@ -37,14 +41,23 @@ const AgregarCasoRiesgo = ({ casoInicial, onClose }) => {
   const [ciudades, setCiudades] = useState([]);
 
   useEffect(() => {
+    console.log('🔍 Cargando estados de riesgo...');
     axios.get('/api/estados/estados-riesgos')
-      .then(res => setEstados(res.data))
-      .catch(() => setEstados([]));
+      .then(res => {
+        console.log('✅ Estados cargados:', res.data);
+        setEstados(res.data);
+      })
+      .catch((error) => {
+        console.error('❌ Error cargando estados:', error);
+        setEstados([]);
+      });
   }, []);
 
   useEffect(() => {
+    console.log('🔍 Cargando clientes (aseguradoras)...');
     axios.get('/api/clientes')
       .then(res => {
+        console.log('✅ Clientes cargados:', res.data);
         // Extraer aseguradoras únicas por codiAsgrdra
         const mapa = new Map();
         res.data.forEach(c => {
@@ -52,30 +65,47 @@ const AgregarCasoRiesgo = ({ casoInicial, onClose }) => {
             mapa.set(c.codiAsgrdra, c.rzonSocial);
           }
         });
-        setAseguradoras(Array.from(mapa, ([codiAsgrdra, rzonSocial]) => ({ codiAsgrdra, rzonSocial })));
+        const aseguradorasUnicas = Array.from(mapa, ([codiAsgrdra, rzonSocial]) => ({ codiAsgrdra, rzonSocial }));
+        console.log('✅ Aseguradoras únicas:', aseguradorasUnicas);
+        setAseguradoras(aseguradorasUnicas);
       })
-      .catch(() => setAseguradoras([]));
+      .catch((error) => {
+        console.error('❌ Error cargando clientes:', error);
+        setAseguradoras([]);
+      });
   }, []);
 
   useEffect(() => {
+    console.log('🔍 Cargando responsables...');
     axios.get('/api/responsables')
       .then(res => {
+        console.log('✅ Responsables cargados:', res.data);
         setResponsables(res.data.map(r => ({ codiRespnsble: r.codiRespnsble, nmbrRespnsble: r.nmbrRespnsble })));
       })
-      .catch(() => setResponsables([]));
+      .catch((error) => {
+        console.error('❌ Error cargando responsables:', error);
+        setResponsables([]);
+      });
   }, []);
 
   useEffect(() => {
+    console.log('🔍 Cargando clasificaciones de riesgo...');
     axios.get('/api/estados/clasificaciones-riesgo')
       .then(res => {
+        console.log('✅ Clasificaciones cargadas:', res.data);
         setClasificaciones(res.data.map(c => ({ codiIdentificador: c.codiIdentificador, rzonDescripcion: c.rzonDescripcion })));
       })
-      .catch(() => setClasificaciones([]));
+      .catch((error) => {
+        console.error('❌ Error cargando clasificaciones:', error);
+        setClasificaciones([]);
+      });
   }, []);
 
   useEffect(() => {
-    axios.get('/api/ciudades')
+    console.log('🔍 Cargando ciudades...');
+    axios.get('/api/ciudades/ciudades')
       .then(res => {
+        console.log('✅ Ciudades cargadas:', res.data);
         // Mapeo para react-select: value = codiMunicipio, label = descMunicipio - descDepto
         setCiudades(res.data.map(c => ({
           value: c.codiMunicipio,
@@ -84,8 +114,22 @@ const AgregarCasoRiesgo = ({ casoInicial, onClose }) => {
           ...c
         })));
       })
-      .catch(() => setCiudades([]));
+      .catch((error) => {
+        console.error('❌ Error cargando ciudades:', error);
+        setCiudades([]);
+      });
   }, []);
+
+  // Log para mostrar el estado final de los datos cargados
+  useEffect(() => {
+    console.log('📊 Estado final de datos cargados:', {
+      estados: estados.length,
+      aseguradoras: aseguradoras.length,
+      responsables: responsables.length,
+      clasificaciones: clasificaciones.length,
+      ciudades: ciudades.length
+    });
+  }, [estados, aseguradoras, responsables, clasificaciones, ciudades]);
 
 
   const onEditarCaso = (caso, idx) => {

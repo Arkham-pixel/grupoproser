@@ -7,6 +7,7 @@ import {
   eliminarComplex,
   obtenerIntermediarios,
 } from '../controllers/complex.controller.js';
+import { enviarEmailPrueba } from '../services/emailService.js';
 import multer from 'multer';
 import path from 'path';
 
@@ -37,6 +38,21 @@ router.post('/upload', upload.single('file'), (req, res) => {
 
 // Rutas para intermediarios (debe ir antes de las rutas con parámetros)
 router.get('/intermediarios', obtenerIntermediarios);
+
+// 📧 Ruta para probar emails de casos complex
+router.post('/test-email', async (req, res) => {
+  try {
+    const { emailDestino } = req.body;
+    const resultado = await enviarEmailPrueba(emailDestino);
+    res.json(resultado);
+  } catch (error) {
+    console.error('❌ Error en test-email complex:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: error.message 
+    });
+  }
+});
 
 router.post('/', crearComplex);
 router.get('/', obtenerTodos);

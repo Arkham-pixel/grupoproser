@@ -23,6 +23,8 @@ import SiniestrosList from "./components/SiniestrosList";
 import ReportePolPadre from './components/ReportePol/ReportePolPadre';
 import AdminUsuarios from './components/AdminUsuarios';
 import TestEmail from './components/TestEmail';
+import TestEmailComplex from './components/TestEmailComplex';
+import TestApiRiesgos from './components/TestApiRiesgos';
 import EditarPerfilUsuario from './components/EditarPerfilUsuario';
 import SessionSettings from './components/SessionSettings';
 import HistorialFormularios from './components/HistorialFormularios';
@@ -137,6 +139,8 @@ export default function App() {
           <Route path="admin/usuarios" element={<AdminUsuarios />} />
           <Route path="admin/session-settings" element={<SessionSettings />} />
           <Route path="test-email" element={<TestEmail />} />
+          <Route path="test-email-complex" element={<TestEmailComplex />} />
+          <Route path="test-api-riesgos" element={<TestApiRiesgos />} />
           <Route path="editar-perfil-usuario" element={<EditarPerfilUsuario />} />
         </Route>
 
